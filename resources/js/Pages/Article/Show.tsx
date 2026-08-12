@@ -1,398 +1,185 @@
-import {
-    ArrowLeft,
-    ArrowRight,
-    Clock3,
-    MessageCircle,
-    Send,
-    Share2,
-} from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronRight, Link2 } from 'lucide-react';
+import { FaFacebookF, FaTelegramPlane, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+import { Link, Head } from '@inertiajs/react';
+import MainLayout from '../../Layouts/MainLayout';
+import { ArticleMeta, CategoryBadge } from '../../Components/ArticleComponents';
+import { Article, Category } from '../../types';
 
-type Props = {
-    slug: string;
+// Mendefinisikan tipe data yang dikirim dari Controller
+interface ShowProps {
+    article: Article;
+    relatedArticles: Article[];
+    popularArticles: Article[];
+    categories: Category[];
+}
+
+// Fungsi untuk memformat tanggal
+const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
 };
 
-const relatedArticles = [
-    {
-        category: 'AKIDAH',
-        title: 'Tawakal yang Sebenarnya kepada Allah',
-        date: '8 Mei 2026',
-        readTime: '6 min read',
-        image:
-            'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=700&q=80',
-    },
-    {
-        category: 'IBADAH',
-        title: 'Keutamaan Shalat Tahajud',
-        date: '4 Mei 2026',
-        readTime: '5 min read',
-        image:
-            'https://images.unsplash.com/photo-1564121211835-e88c852648ab?auto=format&fit=crop&w=700&q=80',
-    },
-    {
-        category: 'ILMU',
-        title: 'Menuntut Ilmu, Jalan Menuju Surga',
-        date: '2 Mei 2026',
-        readTime: '6 min read',
-        image:
-            'https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=700&q=80',
-    },
-];
-
-const popularArticles = [
-    'Tanda-Tanda Hati yang Mulai Keras',
-    'Doa yang Patut Dipanjatkan',
-    'Keutamaan Membaca Al-Qur’an',
-    'Amalan Ringan tapi Pahalanya Besar',
-    'Cara Agar Istiqamah dalam Kebaikan',
-];
-
-export default function Show({ slug }: Props) {
+function QuoteCard() {
     return (
-        <div className="min-h-screen bg-[#fafaf8] text-gray-900">
-            {/* ================= NAVBAR ================= */}
-            <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
-                <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-5 lg:px-8">
-                    <a href="/">
-                        <img
-                            src="/LOGO.png"
-                            alt="Abu Hurairah"
-                            className="h-12 w-auto object-contain"
-                        />
-                    </a>
+        <div className="rounded-xl border border-[#e8dfce] bg-[#faf7f0] p-6 text-center">
+            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-widest text-[#0c6247]">
+                Ayat Pilihan
+            </h3>
+            <p dir="rtl" className="font-serif text-[26px] leading-[1.8] text-[#173c2f]">
+                إِنَّ اللَّهَ لَا يَغْفِرُ أَنْ يُشْرَكَ بِهِ
+            </p>
+            <p className="mt-4 text-[11px] italic leading-relaxed text-[#555]">
+                “Sesungguhnya Allah tidak akan mengampuni dosa syirik kepada-Nya dan Dia mengampuni dosa selain itu bagi siapa yang dikehendaki.”
+            </p>
+            <p className="mt-3 text-[10px] font-bold text-[#174f3b]">
+                (QS. An-Nisa: 48)
+            </p>
+            <button className="mx-auto mt-5 flex items-center gap-1 text-[11px] font-bold text-[#126047] hover:underline">
+                Baca Tafsir
+                <ArrowRight size={12} />
+            </button>
+        </div>
+    );
+}
 
-                    <nav className="hidden items-center gap-7 lg:flex">
-                        <a
-                            href="/"
-                            className="text-[13px] font-medium text-gray-700 hover:text-emerald-900"
-                        >
-                            Beranda
-                        </a>
+export default function Show({ article, relatedArticles, popularArticles, categories }: ShowProps) {
+    return (
+        <MainLayout>
+            <Head title={`${article.title} - Abu Hurairah`} />
 
-                        <a
-                            href="/#artikel"
-                            className="text-[13px] font-medium text-emerald-950"
-                        >
-                            Artikel
-                        </a>
-
-                        <a
-                            href="#"
-                            className="text-[13px] font-medium text-gray-700"
-                        >
-                            Tafsir Al-Qur’an
-                        </a>
-
-                        <a
-                            href="#"
-                            className="text-[13px] font-medium text-gray-700"
-                        >
-                            Hadis
-                        </a>
-
-                        <a
-                            href="#"
-                            className="text-[13px] font-medium text-gray-700"
-                        >
-                            Akidah
-                        </a>
-
-                        <a
-                            href="#"
-                            className="text-[13px] font-medium text-gray-700"
-                        >
-                            Fiqih
-                        </a>
-
-                        <a
-                            href="#"
-                            className="text-[13px] font-medium text-gray-700"
-                        >
-                            Sirah
-                        </a>
+            <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
+                {/* ================= BAGIAN KIRI: KONTEN ARTIKEL ================= */}
+                <article className="min-w-0">
+                    {/* BREADCRUMB */}
+                    <nav className="mb-6 flex items-center gap-2 text-[11px] text-[#777]">
+                        <Link href="/" className="hover:text-[#126047]">Beranda</Link>
+                        <ChevronRight size={12} />
+                        <Link href="#" className="hover:text-[#126047]">Artikel</Link>
+                        <ChevronRight size={12} />
+                        <span className="font-medium text-[#333]">{article.category.name}</span>
                     </nav>
 
-                    <div className="hidden items-center gap-4 lg:flex">
-                        <button
-                            type="button"
-                            className="text-gray-700 hover:text-emerald-900"
-                        >
-                            <span className="text-lg">⌕</span>
-                        </button>
-
-                        <a
-                            href="/login"
-                            className="text-[13px] font-medium text-gray-700 hover:text-emerald-900"
-                        >
-                            Login Admin
-                        </a>
-                    </div>
-
-                    <div className="flex gap-4 lg:hidden">
-                        <span>⌕</span>
-                        <span>☰</span>
-                    </div>
-                </div>
-            </header>
-
-            {/* ================= BREADCRUMB ================= */}
-            <div className="mx-auto max-w-[1280px] px-5 pt-7 lg:px-8">
-                <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                    <a href="/" className="hover:text-emerald-900">
-                        Beranda
-                    </a>
-
-                    <span>/</span>
-
-                    <a href="/#artikel" className="hover:text-emerald-900">
-                        Artikel
-                    </a>
-
-                    <span>/</span>
-
-                    <span className="text-gray-700">Akidah</span>
-                </div>
-            </div>
-
-            {/* ================= ARTICLE ================= */}
-            <main className="mx-auto max-w-[1280px] px-5 py-7 lg:px-8">
-                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
-                    {/* MAIN ARTICLE */}
-                    <article>
-                        <span className="inline-flex rounded bg-emerald-950 px-2 py-1 text-[9px] font-bold tracking-wide text-white">
-                            AKIDAH
-                        </span>
-
-                        <h1 className="mt-4 max-w-4xl font-serif text-3xl font-bold leading-tight text-gray-950 sm:text-4xl lg:text-[43px]">
-                            Ikhlas, Kunci Diterimanya Amal di Sisi Allah
+                    {/* HEADER ARTIKEL */}
+                    <header className="mb-8">
+                        <CategoryBadge>{article.category.name}</CategoryBadge>
+                        <h1 className="mt-4 font-serif text-[28px] font-bold leading-tight text-[#10251d] sm:text-[36px] lg:text-[42px]">
+                            {article.title}
                         </h1>
-
-                        <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-                            <span>8 Mei 2026</span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                                <Clock3 size={13} />
-                                6 min read
-                            </span>
-                        </div>
-
-                        {/* Hero image */}
-                        <div className="mt-7 overflow-hidden rounded-xl">
-                            <img
-                                src="https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=1500&q=85"
-                                alt="Al-Qur'an"
-                                className="aspect-[1.9/1] w-full object-cover"
+                        <div className="mt-5 border-y border-[#e9e6df] py-4">
+                            <ArticleMeta 
+                                date={formatDate(article.created_at)} 
+                                readTime={`${article.read_time} min read`} 
                             />
                         </div>
+                    </header>
 
-                        {/* Content */}
-                        <div className="mt-8 max-w-3xl">
-                            <p className="text-[15px] leading-8 text-gray-700">
-                                Ikhlas adalah ruh dari setiap amal. Tanpanya,
-                                amal hanyalah rutinitas tanpa nilai di sisi
-                                Allah. Adalah keikhlasan hati di baliknya.
-                            </p>
+                    {/* GAMBAR UTAMA */}
+                    <div className="mb-10 overflow-hidden rounded-2xl aspect-[2/1] bg-[#f0eee9]">
+                        <img 
+                            src={article.image} 
+                            alt={article.title} 
+                            className="h-full w-full object-cover"
+                        />
+                    </div>
 
-                            <p className="mt-5 text-[15px] leading-8 text-gray-700">
-                                Ketika niat hanya untuk-Nya, amal sekecil
-                                apapun menjadi besar nilainya. Karena yang
-                                dilihat bukan semata-mata bentuk amal, tetapi
-                                niat dan tujuan seseorang dalam mengerjakannya.
-                            </p>
-
-                            {/* Quote */}
-                            <div className="my-8 rounded-lg bg-[#f5f0e5] px-6 py-7 text-center">
-                                <p
-                                    dir="rtl"
-                                    className="font-serif text-xl leading-loose text-gray-900"
-                                >
-                                    إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ
-                                </p>
-
-                                <p className="mt-3 text-xs italic leading-6 text-gray-600">
-                                    “Sesungguhnya setiap amal tergantung pada
-                                    niatnya.”
-                                </p>
-
-                                <p className="mt-1 text-[10px] font-semibold text-gray-500">
-                                    (HR. Bukhari & Muslim)
-                                </p>
-                            </div>
-
-                            <p className="text-[15px] leading-8 text-gray-700">
-                                Rasulullah ﷺ bersabda bahwa setiap amal
-                                tergantung pada niatnya. Dengan demikian,
-                                seseorang hendaknya selalu memperbaiki niat
-                                sebelum melakukan amal kebaikan.
-                            </p>
-
-                            <p className="mt-5 text-[15px] leading-8 text-gray-700">
-                                Maka perbaikilah niat, luruskan hati, dan
-                                lakukan amal karena Allah semata. Itulah kunci
-                                diterimanya amal di sisi-Nya.
-                            </p>
-                        </div>
-
-                        {/* Share */}
-                        <div className="mt-10 border-t border-gray-200 pt-6">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <span className="flex items-center gap-2 text-xs font-semibold">
-                                    <Share2 size={15} />
-                                    Bagikan Artikel:
-                                </span>
-
-                                <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-xs hover:bg-gray-50">
-                                   
-                                </button>
-
-                                <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-xs hover:bg-gray-50">
-                                    X
-                                </button>
-
-                                <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-xs hover:bg-gray-50">
-                                    <MessageCircle size={14} />
-                                </button>
-
-                                <button className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-xs hover:bg-gray-50">
-                                    <Send size={14} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Related */}
-                        <section className="mt-10">
-                            <h2 className="font-serif text-xl font-bold">
-                                Artikel Terkait
-                            </h2>
-
-                            <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                                {relatedArticles.map((article) => (
-                                    <a
-                                        href="#"
-                                        key={article.title}
-                                        className="group"
-                                    >
-                                        <img
-                                            src={article.image}
-                                            alt={article.title}
-                                            className="aspect-[1.5/1] w-full rounded-lg object-cover transition group-hover:opacity-90"
-                                        />
-
-                                        <p className="mt-2 text-[12px] font-semibold leading-5 text-gray-900">
-                                            {article.title}
-                                        </p>
-                                    </a>
-                                ))}
-                            </div>
-                        </section>
-                    </article>
-
-                    {/* ================= SIDEBAR ================= */}
-                    <aside className="space-y-5">
-                        {/* Ayat */}
-                        <div className="rounded-xl border border-gray-200 bg-[#fbfaf5] p-5">
-                            <h3 className="text-sm font-bold">
-                                ❝ &nbsp; Ayat Pilihan
-                            </h3>
-
-                            <div className="mt-5">
-                                <p
-                                    dir="rtl"
-                                    className="font-serif text-xl leading-loose text-center"
-                                >
-                                    إِنَّ اللَّهَ لَا يُغَيِّرُ مَا بِقَوْمٍ
-                                    حَتَّىٰ يُغَيِّرُوا مَا بِأَنْفُسِهِمْ
-                                </p>
-                            </div>
-
-                            <p className="mt-4 text-center text-[10px] leading-5 text-gray-500">
-                                “Sesungguhnya Allah tidak akan mengubah
-                                keadaan suatu kaum sebelum mereka mengubah
-                                keadaan diri mereka sendiri.”
-                            </p>
-
-                            <p className="mt-2 text-center text-[10px] font-semibold text-gray-500">
-                                (QS. Ar-Ra’d: 11)
-                            </p>
-
-                            <a
-                                href="#"
-                                className="mt-4 flex items-center justify-center gap-1 text-xs font-bold text-emerald-900"
-                            >
-                                Baca Tafsir
-                                <ArrowRight size={13} />
-                            </a>
-                        </div>
-
-                        {/* Kategori */}
-                        <div className="rounded-xl border border-gray-200 bg-white p-5">
-                            <h3 className="text-sm font-bold">Kategori</h3>
-
-                            <div className="mt-4 space-y-3">
-                                {[
-                                    ['Tafsir Al-Qur’an', 18],
-                                    ['Hadis', 16],
-                                    ['Akidah', 14],
-                                    ['Fiqih', 13],
-                                    ['Ibadah', 20],
-                                    ['Sirah Nabi', 12],
-                                    ['Keluarga Muslim', 10],
-                                    ['Motivasi Islam', 15],
-                                ].map(([name, count]) => (
-                                    <div
-                                        key={name}
-                                        className="flex items-center justify-between text-[11px] text-gray-600"
-                                    >
-                                        <span>◉ &nbsp; {name}</span>
-                                        <span className="text-gray-400">
-                                            {count}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Popular */}
-                        <div className="rounded-xl border border-gray-200 bg-white p-5">
-                            <h3 className="text-sm font-bold">
-                                Artikel Populer
-                            </h3>
-
-                            <div className="mt-4 space-y-4">
-                                {popularArticles.map((title, index) => (
-                                    <a
-                                        href="#"
-                                        key={title}
-                                        className="flex gap-3"
-                                    >
-                                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-950 text-[10px] font-bold text-white">
-                                            {index + 1}
-                                        </span>
-
-                                        <span className="text-[11px] font-medium leading-5 text-gray-700">
-                                            {title}
-                                        </span>
-                                    </a>
-                                ))}
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            </main>
-
-            {/* ================= FOOTER ================= */}
-            <footer className="mt-10 border-t border-gray-200 bg-emerald-950">
-                <div className="mx-auto max-w-[1280px] px-5 py-8 text-center lg:px-8">
-                    <img
-                        src="/LOGO.png"
-                        alt="Abu Hurairah"
-                        className="mx-auto h-12 w-auto brightness-0 invert"
+                    {/* ISI ARTIKEL: Render HTML asli dari Database */}
+                    <div 
+                        className="prose prose-sm sm:prose-base max-w-none text-[#333] prose-headings:font-serif prose-headings:text-[#17251f] prose-p:leading-relaxed prose-p:text-[15px] prose-a:text-[#126047]"
+                        dangerouslySetInnerHTML={{ __html: article.content }}
                     />
 
-                    <p className="mt-3 text-xs text-emerald-100/60">
-                        © 2026 Abu Hurairah · Artikel Islam & Dakwah
-                    </p>
-                </div>
-            </footer>
-        </div>
+                    {/* BAGIKAN ARTIKEL */}
+                    <div className="mt-12 flex items-center gap-4 border-t border-[#e9e6df] pt-6">
+                        <span className="text-[12px] font-bold text-[#17251f]">Bagikan Artikel:</span>
+                        <div className="flex gap-2">
+                            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#1877F2] hover:text-white" aria-label="Share to Facebook">
+                                <FaFacebookF size={13} />
+                            </button>
+                            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#1DA1F2] hover:text-white" aria-label="Share to Twitter">
+                                <FaTwitter size={13} />
+                            </button>
+                            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#25D366] hover:text-white" aria-label="Share to WhatsApp">
+                                <FaWhatsapp size={14} />
+                            </button>
+                            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#0088cc] hover:text-white" aria-label="Share to Telegram">
+                                <FaTelegramPlane size={14} />
+                            </button>
+                            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#126047] hover:text-white" aria-label="Copy Link">
+                                <Link2 size={14} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* ARTIKEL TERKAIT */}
+                    <section className="mt-14">
+                        <h2 className="mb-6 font-serif text-[20px] font-bold text-[#17251f] border-b border-[#e9e6df] pb-3">
+                            Artikel Terkait
+                        </h2>
+                        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
+                            {relatedArticles.map((relArticle) => (
+                                <Link href={`/artikel/${relArticle.slug}`} key={relArticle.id} className="group block">
+                                    <div className="aspect-[1.5/1] overflow-hidden rounded-xl bg-[#f0eee9] mb-3">
+                                        <img src={relArticle.image} alt={relArticle.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                                    </div>
+                                    <h3 className="font-serif text-[13px] font-bold leading-snug text-[#14251e] line-clamp-2 group-hover:text-[#126047]">
+                                        {relArticle.title}
+                                    </h3>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                </article>
+
+                {/* ================= BAGIAN KANAN: SIDEBAR ================= */}
+                <aside className="space-y-8">
+                    <QuoteCard />
+
+                    {/* KATEGORI */}
+                    <section className="rounded-xl border border-[#e8e4da] bg-white p-6">
+                        <h3 className="mb-4 border-b border-[#f0eee9] pb-3 font-serif text-[15px] font-bold text-[#17251f]">
+                            Kategori
+                        </h3>
+                        <div className="space-y-3">
+                            {categories.map((category) => (
+                                <Link href={`/kategori/${category.slug}`} key={category.id} className="group flex items-center justify-between text-[12px]">
+                                    <span className="flex items-center gap-2 text-[#555] transition-colors group-hover:text-[#126047]">
+                                        <BookOpen size={13} className="text-[#126047]" />
+                                        {category.name}
+                                    </span>
+                                    <span className="rounded bg-[#f5f5f5] px-2 py-0.5 text-[10px] text-[#999]">
+                                        {category.articles_count}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ARTIKEL POPULER */}
+                    <section className="rounded-xl border border-[#e8e4da] bg-white p-6">
+                        <h3 className="mb-4 border-b border-[#f0eee9] pb-3 font-serif text-[15px] font-bold text-[#17251f]">
+                            Artikel Populer
+                        </h3>
+                        <div className="space-y-5">
+                            {popularArticles.map((popArticle, index) => (
+                                <Link href={`/artikel/${popArticle.slug}`} key={popArticle.id} className="group flex items-start gap-3">
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f3f1eb] text-[10px] font-bold text-[#126047] transition-colors group-hover:bg-[#063f2f] group-hover:text-white">
+                                        {index + 1}
+                                    </span>
+                                    <div>
+                                        <h4 className="text-[12px] font-medium leading-relaxed text-[#333] transition-colors group-hover:text-[#126047] line-clamp-2">
+                                            {popArticle.title}
+                                        </h4>
+                                        <p className="mt-1 text-[10px] text-[#888]">{formatDate(popArticle.created_at)}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </MainLayout>
     );
 }
