@@ -57,7 +57,7 @@ export default function Show({ article, relatedArticles, popularArticles, catego
                     <nav className="mb-6 flex items-center gap-2 text-[11px] text-[#777]">
                         <Link href="/" className="hover:text-[#126047]">Beranda</Link>
                         <ChevronRight size={12} />
-                        <Link href="#" className="hover:text-[#126047]">Artikel</Link>
+                        <Link href="/artikel/" className="hover:text-[#126047]">Artikel</Link>
                         <ChevronRight size={12} />
                         <span className="font-medium text-[#333]">{article.category.name}</span>
                     </nav>

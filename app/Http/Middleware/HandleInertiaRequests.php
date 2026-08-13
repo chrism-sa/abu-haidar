@@ -17,7 +17,11 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            //
+            'auth' => [
+                'user' => $request->user(),
+            ],
+            // Bagikan data kategori ke seluruh komponen React secara global
+            'categories' => \App\Models\Category::all(),
         ]);
     }
 }
