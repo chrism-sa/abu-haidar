@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\Category;
-use App\Models\Setting; // <-- Tambahkan import Setting
+use App\Models\Quote; // <-- Ubah dari Setting ke Quote
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,18 +12,10 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // 1. Ambil Pengaturan (Settings)
-        $settings = Setting::pluck('value', 'key'); // Mengubah data tabel menjadi array praktis
+        // 1. Ambil Ayat Pilihan secara Random dari tabel quotes
+        $quote = Quote::with('article')->inRandomOrder()->first();
 
-        // Format data quote agar sesuai dengan props di React
-        $quote = [
-            'arabic' => $settings['quote_arabic'] ?? '',
-            'translation' => $settings['quote_translation'] ?? '',
-            'reference' => $settings['quote_reference'] ?? '',
-            'tafsir_link' => $settings['quote_link'] ?? '#',
-        ];
-
-        // 2. Query Artikel & Kategori (Masih sama seperti sebelumnya)
+        // 2. Query Artikel & Kategori
         $heroArticle = Article::with('category')->where('is_published', true)->latest()->first();
         
         $latestArticles = Article::with('category')
@@ -45,7 +37,7 @@ class HomeController extends Controller
             'latestArticles' => $latestArticles,
             'selectedArticles' => $selectedArticles,
             'categories' => $categories,
-            'quote' => $quote, // Data ini sekarang berasal dari database!
+            'quote' => $quote, // Data dikirim secara seragam
         ]);
     }
 }

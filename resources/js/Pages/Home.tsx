@@ -12,7 +12,7 @@ interface HomeProps {
     latestArticles: Article[];
     selectedArticles: Article[];
     categories: Category[];
-    quote: Quote | null; // <--- Tambah ini
+    quote: Quote | null; 
 }
 
 export default function Home({ heroArticle, latestArticles, selectedArticles, categories, quote }: HomeProps) {

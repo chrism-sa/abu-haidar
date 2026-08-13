@@ -1,35 +1,40 @@
 import { ArrowRight, BookOpen } from 'lucide-react';
-import { Category, Quote } from '../types'; // Import tipe Quote
+import { Category, Quote } from '../types';
 import { Link } from '@inertiajs/react';
 
-// Terima props quote di QuoteCard
+// Komponen internal QuoteCard (tidak pakai export default)
 function QuoteCard({ quote }: { quote: Quote | null }) {
     if (!quote) return null; // Sembunyikan jika admin belum mengisi data
 
     return (
-        <div className="rounded-xl border border-[#e8dfce] bg-[#faf7f0] p-6 text-center">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#0c6247] mb-5">
+        <div className="rounded-xl border border-[#e8dfce] bg-[#faf7f0] p-6 text-center shadow-sm">
+            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-widest text-[#0c6247]">
                 Ayat Pilihan
             </h3>
             <p dir="rtl" className="font-serif text-[26px] leading-[1.8] text-[#173c2f]">
                 {quote.arabic}
             </p>
-            <p className="mt-4 text-[11px] leading-relaxed text-[#555] italic">
+            <p className="mt-4 text-[11px] italic leading-relaxed text-[#555]">
                 “{quote.translation}”
             </p>
             <p className="mt-3 text-[10px] font-bold text-[#174f3b]">
                 ({quote.reference})
             </p>
-            {quote.tafsir_link && (
-                <a href={quote.tafsir_link} target="_blank" rel="noreferrer" className="mx-auto mt-5 flex items-center justify-center gap-1 text-[11px] font-bold text-[#126047] hover:underline">
+
+            {/* Tombol Baca Tafsir yang mengarah ke halaman artikel */}
+            {quote.article && (
+                <Link
+                    href={`/artikel/${quote.article.slug}`}
+                    className="mx-auto mt-5 flex w-fit items-center justify-center gap-1 text-[11px] font-bold text-[#126047] transition hover:underline"
+                >
                     Baca Tafsir <ArrowRight size={12} />
-                </a>
+                </Link>
             )}
         </div>
     );
 }
 
-// Tambahkan props quote ke Sidebar
+// Hanya ada SATU export default di sini untuk komponen Sidebar
 export default function Sidebar({ categories, quote }: { categories: Category[], quote: Quote | null }) {
     return (
         <aside className="space-y-6">

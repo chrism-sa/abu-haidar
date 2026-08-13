@@ -38,3 +38,36 @@ button {
     background: #063f2f;
     color: white;
 }
+
+@media print {
+    /* Sembunyikan semua elemen kecuali artikel */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Tampilkan hanya bagian pembungkus artikel */
+    article, article * {
+        visibility: visible;
+    }
+
+    article {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    /* Sembunyikan tombol download dan navigasi tidak penting saat dicetak */
+    button, nav, aside, footer {
+        display: none !important;
+    }
+}
+
+/* Styling tambahan khusus untuk elemen teks Arab dalam artikel */
+.prose [dir="rtl"] {
+    font-family: 'Amiri', 'Traditional Arabic', serif; /* Jika menggunakan font Arab, atau fallback ke serif */
+    text-align: right !important;
+    direction: rtl;
+    color: #0c6247; /* Warna hijau khas nuansa Islami */
+}

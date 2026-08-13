@@ -8,7 +8,7 @@ export type Category = {
 export type Article = {
     id: number;
     category_id: number;
-    category: Category; // Relasi tabel
+    category: Category;
     title: string;
     slug: string;
     image: string;
@@ -19,11 +19,11 @@ export type Article = {
     created_at: string;
 };
 
-// Tambahkan di bawah tipe Article dan Category
 export type Quote = {
     id?: number;
     arabic: string;
     translation: string;
     reference: string;
-    tafsir_link?: string;
+    article_id?: number;
+    article?: Article; // <--- Tambahkan relasi artikel di sini
 };
