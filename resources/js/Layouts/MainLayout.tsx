@@ -1,8 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Menu, UserRound, X, Search } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
 import LoginModal from "../Components/LoginModal";
 import { Category } from "../types";
+import { ChevronDown } from "lucide-react";
+import {
+    FaYoutube,
+    FaInstagram,
+    FaTelegramPlane,
+    FaWhatsapp,
+} from "react-icons/fa";
 
 export default function MainLayout({
     children,
@@ -11,6 +18,8 @@ export default function MainLayout({
 }) {
     const [mobileMenu, setMobileMenu] = useState<boolean>(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+    const [footerDropdownOpen, setFooterDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const { auth, categories } = usePage().props as {
         auth: any;
         categories: Category[];
@@ -21,6 +30,20 @@ export default function MainLayout({
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState<boolean>(false);
     const searchRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setFooterDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Debounced Search Effect (Mencegah lag & request beruntun)
     useEffect(() => {
@@ -219,7 +242,7 @@ export default function MainLayout({
                             >
                                 Beranda Utama
                             </Link>
-                            
+
                             <div className="my-1 border-t border-[#eee]" />
                             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-[#888]">
                                 Kategori
@@ -273,37 +296,117 @@ export default function MainLayout({
                     </div>
 
                     <div>
-                        <h4 className="font-serif text-[14px] font-bold tracking-wider uppercase text-emerald-300 mb-4">
-                            Tautan Cepat
-                        </h4>
-                        <ul className="space-y-2.5 text-[12px] text-white/80">
-                            <li>
-                                <Link
-                                    href="/"
-                                    className="hover:text-emerald-300 transition-colors"
-                                >
-                                    Beranda Utama
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    href="/artikel"
-                                    className="hover:text-emerald-300 transition-colors"
-                                >
-                                    Arsip Semua Artikel
-                                </Link>
-                            </li>
-                        </ul>
+                        <div>
+                            <h4 className="font-serif text-[14px] font-bold tracking-wider uppercase text-emerald-300 mb-4">
+                                Tautan Cepat & Kategori
+                            </h4>
+                            <ul className="space-y-3 text-[12px] text-white/80">
+                                <li>
+                                    <Link
+                                        href="/"
+                                        className="flex items-center gap-2 hover:text-emerald-300 transition-colors"
+                                    >
+                                        Beranda Utama
+                                    </Link>
+                                </li>
+
+                                {/* Garis pemisah tipis */}
+                                <div className="my-1 border-t border-white/10" />
+
+                                {/* CUSTOM DROPDOWN KATEGORI YANG ESTETIK */}
+                                <li className="relative" ref={dropdownRef}>
+                                    <button
+                                        onClick={() =>
+                                            setFooterDropdownOpen(
+                                                !footerDropdownOpen,
+                                            )
+                                        }
+                                        className="flex w-full items-center justify-between rounded-lg border border-white/20 bg-[#04281d] px-3.5 py-2 text-[12px] font-medium text-white transition hover:border-emerald-300"
+                                    >
+                                        <span>Pilih Kategori Artikel</span>
+                                        <ChevronDown
+                                            size={14}
+                                            className={`transition-transform duration-300 ${footerDropdownOpen ? "rotate-180" : ""}`}
+                                        />
+                                    </button>
+
+                                    {/* Menu Dropdown Melayang */}
+                                    {footerDropdownOpen && (
+                                        <div className="absolute bottom-full left-0 right-0 mb-2 rounded-xl bg-[#04281d] border border-white/20 shadow-xl overflow-hidden z-50 py-1 max-h-[220px] overflow-y-auto">
+                                            {categories &&
+                                            categories.length > 0 ? (
+                                                categories.map((cat) => (
+                                                    <Link
+                                                        key={cat.id}
+                                                        href={`/kategori/${cat.slug}`}
+                                                        onClick={() =>
+                                                            setFooterDropdownOpen(
+                                                                false,
+                                                            )
+                                                        }
+                                                        className="block px-4 py-2 text-[12px] text-white/80 hover:bg-emerald-950 hover:text-emerald-300 transition"
+                                                    >
+                                                        {cat.name}
+                                                    </Link>
+                                                ))
+                                            ) : (
+                                                <div className="px-4 py-2 text-[11px] text-white/50 text-center">
+                                                    Tidak ada kategori
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div>
                         <h4 className="font-serif text-[14px] font-bold tracking-wider uppercase text-emerald-300 mb-4">
-                            Media Sosial
+                            Media Sosial & Saluran
                         </h4>
                         <p className="text-[12px] text-white/70 mb-4 leading-relaxed">
                             Ikuti perkembangan kajian dan sebaran artikel
-                            terbaru kami melalui kanal resmi.
+                            terbaru kami melalui kanal resmi di bawah ini:
                         </p>
+                        <div className="flex items-center gap-3">
+                            <a
+                                href="https://youtube.com"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#FF0000]"
+                                aria-label="YouTube"
+                            >
+                                <FaYoutube size={16} />
+                            </a>
+                            <a
+                                href="https://instagram.com"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#E4405F]"
+                                aria-label="Instagram"
+                            >
+                                <FaInstagram size={16} />
+                            </a>
+                            <a
+                                href="https://telegram.org"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#0088cc]"
+                                aria-label="Telegram"
+                            >
+                                <FaTelegramPlane size={15} />
+                            </a>
+                            <a
+                                href="https://whatsapp.com"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#25D366]"
+                                aria-label="WhatsApp"
+                            >
+                                <FaWhatsapp size={16} />
+                            </a>
+                        </div>
                     </div>
                 </div>
 
