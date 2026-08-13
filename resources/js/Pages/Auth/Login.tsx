@@ -19,13 +19,13 @@ export default function Login() {
 
     return (
         <div className="flex min-h-screen bg-[#fafaf8]">
-            <Head title="Login Admin - Abu Hurairah" />
+            <Head title="Login Admin - Abu Haidar" />
 
             {/* KIRI: Sisi Branding (Hanya muncul di desktop) */}
             <div className="hidden w-full max-w-[500px] flex-col items-center justify-center bg-[#063f2f] p-12 text-center text-white lg:flex relative overflow-hidden">
                 <div className="relative z-10 flex flex-col items-center">
-                    <img src="/LOGO2.png" alt="Abu Hurairah" className="mb-6 h-20 brightness-0 invert" />
-                    <h1 className="font-serif text-[24px] font-bold">Abu Hurairah</h1>
+                    <img src="/LOGO2.png" alt="Abu Haidar" className="mb-6 h-20 brightness-0 invert" />
+                    <h1 className="font-serif text-[24px] font-bold">Abu Haidar</h1>
                     <p className="mt-2 text-[12px] text-white/80">Artikel Islam & Dakwah</p>
                     <p className="mt-8 max-w-xs text-[13px] leading-relaxed text-white/70">
                         Kelola artikel dan konten dakwah dengan mudah dan aman.
@@ -113,7 +113,7 @@ export default function Login() {
                     </form>
 
                     <div className="mt-8 text-center text-[10px] text-[#999]">
-                        © 2026 Abu Hurairah
+                        © 2026 Abu Haidar. All rights reserved.
                     </div>
                 </div>
             </div>

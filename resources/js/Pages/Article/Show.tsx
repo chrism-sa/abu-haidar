@@ -48,7 +48,7 @@ function QuoteCard() {
 export default function Show({ article, relatedArticles, popularArticles, categories }: ShowProps) {
     return (
         <MainLayout>
-            <Head title={`${article.title} - Abu Hurairah`} />
+            <Head title={`${article.title} - Abu Haidar`} />
 
             <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
                 {/* ================= BAGIAN KIRI: KONTEN ARTIKEL ================= */}

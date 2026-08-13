@@ -52,7 +52,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 name="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="admin@abuhurairah.com"
+                                placeholder="...@....com"
                                 className="w-full rounded-lg border border-[#dedbd2] bg-[#fafaf8] px-4 py-3 text-[13px] outline-none transition focus:border-[#0b6045]"
                                 required
                             />
