@@ -6,7 +6,10 @@ import { createRoot } from 'react-dom/client';
 const pages = import.meta.glob('./Pages/**/*.tsx');
 
 createInertiaApp({
-    title: (title) => `${title} - Abu Hurairah`,
+    title: (title) => 
+        title 
+            ? `${title} - Abu Haidar` 
+            : 'Abu Haidar - Kajian & Risalah Dakwah Islamiyah',
 
     resolve: async (name) => {
         const page = pages[`./Pages/${name}.tsx`];

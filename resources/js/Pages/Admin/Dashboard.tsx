@@ -45,7 +45,7 @@ export default function Dashboard({ auth, db_status }: DashboardProps) {
 
                     <div className="flex items-center gap-3">
                         <Link
-                            href="/"
+                            href="/home"
                             className="flex items-center gap-1.5 rounded-lg border border-[#e8e4da] bg-white px-3 py-2 text-[12px] font-medium text-[#17251f] transition hover:bg-[#faf7f0]"
                         >
                             <Home size={14} /> Lihat Web
@@ -56,7 +56,7 @@ export default function Dashboard({ auth, db_status }: DashboardProps) {
                             method="post"
                             as="button"
                             onSuccess={() => {
-                                window.location.href = "/";
+                                window.location.href = "/home";
                             }}
                             className="flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-[12px] font-medium text-red-600 transition hover:bg-red-100"
                         >

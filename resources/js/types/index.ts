@@ -2,7 +2,7 @@ export type Category = {
     id: number;
     name: string;
     slug: string;
-    articles_count?: number; // Hasil dari withCount() di controller
+    articles_count?: number; 
 };
 
 export type Article = {
@@ -14,9 +14,9 @@ export type Article = {
     image: string;
     description: string;
     content: string;
-    read_time: number;
     is_published: boolean;
     created_at: string;
+    updated_at: string;
 };
 
 export type Quote = {
@@ -25,5 +25,5 @@ export type Quote = {
     translation: string;
     reference: string;
     article_id?: number;
-    article?: Article; // <--- Tambahkan relasi artikel di sini
+    article?: Article; 
 };

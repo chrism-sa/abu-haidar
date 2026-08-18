@@ -12,8 +12,9 @@ import {
     FaWhatsapp,
 } from "react-icons/fa";
 import { Link, Head } from "@inertiajs/react";
+import { useState, useEffect } from "react"; // 1. IMPORT STATE & EFFECT
 import MainLayout from "../../Layouts/MainLayout";
-import Sidebar from "../../Components/Sidebar"; // <--- Import komponen Sidebar
+import Sidebar from "../../Components/Sidebar";
 import { ArticleMeta, CategoryBadge } from "../../Components/ArticleComponents";
 import { Article, Category, Quote } from "../../types";
 
@@ -33,6 +34,34 @@ const formatDate = (dateString: string) => {
     });
 };
 
+const timeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    let interval = seconds / 31536000;
+    if (interval >= 1)
+        return "Diperbarui " + Math.floor(interval) + " tahun yang lalu";
+
+    interval = seconds / 2592000;
+    if (interval >= 1)
+        return "Diperbarui " + Math.floor(interval) + " bulan yang lalu";
+
+    interval = seconds / 86400;
+    if (interval >= 1)
+        return "Diperbarui " + Math.floor(interval) + " hari yang lalu";
+
+    interval = seconds / 3600;
+    if (interval >= 1)
+        return "Diperbarui " + Math.floor(interval) + " jam yang lalu";
+
+    interval = seconds / 60;
+    if (interval >= 1)
+        return "Diperbarui " + Math.floor(interval) + " menit yang lalu";
+
+    return "Baru saja diperbarui";
+};
+
 export default function Show({
     article,
     relatedArticles,
@@ -40,6 +69,39 @@ export default function Show({
     categories,
     quote,
 }: ShowProps) {
+    // 2. STATE UNTUK SHARE & COPY LINK
+    const [copied, setCopied] = useState(false);
+    const [currentUrl, setCurrentUrl] = useState("");
+
+    // Ambil URL saat ini ketika komponen dimuat (aman untuk SSR)
+    useEffect(() => {
+        setCurrentUrl(window.location.href);
+    }, []);
+
+    // Encode URL & Judul agar aman untuk query parameter
+    const encodedUrl = encodeURIComponent(currentUrl);
+    const encodedTitle = encodeURIComponent(article.title);
+
+    // Daftar link berbagi sosmed
+    const shareLinks = {
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+        twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
+        whatsapp: `https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}`,
+        telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+    };
+
+    // Fungsi salin tautan
+    const copyLinkToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(currentUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000); // Hilang setelah 2 detik
+        } catch (err) {
+            console.error("Gagal menyalin: ", err);
+            alert("Gagal menyalin tautan.");
+        }
+    };
+
     const handleDownloadPDF = () => {
         window.print();
     };
@@ -53,7 +115,7 @@ export default function Show({
                 <article className="min-w-0">
                     {/* BREADCRUMB */}
                     <nav className="mb-6 flex items-center gap-2 text-[11px] text-[#777]">
-                        <Link href="/" className="hover:text-[#126047]">
+                        <Link href="/home" className="hover:text-[#126047]">
                             Beranda
                         </Link>
                         <ChevronRight size={12} />
@@ -72,11 +134,20 @@ export default function Show({
                         <h1 className="mt-4 font-serif text-[28px] font-bold leading-tight text-[#10251d] sm:text-[36px] lg:text-[42px]">
                             {article.title}
                         </h1>
-                        <div className="mt-5 border-y border-[#e9e6df] py-4">
-                            <ArticleMeta
-                                date={formatDate(article.created_at)}
-                                readTime={`${article.read_time} min read`}
-                            />
+
+                        {/* Mengganti ArticleMeta dengan susunan kustom yang baru */}
+                        <div className="mt-5 border-y border-[#e9e6df] py-4 flex flex-wrap items-center gap-3 text-[13px] font-medium text-[#555]">
+                            <span>
+                                Ditulis: {formatDate(article.created_at)}
+                            </span>
+
+                            {/* Titik Pemisah */}
+                            <span className="h-1 w-1 rounded-full bg-[#ccc]"></span>
+
+                            {/* Keterangan Terakhir Update */}
+                            <span className="italic text-[#888]">
+                                {timeAgo(article.updated_at)}
+                            </span>
                         </div>
                     </header>
 
@@ -94,11 +165,10 @@ export default function Show({
                         className="rounded-2xl bg-white p-6 sm:p-12 shadow-sm border border-[#e8e4da]"
                     >
                         <div
-                            className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] 
-            prose-headings:font-serif prose-headings:text-[#17251f] prose-headings:mt-8 prose-headings:mb-4
-            prose-p:text-justify prose-p:leading-relaxed prose-p:my-5 prose-p:text-[16px] 
-            prose-a:text-[#126047] prose-strong:text-[#111]
-            prose-li:marker:text-[#126047] prose-li:my-2"
+                            className="prose prose-lg max-w-none text-[#333] 
+    prose-headings:text-[#17251f] 
+    prose-li:list-decimal prose-li:pl-2 /* Memastikan list punya spasi */
+    break-words overflow-hidden"
                             dangerouslySetInnerHTML={{
                                 __html: article.content,
                             }}
@@ -111,37 +181,65 @@ export default function Show({
                             <span className="text-[12px] font-bold text-[#17251f]">
                                 Bagikan Artikel:
                             </span>
-                            <div className="flex gap-2">
-                                <button
+                            <div className="flex gap-2 relative">
+                                {/* 3. UBAH BUTTON MENJADI ANCHOR UNTUK SOSMED */}
+                                <a
+                                    href={shareLinks.facebook}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#1877F2] hover:text-white"
                                     aria-label="Share to Facebook"
                                 >
                                     <FaFacebookF size={13} />
-                                </button>
-                                <button
+                                </a>
+
+                                <a
+                                    href={shareLinks.twitter}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#1DA1F2] hover:text-white"
                                     aria-label="Share to Twitter"
                                 >
                                     <FaTwitter size={13} />
-                                </button>
-                                <button
+                                </a>
+
+                                <a
+                                    href={shareLinks.whatsapp}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#25D366] hover:text-white"
                                     aria-label="Share to WhatsApp"
                                 >
                                     <FaWhatsapp size={14} />
-                                </button>
-                                <button
+                                </a>
+
+                                <a
+                                    href={shareLinks.telegram}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#0088cc] hover:text-white"
                                     aria-label="Share to Telegram"
                                 >
                                     <FaTelegramPlane size={14} />
-                                </button>
-                                <button
-                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#126047] hover:text-white"
-                                    aria-label="Copy Link"
-                                >
-                                    <Link2 size={14} />
-                                </button>
+                                </a>
+
+                                {/* 4. BUTTON COPY LINK DENGAN NOTIFIKASI */}
+                                <div className="relative flex items-center">
+                                    <button
+                                        onClick={copyLinkToClipboard}
+                                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#126047] hover:text-white"
+                                        aria-label="Copy Link"
+                                    >
+                                        <Link2 size={14} />
+                                    </button>
+
+                                    {/* Tooltip notifikasi "Tautan disalin!" */}
+                                    {copied && (
+                                        <span className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#17251f] px-2.5 py-1 text-[10px] font-medium text-white shadow-sm animate-fade-in">
+                                            Tautan disalin!
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

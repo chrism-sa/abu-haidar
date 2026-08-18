@@ -12,7 +12,7 @@ import {
     Check,
     X,
 } from "lucide-react";
-import { Category } from "@/types";
+import { Category, Article } from "@/types";
 import { useState, useEffect } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -20,37 +20,58 @@ import "react-quill-new/dist/quill.snow.css";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/Utils/cropImage";
 
-interface CreateProps {
-    categories: Category[];
+interface QuoteItem {
+    id?: number;
+    arabic: string;
+    translation: string;
+    reference: string;
 }
 
-export default function ArticleCreate({ categories }: CreateProps) {
+interface EditProps {
+    article: Article;
+    categories: Category[];
+    quote?: QuoteItem | null;
+}
+
+export default function ArticleEdit({ article, categories, quote }: EditProps) {
     const [imageSourceType, setImageSourceType] = useState<"file" | "url">(
         "file",
     );
     const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     // State Khusus Cropper
     const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
+    // Isi tempImageSrc awal dengan gambar lama artikel
+    const [tempImageSrc, setTempImageSrc] = useState<string | null>(
+        article.image || null,
+    );
+    const [imagePreview, setImagePreview] = useState<string | null>(
+        article.image || null,
+    );
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
-
+    const handleOpenCropModal = () => {
+        // Jika belum ada file baru tapi ada preview gambar lama/URL, gunakan itu sebagai sumber crop
+        if (!tempImageSrc && imagePreview) {
+            setTempImageSrc(imagePreview);
+        }
+        setCropModalOpen(true);
+    };
     // Form Inertia
     const { data, setData, post, processing, errors } = useForm({
-        title: "",
-        category_id: categories[0]?.id || "",
+        _method: "POST", // Tetap POST multipart
+        title: article.title || "",
+        category_id: article.category_id || categories[0]?.id || "",
         image_file: null as File | null,
         image_url: "",
-        description: "",
-        content: "",
-        is_published: true,
-        // Data Quote untuk Kategori Tafsir
-        quote_arabic: "",
-        quote_translation: "",
-        quote_reference: "",
+        description: article.description || "",
+        content: article.content || "",
+        is_published: Boolean(article.is_published),
+        // Data Quote
+        quote_arabic: quote?.arabic || "",
+        quote_translation: quote?.translation || "",
+        quote_reference: quote?.reference || "",
     });
 
     // Deteksi apakah kategori yang dipilih adalah Tafsir
@@ -61,7 +82,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         ?.toLowerCase()
         .includes("tafsir");
 
-    // Sinkronisasi Preview Gambar
+    // Sinkronisasi Preview Gambar jika ada perubahan input
     useEffect(() => {
         if (imageSourceType === "file" && data.image_file) {
             const objectUrl = URL.createObjectURL(data.image_file);
@@ -69,10 +90,10 @@ export default function ArticleCreate({ categories }: CreateProps) {
             return () => URL.revokeObjectURL(objectUrl);
         } else if (imageSourceType === "url" && data.image_url) {
             setImagePreview(data.image_url);
-        } else {
-            setImagePreview(null);
+        } else if (!data.image_file && !data.image_url) {
+            setImagePreview(article.image || null);
         }
-    }, [data.image_file, data.image_url, imageSourceType]);
+    }, [data.image_file, data.image_url, imageSourceType, article.image]);
 
     // Handler saat file dipilih
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +126,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post("/admin/articles");
+        post(`/admin/articles/${article.id}`);
     };
 
     const editorModules = {
@@ -123,7 +144,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
     return (
         <div className="min-h-screen bg-[#f4f4f0] text-[#17251f]">
-            <Head title="Tulis Artikel - Abu Haidar" />
+            <Head title={`Edit: ${article.title} - Abu Haidar`} />
 
             <header className="border-b border-[#e5e2da] bg-white shadow-xs sticky top-0 z-30">
                 <div className="mx-auto flex max-w-[1000px] items-center justify-between px-6 py-4">
@@ -134,8 +155,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         >
                             <ArrowLeft size={14} /> Kembali
                         </Link>
-                        <h1 className="font-serif text-[18px] font-bold text-[#111] hidden sm:block">
-                            Editor Artikel Dakwah
+                        <h1 className="font-serif text-[18px] font-bold text-[#111] hidden sm:block truncate max-w-sm">
+                            Edit: {article.title}
                         </h1>
                     </div>
 
@@ -144,7 +165,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         disabled={processing}
                         className="flex items-center gap-2 rounded-xl bg-[#063f2f] px-5 py-2.5 text-[13px] font-bold text-white transition hover:bg-[#07513c] shadow-sm disabled:opacity-50"
                     >
-                        <Save size={15} /> Simpan & Publikasikan
+                        <Save size={15} /> Simpan Perubahan
                     </button>
                 </div>
             </header>
@@ -235,8 +256,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         className="w-full text-[13px] text-[#555] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[12px] file:font-bold file:bg-[#e9e6df] file:text-[#063f2f] hover:file:bg-[#dfdbd3] cursor-pointer"
                                     />
                                     <p className="mt-1 text-[11px] text-[#888]">
-                                        Rasio sampul artikel web adalah 2:1
-                                        (landscape).
+                                        Biarkan kosong jika tidak ingin mengubah
+                                        gambar saat ini.
                                     </p>
                                 </div>
                             ) : (
@@ -253,27 +274,24 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 </div>
                             )}
 
-                            {/* Pratinjau Gambar + Tombol Sesuaikan Ulang */}
+                            {/* Pratinjau Gambar Saat Ini / Gambar Baru + Tombol Crop */}
                             {imagePreview && (
-                                <div className="mt-3 relative h-40 w-full max-w-sm overflow-hidden rounded-xl border border-[#dcd7ce] group">
+                                <div className="mt-3 relative h-44 w-full max-w-sm overflow-hidden rounded-xl border border-[#dcd7ce] group bg-[#f0eee9]">
                                     <img
                                         src={imagePreview}
                                         alt="Thumbnail Preview"
                                         className="h-full w-full object-cover"
                                     />
-                                    {imageSourceType === "file" &&
-                                        tempImageSrc && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setCropModalOpen(true)
-                                                }
-                                                className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-white font-bold text-[12px] opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <Crop size={16} /> Atur /
-                                                Sesuaikan Ulang
-                                            </button>
-                                        )}
+
+                                    {/* Tombol Crop selalu muncul saat hover untuk foto lama maupun baru */}
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenCropModal}
+                                        className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-white font-bold text-[12px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <Crop size={16} /> Sesuaikan / Pangkas
+                                        Ulang
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -369,7 +387,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         ✓
                                     </span>
                                     <h4 className="text-[13px] font-bold text-[#063f2f]">
-                                        Kutipan Tafsir Ayat 
+                                        Kutipan Tafsir Ayat (Quotes Card)
                                     </h4>
                                 </div>
 

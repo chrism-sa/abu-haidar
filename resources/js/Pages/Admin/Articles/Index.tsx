@@ -48,31 +48,77 @@ export default function ArticleIndex({ articles }: IndexProps) {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-[#e9e6df] bg-[#f9f8f5] text-[11px] uppercase tracking-wider text-[#666]">
-                                    <th className="p-4 font-bold">Judul Artikel</th>
+                                    {/* Tambahan Kolom Sampul */}
+                                    <th className="p-4 font-bold text-center w-24">
+                                        Sampul
+                                    </th>
+                                    <th className="p-4 font-bold">
+                                        Judul Artikel
+                                    </th>
                                     <th className="p-4 font-bold">Kategori</th>
-                                    <th className="p-4 font-bold">Waktu Baca</th>
-                                    <th className="p-4 font-bold">Status</th>
-                                    <th className="p-4 font-bold text-right">Aksi</th>
+                                    <th className="p-4 font-bold">
+                                        Waktu Buat
+                                    </th>
+                                    <th className="p-4 font-bold text-center">
+                                        Terakhir Update
+                                    </th>
+                                    <th className="p-4 font-bold text-center">
+                                        Aksi
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#f0eee9] text-[13px]">
                                 {articles.length > 0 ? (
                                     articles.map((article) => (
-                                        <tr key={article.id} className="transition hover:bg-[#faf9f6]">
-                                            <td className="p-4 font-medium text-[#17251f] max-w-md truncate">
+                                        <tr
+                                            key={article.id}
+                                            className="transition hover:bg-[#faf9f6]"
+                                        >
+                                            {/* Tampilan Gambar Thumbnail */}
+                                            <td className="p-4">
+                                                <div className="h-12 w-16 overflow-hidden rounded-md bg-[#e9e6df] border border-[#dcd7ce]">
+                                                    {article.image ? (
+                                                        <img
+                                                            src={article.image}
+                                                            alt="Sampul"
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-[9px] font-bold text-[#999]">
+                                                            NO IMG
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            <td className="p-4 font-medium text-[#17251f] max-w-xs sm:max-w-md truncate">
                                                 {article.title}
                                             </td>
+
                                             <td className="p-4 text-[#555]">
-                                                {article.category?.name || "Tanpa Kategori"}
+                                                {article.category?.name ||
+                                                    "Tanpa Kategori"}
                                             </td>
+
                                             <td className="p-4 text-[#555]">
-                                                {article.read_time} Menit
+                                                {new Date(
+                                                    article.created_at,
+                                                ).toLocaleDateString("id-ID", {
+                                                    day: "numeric",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                })}
                                             </td>
-                                            <td className="p-4">
-                                                <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${article.is_published ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                                                    {article.is_published ? "Publikasi" : "Draft"}
-                                                </span>
+                                            <td className="p-4 text-[#555] text-center">
+                                                {new Date(
+                                                    article.updated_at,
+                                                ).toLocaleDateString("id-ID", {
+                                                    day: "numeric",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                })}
                                             </td>
+
                                             <td className="p-4 text-right space-x-2">
                                                 <Link
                                                     href={`/admin/articles/${article.id}/edit`}
@@ -82,7 +128,12 @@ export default function ArticleIndex({ articles }: IndexProps) {
                                                     <Edit size={14} />
                                                 </Link>
                                                 <button
-                                                    onClick={() => handleDelete(article.id, article.title)}
+                                                    onClick={() =>
+                                                        handleDelete(
+                                                            article.id,
+                                                            article.title,
+                                                        )
+                                                    }
                                                     className="inline-flex items-center justify-center rounded-lg border border-red-100 bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
                                                     title="Hapus Artikel"
                                                 >
@@ -93,8 +144,13 @@ export default function ArticleIndex({ articles }: IndexProps) {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={5} className="p-8 text-center text-[#777]">
-                                            Belum ada artikel yang tersedia. Silakan buat baru.
+                                        {/* colSpan diubah menjadi 6 karena ketambahan 1 kolom Sampul */}
+                                        <td
+                                            colSpan={6}
+                                            className="p-8 text-center text-[#777]"
+                                        >
+                                            Belum ada artikel yang tersedia.
+                                            Silakan buat baru.
                                         </td>
                                     </tr>
                                 )}

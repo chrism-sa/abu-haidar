@@ -7,11 +7,11 @@ import { ChevronDown } from "lucide-react";
 import {
     FaYoutube,
     FaInstagram,
-    FaTelegramPlane,
-    FaWhatsapp,
+    FaFacebookF,
 } from "react-icons/fa";
 
 export default function MainLayout({
+    
     children,
 }: {
     children: React.ReactNode;
@@ -95,6 +95,7 @@ export default function MainLayout({
     };
 
     return (
+        
         <div className="min-h-screen bg-[#fafaf8] text-[#17251f]">
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-[#e9e6df] bg-white">
@@ -102,7 +103,7 @@ export default function MainLayout({
                     <div className="flex h-[70px] items-center justify-between gap-3">
                         {/* LOGO (Kiri) */}
                         <Link
-                            href="/"
+                            href="/home"
                             className="flex shrink-0 items-center gap-3"
                         >
                             <img
@@ -371,7 +372,7 @@ export default function MainLayout({
                         </p>
                         <div className="flex items-center gap-3">
                             <a
-                                href="https://youtube.com"
+                                href="https://youtube.com/SHOLATTV"
                                 target="_blank"
                                 rel="noreferrer"
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#FF0000]"
@@ -380,7 +381,7 @@ export default function MainLayout({
                                 <FaYoutube size={16} />
                             </a>
                             <a
-                                href="https://instagram.com"
+                                href="https://instagram.com/sholat.tv"
                                 target="_blank"
                                 rel="noreferrer"
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#E4405F]"
@@ -389,22 +390,13 @@ export default function MainLayout({
                                 <FaInstagram size={16} />
                             </a>
                             <a
-                                href="https://telegram.org"
+                                href="https://facebook.com/sholattv"
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#0088cc]"
-                                aria-label="Telegram"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#1877F2]"
+                                aria-label="Facebook"
                             >
-                                <FaTelegramPlane size={15} />
-                            </a>
-                            <a
-                                href="https://whatsapp.com"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#25D366]"
-                                aria-label="WhatsApp"
-                            >
-                                <FaWhatsapp size={16} />
+                                <FaFacebookF size={16} />
                             </a>
                         </div>
                     </div>

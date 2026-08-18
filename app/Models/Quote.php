@@ -4,16 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Quote extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['arabic', 'translation', 'reference', 'article_id'];
+    protected $fillable = [
+        'article_id',
+        'arabic',
+        'translation',
+        'reference',
+    ];
 
-    // Relasi ke Artikel
-    public function article()
+    public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
     }
 }
+
+?>

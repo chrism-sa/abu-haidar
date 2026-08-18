@@ -71,3 +71,103 @@ button {
     direction: rtl;
     color: #0c6247; /* Warna hijau khas nuansa Islami */
 }
+
+/* --- CSS TAMBAHAN UNTUK QUILL PADA HALAMAN PUBLIK --- */
+.prose .ql-align-center { text-align: center !important; }
+.prose .ql-align-right { text-align: right !important; }
+.prose .ql-align-justify { text-align: justify !important; }
+
+.prose .ql-direction-rtl { 
+    direction: rtl !important; 
+    text-align: right !important; 
+    font-family: 'Traditional Arabic', serif;
+    font-size: 24px;
+    color: #063f2f;
+    line-height: 2.2;
+}
+
+/* --- PERBAIKAN KELAS PERATAAN QUILL DI SISI PUBLIK --- */
+.prose .ql-align-center {
+    text-align: center !important;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.prose .ql-align-right {
+    text-align: right !important;
+    display: block;
+}
+
+.prose .ql-align-justify {
+    text-align: justify !important;
+}
+
+.prose .ql-direction-rtl {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: 'Traditional Arabic', 'Amiri', serif !important;
+    font-size: 26px !important;
+    color: #063f2f;
+    line-height: 2.2 !important;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+/* Pastikan Tailwind prose menampilkan list dan margin dengan benar */
+.prose ul {
+    list-style-type: disc !important;
+    padding-left: 20px !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.prose ol {
+    list-style-type: decimal !important;
+    padding-left: 20px !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.prose p {
+    margin-bottom: 1.25rem !important; /* Memberi jarak antar paragraf */
+    line-height: 1.8 !important;
+}
+
+.prose h2, .prose h3, .prose h4 {
+    margin-top: 2rem !important;
+    margin-bottom: 1rem !important;
+    font-weight: bold !important;
+}
+
+.prose blockquote {
+    border-left: 4px solid #063f2f !important;
+    padding-left: 1rem !important;
+    font-style: italic !important;
+    background: #faf8f5 !important;
+    padding: 1rem !important;
+}
+
+/* Menyamakan container prose dengan gaya editor */
+.prose {
+    font-size: 16px !important;
+    line-height: 1.8 !important;
+    color: #333 !important;
+}
+
+/* Pastikan gambar tidak terlalu lebar dari container */
+.prose img {
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+/* Menyamakan persis ukuran font dan tinggi baris antara editor dan web publik */
+.ql-editor, .prose {
+    font-size: 16px !important;
+    line-height: 1.8 !important;
+    color: #333 !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Memastikan elemen heading di dalam artikel konsisten */
+.prose h2 { font-size: 1.5em !important; font-family: 'Playfair Display', Georgia, serif !important; }
+.prose h3 { font-size: 1.25em !important; font-family: 'Playfair Display', Georgia, serif !important; }
+.prose h4 { font-size: 1.1em !important; font-family: 'Playfair Display', Georgia, serif !important; }

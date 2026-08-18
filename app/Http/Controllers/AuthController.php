@@ -44,6 +44,6 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         // Menggunakan redirect biasa yang dipaksa reload penuh oleh browser
-        return redirect('/')->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        return redirect('/home')->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 }
