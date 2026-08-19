@@ -28,7 +28,7 @@ export default function ArticleIndex({ articles }: IndexProps) {
                             <ArrowLeft size={14} /> Kembali
                         </Link>
                         <h1 className="font-serif text-[18px] font-bold">
-                            Kelola Artikel Dakwah
+                            Kelola Artikel
                         </h1>
                     </div>
 

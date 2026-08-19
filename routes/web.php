@@ -4,14 +4,15 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CategoryController;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Quote;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,17 +20,11 @@ use App\Models\Quote;
 |--------------------------------------------------------------------------
 */
 
-/*
-|--------------------------------------------------------------------------
-| RUTE PUBLIK
-|--------------------------------------------------------------------------
-*/
-// Halaman Pembuka / Sambutan Sementara
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('welcome');
 
-// Beranda Utama Website (Daftar Artikel & Kajian)
+// Beranda Utama Website
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 Route::get('/artikel', function (Request $request) {
@@ -49,7 +44,7 @@ Route::get('/artikel', function (Request $request) {
     return Inertia::render('Article/Index', [
         'articles' => $articles,
         'title' => $search ? 'Pencarian: "' . $search . '"' : 'Semua Artikel',
-        'categories' => Category::all(),
+        'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
         'currentCategory' => null
     ]);
 })->name('artikel.index');
@@ -68,7 +63,7 @@ Route::get('/kategori/{slug}', function ($slug) {
     return Inertia::render('Article/Index', [
         'articles' => $articles,
         'title' => 'Kategori: ' . $category->name,
-        'categories' => Category::all(),
+        'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
         'currentCategory' => $category
     ]);
 })->name('kategori.show');
@@ -108,7 +103,40 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
-| RUTE ADMIN (Dashboard, Kelola Artikel & Kategori)
+| PINTU GERBANG SETELAH LOGIN
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->get('/dashboard', function () {
+    $user = auth()->user();
+    $adminEmail = 'admin@abuhaidararema.com';
+
+    if ($user->email === $adminEmail) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    return redirect()->route('user.dashboard');
+})->name('dashboard');
+
+
+/*
+|--------------------------------------------------------------------------
+| RUTE KHUSUS USER (JAMAAH)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->prefix('user')->group(function () {
+    Route::get('/dashboard', function () {
+        return Inertia::render('User/Dashboard', [
+            'auth' => [
+                'user' => auth()->user()
+            ]
+        ]);
+    })->name('user.dashboard');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| RUTE ADMIN (Dashboard, Kelola Artikel, User & Kategori)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->prefix('admin')->group(function () {
@@ -131,7 +159,45 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         ]);
     })->name('admin.dashboard');
 
-    // 2. KELOLA ARTIKEL
+    // 2. KELOLA PENGGUNA
+    Route::get('/users', function () {
+        return Inertia::render('Admin/Users/Index', [
+            'users' => User::latest()->get()
+        ]);
+    })->name('admin.users.index');
+
+    Route::post('/users', function (Request $request) {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'email.unique' => 'Mohon maaf, alamat email ini sudah terdaftar.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
+            'password.min' => 'Kata sandi minimal harus 8 karakter.'
+        ]);
+
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
+
+        return redirect()->back();
+    })->name('admin.users.store');
+
+    Route::delete('/users/{id}', function ($id) {
+        $user = User::findOrFail($id);
+
+        if ($user->email === 'admin@abuhaidararema.com') {
+            return redirect()->back()->with('error', 'Admin utama tidak bisa dihapus!');
+        }
+
+        $user->delete();
+        return redirect()->back();
+    })->name('admin.users.destroy');
+
+    // 3. KELOLA ARTIKEL
     Route::get('/articles', function () {
         return Inertia::render('Admin/Articles/Index', [
             'articles' => Article::with('category')->latest()->get()
@@ -140,75 +206,11 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
     Route::get('/articles/create', function () {
         return Inertia::render('Admin/Articles/Create', [
-            'categories' => Category::all()
+            'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get()
         ]);
     })->name('admin.articles.create');
 
-    // SIMPAN ARTIKEL BARU (CREATE)
     Route::post('/articles', function (Request $request) {
-        // Validasi
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'image_file' => 'nullable', // Bebaskan rule agar file crop Canvas bisa masuk
-            'image_url' => 'nullable|string',
-            'description' => 'nullable|string',
-            'content' => 'required|string',
-            'quote_arabic' => 'nullable|string',
-            'quote_translation' => 'nullable|string',
-            'quote_reference' => 'nullable|string',
-        ]);
-
-        // Cek sumber gambar
-        $imagePath = '';
-        if ($request->hasFile('image_file')) {
-            $imagePath = '/storage/' . $request->file('image_file')->store('articles', 'public');
-        } elseif ($request->filled('image_url')) {
-            $imagePath = $request->image_url;
-        } else {
-            $imagePath = 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?q=80&w=1200&auto=format&fit=crop';
-        }
-
-        // Simpan Artikel (Gunakan ?? '' untuk mencegah error DB AllowNull=0)
-        $article = Article::create([
-            'category_id' => $request->category_id,
-            'title' => $request->title,
-            'slug' => Str::slug($request->title) . '-' . time(),
-            'image' => $imagePath,
-            'description' => $request->description ?? '',
-            'content' => $request->content ?? '',
-            'is_published' => true,
-        ]);
-
-        // Simpan Quotes jika ada (Gunakan ?? '' untuk mencegah error DB AllowNull=0)
-        if ($request->filled('quote_arabic')) {
-            Quote::create([
-                'article_id' => $article->id,
-                'arabic' => $request->quote_arabic ?? '',
-                'translation' => $request->quote_translation ?? '',
-                'reference' => $request->quote_reference ?? '',
-            ]);
-        }
-
-        return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil dipublikasikan!');
-    })->name('admin.articles.store');
-
-
-    Route::get('/articles/{id}/edit', function ($id) {
-        // Ambil artikel beserta relasi quotes (ambil quote pertama jika ada)
-        $article = Article::with('quotes')->findOrFail($id);
-
-        return Inertia::render('Admin/Articles/Edit', [
-            'article' => $article,
-            'categories' => Category::all(),
-            'quote' => $article->quotes->first() // Kirim quote terkait jika ada
-        ]);
-    })->name('admin.articles.edit');
-
-    // UPDATE ARTIKEL (EDIT)
-    Route::post('/articles/{id}', function (Request $request, $id) {
-        $article = Article::findOrFail($id);
-
         $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -221,25 +223,98 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'quote_reference' => 'nullable|string',
         ]);
 
+        $imagePath = '';
+        if ($request->hasFile('image_file')) {
+            $imagePath = '/storage/' . $request->file('image_file')->store('articles', 'public');
+        } elseif ($request->filled('image_url')) {
+            $imagePath = $request->image_url;
+        } else {
+            $imagePath = 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?q=80&w=1200&auto=format&fit=crop';
+        }
+
+        $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->content ?? '');
+        $cleanDescription = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->description ?? '');
+
+        $article = Article::create([
+            'category_id' => $request->category_id,
+            'title' => $request->title,
+            'slug' => Str::slug($request->title) . '-' . time(),
+            'image' => $imagePath,
+            'description' => $cleanDescription ?? '',
+            'content' => $cleanContent ?? '',
+            'is_published' => true,
+        ]);
+
+        if ($request->filled('quote_arabic')) {
+            Quote::create([
+                'article_id' => $article->id,
+                'arabic' => $request->quote_arabic ?? '',
+                'translation' => $request->quote_translation ?? '',
+                'reference' => $request->quote_reference ?? '',
+            ]);
+        }
+
+        return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil dipublikasikan!');
+    })->name('admin.articles.store');
+
+    Route::get('/articles/{id}/edit', function ($id) {
+        $article = Article::with('quotes')->findOrFail($id);
+
+        return Inertia::render('Admin/Articles/Edit', [
+            'article' => $article,
+            'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
+            'quote' => $article->quotes->first()
+        ]);
+    })->name('admin.articles.edit');
+
+    Route::post('/articles/{id}', function (Request $request, $id) {
+        $article = Article::findOrFail($id);
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'category_id' => 'required|exists:categories,id',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'image_url' => 'nullable|string',
+            'description' => 'nullable|string',
+            'content' => 'required|string',
+            'quote_arabic' => 'nullable|string',
+            'quote_translation' => 'nullable|string',
+            'quote_reference' => 'nullable|string',
+        ]);
+
+        $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->content ?? '');
+        $cleanDescription = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->description ?? '');
+
         $updateData = [
             'title' => $request->title,
             'slug' => Str::slug($request->title) . '-' . $article->id,
             'category_id' => $request->category_id,
-            'description' => $request->description ?? '',
-            'content' => $request->content ?? '',
+            'description' => $cleanDescription ?? '',
+            'content' => $cleanContent ?? '',
         ];
 
-        // Cek apakah ada penggantian gambar
         if ($request->hasFile('image_file')) {
+            if ($article->image && str_starts_with($article->image, '/storage/')) {
+                $oldPath = str_replace('/storage/', '', $article->image);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
             $imagePath = $request->file('image_file')->store('articles', 'public');
             $updateData['image'] = '/storage/' . $imagePath;
-        } elseif ($request->filled('image_url')) {
+        } elseif ($request->filled('image_url') && $request->image_url !== $article->image) {
+            if ($article->image && str_starts_with($article->image, '/storage/')) {
+                $oldPath = str_replace('/storage/', '', $article->image);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
             $updateData['image'] = $request->image_url;
         }
 
         $article->update($updateData);
 
-        // Update atau Buat Quote terkait
         if ($request->filled('quote_arabic')) {
             Quote::updateOrCreate(
                 ['article_id' => $article->id],
@@ -250,7 +325,6 @@ Route::middleware('auth')->prefix('admin')->group(function () {
                 ]
             );
         } else {
-            // Jika dikosongkan saat edit, hapus quote lamanya
             Quote::where('article_id', $article->id)->delete();
         }
 
@@ -259,14 +333,25 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
     Route::delete('/articles/{id}', function ($id) {
         $article = Article::findOrFail($id);
-        $article->delete(); // Quotes akan ikut terhapus jika di migrasi diset cascade
 
-        return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil dihapus!');
+        if ($article->image && str_starts_with($article->image, '/storage/')) {
+            $oldPath = str_replace('/storage/', '', $article->image);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        $article->delete();
+
+        return redirect()->back()->with('success', 'Artikel beserta foto berhasil dihapus!');
     })->name('admin.articles.destroy');
 
-    // 3. KELOLA KATEGORI
+    // 4. KELOLA KATEGORI
     Route::get('/categories', function () {
-        $categories = Category::withCount('articles')->latest()->get();
+        $categories = Category::withCount('articles')
+            ->orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')
+            ->get();
+
         return Inertia::render('Admin/Categories/Index', [
             'categories' => $categories
         ]);
@@ -303,7 +388,6 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::delete('/categories/{id}', function ($id) {
         $category = Category::withCount('articles')->findOrFail($id);
 
-        // Proteksi jika masih ada artikel di dalam kategori ini
         if ($category->articles_count > 0) {
             return redirect()->back()->with('error', 'Kategori tidak dapat dihapus karena masih memiliki artikel terkait.');
         }

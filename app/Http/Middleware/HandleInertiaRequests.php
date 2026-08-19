@@ -20,8 +20,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            // Bagikan data kategori ke seluruh komponen React secara global
-            'categories' => \App\Models\Category::all(),
+            // Bagikan data kategori dengan urutan kustom ke seluruh komponen global (Navbar/Footer)
+            'categories' => \App\Models\Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
         ]);
     }
 }

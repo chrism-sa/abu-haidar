@@ -17,7 +17,7 @@ class HomeController extends Controller
 
         // 2. Query Artikel & Kategori
         $heroArticle = Article::with('category')->where('is_published', true)->latest()->first();
-        
+
         $latestArticles = Article::with('category')
             ->where('is_published', true)
             ->where('id', '!=', $heroArticle?->id)
@@ -29,7 +29,7 @@ class HomeController extends Controller
 
         $categories = Category::withCount(['articles' => function ($query) {
             $query->where('is_published', true);
-        }])->get();
+        }])->orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get();
 
         // 3. Kirim ke React
         return Inertia::render('Home', [

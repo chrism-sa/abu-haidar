@@ -165,10 +165,11 @@ export default function Show({
                         className="rounded-2xl bg-white p-6 sm:p-12 shadow-sm border border-[#e8e4da]"
                     >
                         <div
-                            className="prose prose-lg max-w-none text-[#333] 
-    prose-headings:text-[#17251f] 
-    prose-li:list-decimal prose-li:pl-2 /* Memastikan list punya spasi */
-    break-words overflow-hidden"
+                            className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] 
+        prose-headings:text-[#17251f] 
+        prose-li:list-decimal prose-li:pl-2
+        prose-p:leading-relaxed prose-p:text-justify md:prose-p:text-left
+        [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
                             dangerouslySetInnerHTML={{
                                 __html: article.content,
                             }}
@@ -248,7 +249,7 @@ export default function Show({
                             onClick={handleDownloadPDF}
                             className="inline-flex items-center gap-2 rounded-lg bg-[#063f2f] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#07513c]"
                         >
-                            <Download size={14} /> Download PDF
+                            <Download size={14} /> PDF
                         </button>
                     </div>
 

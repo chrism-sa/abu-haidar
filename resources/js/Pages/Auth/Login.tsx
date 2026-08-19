@@ -24,7 +24,7 @@ export default function Login() {
             {/* KIRI: Sisi Branding (Hanya muncul di desktop) */}
             <div className="hidden w-full max-w-[500px] flex-col items-center justify-center bg-[#063f2f] p-12 text-center text-white lg:flex relative overflow-hidden">
                 <div className="relative z-10 flex flex-col items-center">
-                    <img src="/LOGO2.png" alt="Abu Haidar" className="mb-6 h-20 brightness-0 invert" />
+                    <img src="/LOGO.png" alt="Abu Haidar" className="mb-6 h-20 " />
                     <h1 className="font-serif text-[24px] font-bold">Abu Haidar</h1>
                     <p className="mt-2 text-[12px] text-white/80">Artikel Islam & Dakwah</p>
                     <p className="mt-8 max-w-xs text-[13px] leading-relaxed text-white/70">

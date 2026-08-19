@@ -216,7 +216,7 @@ export default function MainLayout({
                                 </button>
                             )}
 
-                            {/* Tombol Hamburger Mobile */}
+                            {/* Tombol Hamburger Mobile
                             <button
                                 onClick={() => setMobileMenu(!mobileMenu)}
                                 className="flex lg:hidden h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555]"
@@ -227,12 +227,12 @@ export default function MainLayout({
                                 ) : (
                                     <Menu size={18} />
                                 )}
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>
 
-                {/* MOBILE MENU DROPDOWN */}
+                {/* MOBILE MENU DROPDOWN
                 {mobileMenu && (
                     <div className="border-t border-[#eee] py-4 px-5 bg-white lg:hidden shadow-lg absolute w-full">
                         <nav className="space-y-2">
@@ -261,7 +261,7 @@ export default function MainLayout({
                                 ))}
                         </nav>
                     </div>
-                )}
+                )} */}
             </header>
 
             {/* ================= MAIN KONTEN ================= */}

@@ -94,7 +94,7 @@ export default function CategoriesIndex({ categories }: CategoriesProps) {
                             <ArrowLeft size={14} /> Kembali
                         </Link>
                         <h1 className="font-serif text-[18px] font-bold text-[#111]">
-                            Kelola Kategori Dakwah
+                            Kelola Kategori
                         </h1>
                     </div>
 

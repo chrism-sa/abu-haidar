@@ -13,7 +13,7 @@ import {
     X,
 } from "lucide-react";
 import { Category } from "@/types";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
@@ -38,8 +38,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    // Form Inertia
-    const { data, setData, post, processing, errors } = useForm({
+    // Form Inertia (TAMBAHKAN transform DISINI)
+    const { data, setData, post, processing, errors, transform } = useForm({
         title: "",
         category_id: categories[0]?.id || "",
         image_file: null as File | null,
@@ -47,19 +47,33 @@ export default function ArticleCreate({ categories }: CreateProps) {
         description: "",
         content: "",
         is_published: true,
-        // Data Quote untuk Kategori Tafsir
         quote_arabic: "",
         quote_translation: "",
         quote_reference: "",
     });
 
-    // Deteksi apakah kategori yang dipilih adalah Tafsir
+    // Deteksi Kategori Tafsir
     const selectedCategory = categories.find(
         (c) => c.id === Number(data.category_id),
     );
     const isTafsirCategory = selectedCategory?.name
         ?.toLowerCase()
         .includes("tafsir");
+
+    // MENCEGAT DAN MEMBERSIHKAN DATA SEBELUM DIKIRIM (Cara standar Inertia)
+    transform((currentData) => ({
+        ...currentData,
+        content: currentData.content
+            ? currentData.content
+                  .replace(/&nbsp;/g, " ")
+                  .replace(/\u00a0/g, " ")
+            : "",
+        description: currentData.description
+            ? currentData.description
+                  .replace(/&nbsp;/g, " ")
+                  .replace(/\u00a0/g, " ")
+            : "",
+    }));
 
     // Sinkronisasi Preview Gambar
     useEffect(() => {
@@ -74,10 +88,20 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     }, [data.image_file, data.image_url, imageSourceType]);
 
-    // Handler saat file dipilih
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
+
+            // 1. Cek ukuran file dalam Byte (2 MB = 2 * 1024 * 1024)
+            if (file.size > 2 * 1024 * 1024) {
+                alert(
+                    "Ukuran gambar terlalu besar! Maksimal 2 MB agar server hemat ruang.",
+                );
+                e.target.value = ""; // Reset input file agar kosong kembali
+                return; // Hentikan proses, jangan buka modal crop
+            }
+
+            // 2. Jika lolos validasi (di bawah 2 MB), buka modal crop
             const reader = new FileReader();
             reader.addEventListener("load", () => {
                 setTempImageSrc(reader.result?.toString() || null);
@@ -87,7 +111,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
-    // Selesai Crop & Masukkan ke Form
     const handleSaveCrop = async () => {
         try {
             if (tempImageSrc && croppedAreaPixels) {
@@ -103,22 +126,45 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
+    // Konfigurasi Quill Matcher
+    const quillModules = useMemo(
+        () => ({
+            toolbar: [
+                [{ header: [2, 3, 4, false] }],
+                ["bold", "italic", "underline", "strike"],
+                [{ color: [] }, { background: [] }],
+                [{ align: [] }],
+                [{ list: "ordered" }, { list: "bullet" }],
+                [{ direction: "rtl" }],
+                ["link", "blockquote"],
+                ["clean"],
+            ],
+            clipboard: {
+                matchers: [
+                    [
+                        Node.TEXT_NODE,
+                        (_node: any, delta: any) => {
+                            delta.ops.forEach((op: any) => {
+                                if (typeof op.insert === "string") {
+                                    op.insert = op.insert.replace(
+                                        /\u00a0/g,
+                                        " ",
+                                    );
+                                }
+                            });
+                            return delta;
+                        },
+                    ],
+                ],
+            },
+        }),
+        [],
+    );
+
+    // Handler Submit (Cukup panggil post saja, pembersihan sudah diurus 'transform')
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post("/admin/articles");
-    };
-
-    const editorModules = {
-        toolbar: [
-            [{ header: [2, 3, 4, false] }],
-            ["bold", "italic", "underline", "strike"],
-            [{ color: [] }, { background: [] }],
-            [{ align: [] }],
-            [{ list: "ordered" }, { list: "bullet" }],
-            [{ direction: "rtl" }],
-            ["link", "blockquote"],
-            ["clean"],
-        ],
     };
 
     return (
@@ -155,7 +201,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                     className="space-y-6"
                     encType="multipart/form-data"
                 >
-                    {/* KARTU INFORMASI DASAR */}
                     <div className="rounded-2xl border border-[#e5e2da] bg-white p-8 shadow-sm space-y-5">
                         <div>
                             <label className="block text-[12px] font-bold uppercase tracking-wider text-[#555] mb-2">
@@ -194,7 +239,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             </select>
                         </div>
 
-                        {/* BAGIAN DUAL MODE GAMBAR */}
                         <div className="space-y-3 rounded-xl border border-[#e8e4da] bg-[#faf9f6] p-4">
                             <div className="flex items-center justify-between">
                                 <label className="block text-[12px] font-bold uppercase tracking-wider text-[#555] flex items-center gap-2">
@@ -230,13 +274,14 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 <div>
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/JPEG, image/PNG, image/WEBP"
                                         onChange={handleFileSelect}
                                         className="w-full text-[13px] text-[#555] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[12px] file:font-bold file:bg-[#e9e6df] file:text-[#063f2f] hover:file:bg-[#dfdbd3] cursor-pointer"
                                     />
                                     <p className="mt-1 text-[11px] text-[#888]">
                                         Rasio sampul artikel web adalah 2:1
-                                        (landscape).
+                                        (landscape). <strong>Maks. 2 MB</strong>{" "}
+                                        (JPEG, PNG, WEBP).
                                     </p>
                                 </div>
                             ) : (
@@ -253,7 +298,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 </div>
                             )}
 
-                            {/* Pratinjau Gambar + Tombol Sesuaikan Ulang */}
                             {imagePreview && (
                                 <div className="mt-3 relative h-40 w-full max-w-sm overflow-hidden rounded-xl border border-[#dcd7ce] group">
                                     <img
@@ -278,7 +322,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             )}
                         </div>
 
-                        {/* MODAL POPUP CROP / ATUR FOTO */}
+                        {/* MODAL CROP */}
                         {cropModalOpen && tempImageSrc && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
                                 <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl space-y-4">
@@ -288,7 +332,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 size={18}
                                                 className="text-[#063f2f]"
                                             />{" "}
-                                            Sesuaikan & Pangkas Gambar Sampul
+                                            Sesuaikan Gambar
                                         </h3>
                                         <button
                                             type="button"
@@ -300,7 +344,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             <X size={18} />
                                         </button>
                                     </div>
-
                                     <div className="relative h-[320px] w-full overflow-hidden rounded-xl bg-black">
                                         <Cropper
                                             image={tempImageSrc}
@@ -319,7 +362,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onZoomChange={setZoom}
                                         />
                                     </div>
-
                                     <div className="flex items-center gap-3 px-2">
                                         <ZoomIn
                                             size={16}
@@ -337,7 +379,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             className="w-full h-1.5 bg-[#e9e6df] rounded-lg appearance-none cursor-pointer accent-[#063f2f]"
                                         />
                                     </div>
-
                                     <div className="flex justify-end gap-3 pt-2">
                                         <button
                                             type="button"
@@ -361,7 +402,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             </div>
                         )}
 
-                        {/* FIELD KUTIPAN AL-QUR'AN (OTOMATIS MUNCUL JIKA KATEGORI TAFSIR) */}
                         {isTafsirCategory && (
                             <div className="space-y-4 rounded-xl border border-[#063f2f]/20 bg-[#f4f8f6] p-5">
                                 <div className="flex items-center gap-2 border-b border-[#063f2f]/10 pb-2">
@@ -369,10 +409,9 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         ✓
                                     </span>
                                     <h4 className="text-[13px] font-bold text-[#063f2f]">
-                                        Kutipan Tafsir Ayat 
+                                        Kutipan Tafsir Ayat
                                     </h4>
                                 </div>
-
                                 <div>
                                     <label className="block text-[11px] font-bold uppercase tracking-wider text-[#555] mb-1">
                                         Teks Ayat Arab
@@ -391,7 +430,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         className="w-full rounded-xl border border-[#dcd7ce] bg-white px-4 py-2.5 text-[18px] font-serif focus:border-[#063f2f] focus:outline-none text-right"
                                     />
                                 </div>
-
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#555] mb-1">
@@ -468,7 +506,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             </button>
                         </div>
 
-                        {/* EDITOR WYSIWYG */}
                         <div
                             className={`${viewMode === "edit" ? "block" : "hidden"} p-6 sm:p-12 bg-[#faf7f0] rounded-b-2xl quill-wrapper relative`}
                         >
@@ -476,17 +513,17 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             <div className="rounded-b-2xl rounded-t-none bg-white shadow-sm border border-[#e8e4da] max-w-[800px] mx-auto relative">
                                 <ReactQuill
                                     theme="snow"
-                                    modules={editorModules}
                                     value={data.content}
                                     onChange={(content) =>
                                         setData("content", content)
                                     }
+                                    modules={quillModules}
+                                    className="bg-white rounded-lg"
                                     placeholder="Mulai menulis artikel di sini..."
                                 />
                             </div>
                         </div>
 
-                        {/* LIVE PREVIEW */}
                         <div
                             className={`${viewMode === "preview" ? "block" : "hidden"} p-6 sm:p-12 bg-[#faf7f0] rounded-b-2xl`}
                         >
@@ -524,9 +561,17 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 )}
 
                                 <div
-                                    className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] break-words overflow-hidden"
+                                    className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] 
+    prose-headings:text-[#17251f] 
+    prose-li:list-decimal prose-li:pl-2
+    prose-p:leading-relaxed prose-p:text-justify md:prose-p:text-left
+    [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
                                     dangerouslySetInnerHTML={{
-                                        __html: data.content,
+                                        __html: data.content
+                                            ? data.content
+                                                  .replace(/&nbsp;/g, " ")
+                                                  .replace(/\u00a0/g, " ")
+                                            : "",
                                     }}
                                 />
                             </div>

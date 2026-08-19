@@ -13,7 +13,7 @@ import {
     X,
 } from "lucide-react";
 import { Category, Article } from "@/types";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
@@ -41,7 +41,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
 
     // State Khusus Cropper
     const [cropModalOpen, setCropModalOpen] = useState(false);
-    // Isi tempImageSrc awal dengan gambar lama artikel
     const [tempImageSrc, setTempImageSrc] = useState<string | null>(
         article.image || null,
     );
@@ -51,16 +50,17 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
     const handleOpenCropModal = () => {
-        // Jika belum ada file baru tapi ada preview gambar lama/URL, gunakan itu sebagai sumber crop
         if (!tempImageSrc && imagePreview) {
             setTempImageSrc(imagePreview);
         }
         setCropModalOpen(true);
     };
-    // Form Inertia
-    const { data, setData, post, processing, errors } = useForm({
-        _method: "POST", // Tetap POST multipart
+
+    // Form Inertia (TAMBAHKAN transform DISINI)
+    const { data, setData, post, processing, errors, transform } = useForm({
+        _method: "POST", // Tetap POST multipart untuk Laravel Route Update
         title: article.title || "",
         category_id: article.category_id || categories[0]?.id || "",
         image_file: null as File | null,
@@ -68,13 +68,12 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         description: article.description || "",
         content: article.content || "",
         is_published: Boolean(article.is_published),
-        // Data Quote
         quote_arabic: quote?.arabic || "",
         quote_translation: quote?.translation || "",
         quote_reference: quote?.reference || "",
     });
 
-    // Deteksi apakah kategori yang dipilih adalah Tafsir
+    // Deteksi Kategori Tafsir
     const selectedCategory = categories.find(
         (c) => c.id === Number(data.category_id),
     );
@@ -82,7 +81,22 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         ?.toLowerCase()
         .includes("tafsir");
 
-    // Sinkronisasi Preview Gambar jika ada perubahan input
+    // MENCEGAT DAN MEMBERSIHKAN DATA SEBELUM DIKIRIM
+    transform((currentData) => ({
+        ...currentData,
+        content: currentData.content
+            ? currentData.content
+                  .replace(/&nbsp;/g, " ")
+                  .replace(/\u00a0/g, " ")
+            : "",
+        description: currentData.description
+            ? currentData.description
+                  .replace(/&nbsp;/g, " ")
+                  .replace(/\u00a0/g, " ")
+            : "",
+    }));
+
+    // Sinkronisasi Preview Gambar
     useEffect(() => {
         if (imageSourceType === "file" && data.image_file) {
             const objectUrl = URL.createObjectURL(data.image_file);
@@ -95,10 +109,20 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
     }, [data.image_file, data.image_url, imageSourceType, article.image]);
 
-    // Handler saat file dipilih
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
+
+            // 1. Validasi maksimal 2 MB
+            if (file.size > 2 * 1024 * 1024) {
+                alert(
+                    "Ukuran gambar terlalu besar! Maksimal 2 MB agar server hemat penyimpanan.",
+                );
+                e.target.value = ""; // Reset input file
+                return;
+            }
+
+            // 2. Baca file dan buka modal crop
             const reader = new FileReader();
             reader.addEventListener("load", () => {
                 setTempImageSrc(reader.result?.toString() || null);
@@ -108,7 +132,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
     };
 
-    // Selesai Crop & Masukkan ke Form
     const handleSaveCrop = async () => {
         try {
             if (tempImageSrc && croppedAreaPixels) {
@@ -124,22 +147,44 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
     };
 
+    // Konfigurasi Lengkap Quill + Matcher untuk EDIT
+    const quillModules = useMemo(
+        () => ({
+            toolbar: [
+                [{ header: [2, 3, 4, false] }],
+                ["bold", "italic", "underline", "strike"],
+                [{ color: [] }, { background: [] }],
+                [{ align: [] }],
+                [{ list: "ordered" }, { list: "bullet" }],
+                [{ direction: "rtl" }],
+                ["link", "blockquote"],
+                ["clean"],
+            ],
+            clipboard: {
+                matchers: [
+                    [
+                        Node.TEXT_NODE,
+                        (_node: any, delta: any) => {
+                            delta.ops.forEach((op: any) => {
+                                if (typeof op.insert === "string") {
+                                    op.insert = op.insert.replace(
+                                        /\u00a0/g,
+                                        " ",
+                                    );
+                                }
+                            });
+                            return delta;
+                        },
+                    ],
+                ],
+            },
+        }),
+        [],
+    );
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(`/admin/articles/${article.id}`);
-    };
-
-    const editorModules = {
-        toolbar: [
-            [{ header: [2, 3, 4, false] }],
-            ["bold", "italic", "underline", "strike"],
-            [{ color: [] }, { background: [] }],
-            [{ align: [] }],
-            [{ list: "ordered" }, { list: "bullet" }],
-            [{ direction: "rtl" }],
-            ["link", "blockquote"],
-            ["clean"],
-        ],
     };
 
     return (
@@ -176,7 +221,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                     className="space-y-6"
                     encType="multipart/form-data"
                 >
-                    {/* KARTU INFORMASI DASAR */}
                     <div className="rounded-2xl border border-[#e5e2da] bg-white p-8 shadow-sm space-y-5">
                         <div>
                             <label className="block text-[12px] font-bold uppercase tracking-wider text-[#555] mb-2">
@@ -215,7 +259,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             </select>
                         </div>
 
-                        {/* BAGIAN DUAL MODE GAMBAR */}
                         <div className="space-y-3 rounded-xl border border-[#e8e4da] bg-[#faf9f6] p-4">
                             <div className="flex items-center justify-between">
                                 <label className="block text-[12px] font-bold uppercase tracking-wider text-[#555] flex items-center gap-2">
@@ -274,7 +317,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                 </div>
                             )}
 
-                            {/* Pratinjau Gambar Saat Ini / Gambar Baru + Tombol Crop */}
                             {imagePreview && (
                                 <div className="mt-3 relative h-44 w-full max-w-sm overflow-hidden rounded-xl border border-[#dcd7ce] group bg-[#f0eee9]">
                                     <img
@@ -282,8 +324,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         alt="Thumbnail Preview"
                                         className="h-full w-full object-cover"
                                     />
-
-                                    {/* Tombol Crop selalu muncul saat hover untuk foto lama maupun baru */}
                                     <button
                                         type="button"
                                         onClick={handleOpenCropModal}
@@ -296,7 +336,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             )}
                         </div>
 
-                        {/* MODAL POPUP CROP / ATUR FOTO */}
+                        {/* MODAL CROP */}
                         {cropModalOpen && tempImageSrc && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
                                 <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl space-y-4">
@@ -306,7 +346,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                                 size={18}
                                                 className="text-[#063f2f]"
                                             />{" "}
-                                            Sesuaikan & Pangkas Gambar Sampul
+                                            Sesuaikan Gambar Sampul
                                         </h3>
                                         <button
                                             type="button"
@@ -318,7 +358,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             <X size={18} />
                                         </button>
                                     </div>
-
                                     <div className="relative h-[320px] w-full overflow-hidden rounded-xl bg-black">
                                         <Cropper
                                             image={tempImageSrc}
@@ -337,7 +376,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             onZoomChange={setZoom}
                                         />
                                     </div>
-
                                     <div className="flex items-center gap-3 px-2">
                                         <ZoomIn
                                             size={16}
@@ -355,7 +393,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             className="w-full h-1.5 bg-[#e9e6df] rounded-lg appearance-none cursor-pointer accent-[#063f2f]"
                                         />
                                     </div>
-
                                     <div className="flex justify-end gap-3 pt-2">
                                         <button
                                             type="button"
@@ -379,7 +416,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             </div>
                         )}
 
-                        {/* FIELD KUTIPAN AL-QUR'AN (OTOMATIS MUNCUL JIKA KATEGORI TAFSIR) */}
                         {isTafsirCategory && (
                             <div className="space-y-4 rounded-xl border border-[#063f2f]/20 bg-[#f4f8f6] p-5">
                                 <div className="flex items-center gap-2 border-b border-[#063f2f]/10 pb-2">
@@ -390,7 +426,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         Kutipan Tafsir Ayat (Quotes Card)
                                     </h4>
                                 </div>
-
                                 <div>
                                     <label className="block text-[11px] font-bold uppercase tracking-wider text-[#555] mb-1">
                                         Teks Ayat Arab
@@ -409,7 +444,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         className="w-full rounded-xl border border-[#dcd7ce] bg-white px-4 py-2.5 text-[18px] font-serif focus:border-[#063f2f] focus:outline-none text-right"
                                     />
                                 </div>
-
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#555] mb-1">
@@ -486,7 +520,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             </button>
                         </div>
 
-                        {/* EDITOR WYSIWYG */}
                         <div
                             className={`${viewMode === "edit" ? "block" : "hidden"} p-6 sm:p-12 bg-[#faf7f0] rounded-b-2xl quill-wrapper relative`}
                         >
@@ -494,17 +527,17 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             <div className="rounded-b-2xl rounded-t-none bg-white shadow-sm border border-[#e8e4da] max-w-[800px] mx-auto relative">
                                 <ReactQuill
                                     theme="snow"
-                                    modules={editorModules}
                                     value={data.content}
                                     onChange={(content) =>
                                         setData("content", content)
                                     }
+                                    modules={quillModules}
+                                    className="bg-white rounded-lg"
                                     placeholder="Mulai menulis artikel di sini..."
                                 />
                             </div>
                         </div>
 
-                        {/* LIVE PREVIEW */}
                         <div
                             className={`${viewMode === "preview" ? "block" : "hidden"} p-6 sm:p-12 bg-[#faf7f0] rounded-b-2xl`}
                         >
@@ -542,9 +575,17 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                 )}
 
                                 <div
-                                    className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] break-words overflow-hidden"
+                                    className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] 
+    prose-headings:text-[#17251f] 
+    prose-li:list-decimal prose-li:pl-2
+    prose-p:leading-relaxed prose-p:text-justify md:prose-p:text-left
+    [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
                                     dangerouslySetInnerHTML={{
-                                        __html: data.content,
+                                        __html: data.content
+                                            ? data.content
+                                                  .replace(/&nbsp;/g, " ")
+                                                  .replace(/\u00a0/g, " ")
+                                            : "",
                                     }}
                                 />
                             </div>

@@ -11,6 +11,26 @@ use Inertia\Inertia;
 
 class ArticleController extends Controller
 {
+    /**
+     * Membersihkan non-breaking spaces dan karakter spasi tersembunyi
+     * dari input teks editor rich-text.
+     */
+    private function cleanHtmlContent(?string $content): ?string
+    {
+        if (!$content) {
+            return $content;
+        }
+
+        // Ganti entitas &nbsp;, variasi hex/desimal, dan karakter unicode \u00a0 menjadi spasi biasa
+        $cleaned = str_replace(
+            ['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"],
+            ' ',
+            $content
+        );
+
+        return $cleaned;
+    }
+
     public function show($slug)
     {
         // 1. Cari artikel yang terbit beserta relasi category & quotes
@@ -40,7 +60,7 @@ class ArticleController extends Controller
         // 4. Ambil Kategori untuk Sidebar (hanya hitung artikel terbit)
         $categories = Category::withCount(['articles' => function ($query) {
             $query->where('is_published', true);
-        }])->get();
+        }])->orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get();
 
         // 5. Kirim semua data ke Pages/Article/Show.tsx
         return Inertia::render('Article/Show', [
@@ -74,14 +94,18 @@ class ArticleController extends Controller
             $imagePath = $request->image_url;
         }
 
+        // Bersihkan konten dan deskripsi dari karakter &nbsp;
+        $cleanContent = $this->cleanHtmlContent($request->content);
+        $cleanDescription = $this->cleanHtmlContent($request->description);
+
         // Simpan Data Artikel
         $article = Article::create([
             'category_id' => $request->category_id,
             'title' => $request->title,
             'slug' => Str::slug($request->title) . '-' . time(),
             'image' => $imagePath,
-            'description' => $request->description,
-            'content' => $request->content,
+            'description' => $cleanDescription,
+            'content' => $cleanContent,
             'is_published' => true,
         ]);
 
@@ -98,5 +122,3 @@ class ArticleController extends Controller
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil disimpan.');
     }
 }
-
-?>
