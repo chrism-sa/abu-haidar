@@ -1,15 +1,100 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap");
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 :root {
-    font-family: 'Inter', sans-serif;
-    color: #17251f;
-    background: #fafaf8;
-    /* font-synthesis: none; */
+    font-family: "Inter", "Times New Roman", Times, serif;
+    color: #162b22;
+    background: #f2f7f4; /* Background Soft Sage Green */
     text-rendering: optimizeLegibility;
 }
 
+::selection {
+    background: #0f4c3a; /* Emerald Green */
+    color: #fdfbf7;
+}
+/* =========================================
+   1. DEFINISI FONT LOKAL
+========================================= */
+@font-face {
+    font-family: "Adobe Naskh";
+    /* PERBAIKAN: Hapus /public dari URL */
+    src: url("/public/fonts/Adobe-Naskh-Medium.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Al Jazeera";
+    /* PERBAIKAN: Hapus /public dari URL */
+    src: url("/public/fonts/AL-JAZEERA-ARABIC-REGULAR.TTF") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* =========================================
+   2. CLASS HELPER UNTUK FONT ARAB
+========================================= */
+.font-adobe-naskh,
+.ql-font-adobe-naskh {
+    font-family: "Adobe Naskh", serif !important;
+}
+
+.font-al-jazeera,
+.ql-font-al-jazeera {
+    font-family: "Al Jazeera", sans-serif !important;
+}
+
+.font-traditional-arabic,
+.ql-font-traditional-arabic {
+    font-family: "Amiri", "Traditional Arabic", serif !important;
+}
+
+.font-scheherazade,
+.ql-font-scheherazade {
+    font-family: "Scheherazade New", serif !important;
+}
+
+/* =========================================
+   3. SETTING GLOBAL TEKS ARAB (RTL)
+   (Mencegah putus dan memperbaiki spasi)
+========================================= */
+[dir="rtl"],
+[lang="ar"],
+.prose [dir="rtl"],
+.prose p[dir="rtl"],
+.ql-editor [dir="rtl"],
+.prose .ql-direction-rtl {
+    direction: rtl !important;
+    text-align: right !important; /* Mencegah Justify */
+    font-size: 26px !important;
+    line-height: 2.2 !important;
+    color: #063f2f !important;
+
+    /* Memaksa huruf Arab tersambung */
+    letter-spacing: normal !important;
+    font-variant-ligatures: normal !important;
+    font-feature-settings:
+        "liga" 1,
+        "calt" 1,
+        "ccmp" 1 !important;
+
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+/* PERBAIKAN: KHUSUS KARTU AYAT DI SIDEBAR (MEMBATALKAN RATA KANAN) */
+.quote-card-arabic {
+    text-align: center !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* =========================================
+   4. SETTING UMUM WEBSITE
+========================================= */
 html {
     scroll-behavior: smooth;
 }
@@ -18,38 +103,31 @@ body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
-    background: #fafaf8;
+    background: #f2f7f4; /* Pastikan body juga hijau muda */
 }
-
 button,
 a {
     -webkit-tap-highlight-color: transparent;
 }
-
 button {
     cursor: pointer;
 }
 
 .font-serif {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: "Playfair Display", Georgia, serif;
 }
 
-::selection {
-    background: #063f2f;
-    color: white;
-}
-
+/* =========================================
+   5. PRINT STYLES (PDF)
+========================================= */
 @media print {
-    /* Sembunyikan semua elemen kecuali artikel */
     body * {
         visibility: hidden;
     }
-
-    /* Tampilkan hanya bagian pembungkus artikel */
-    article, article * {
+    article,
+    article * {
         visibility: visible;
     }
-
     article {
         position: absolute;
         left: 0;
@@ -57,89 +135,53 @@ button {
         width: 100%;
         padding: 20px;
     }
-
-    /* Sembunyikan tombol download dan navigasi tidak penting saat dicetak */
-    button, nav, aside, footer {
+    button,
+    nav,
+    aside,
+    footer {
         display: none !important;
     }
 }
 
-/* Styling tambahan khusus untuk elemen teks Arab dalam artikel */
-.prose [dir="rtl"] {
-    font-family: 'Amiri', 'Traditional Arabic', serif; /* Jika menggunakan font Arab, atau fallback ke serif */
-    text-align: right !important;
-    direction: rtl;
-    color: #0c6247; /* Warna hijau khas nuansa Islami */
-}
-
-.ql-editor em, .prose em {
+/* =========================================
+   6. STYLING KONTEN ARTIKEL (PROSE & EDITOR)
+========================================= */
+.ql-editor em,
+.prose em {
     font-style: italic !important;
 }
 
-/* --- CSS TAMBAHAN UNTUK QUILL PADA HALAMAN PUBLIK --- */
-.prose .ql-align-center { text-align: center !important; }
-.prose .ql-align-right { text-align: right !important; }
-.prose .ql-align-justify { text-align: justify !important; }
-
-.prose .ql-direction-rtl { 
-    direction: rtl !important; 
-    text-align: right !important; 
-    font-family: 'Traditional Arabic', serif;
-    font-size: 24px;
-    color: #063f2f;
-    line-height: 2.2;
-}
-
-/* --- PERBAIKAN KELAS PERATAAN QUILL DI SISI PUBLIK --- */
+/* Perataan Teks */
 .prose .ql-align-center {
     text-align: center !important;
     display: block;
     margin-left: auto;
     margin-right: auto;
 }
-
 .prose .ql-align-right {
     text-align: right !important;
     display: block;
 }
-
 .prose .ql-align-justify {
     text-align: justify !important;
 }
 
-.prose .ql-direction-rtl {
-    direction: rtl !important;
-    text-align: right !important;
-    font-family: 'Traditional Arabic', 'Amiri', serif !important;
-    font-size: 26px !important;
-    color: #063f2f;
-    line-height: 2.2 !important;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-
-/* Pastikan Tailwind prose menampilkan list dan margin dengan benar */
+/* Styling List */
 .prose ul {
     list-style-type: disc !important;
     padding-left: 20px !important;
     margin-bottom: 1.5rem !important;
 }
-
 .prose ol {
     list-style-type: decimal !important;
     padding-left: 20px !important;
     margin-bottom: 1.5rem !important;
 }
 
+/* Styling Elemen Teks */
 .prose p {
-    margin-bottom: 1.25rem !important; /* Memberi jarak antar paragraf */
+    margin-bottom: 1.25rem !important;
     line-height: 1.8 !important;
-}
-
-.prose h2, .prose h3, .prose h4 {
-    margin-top: 2rem !important;
-    margin-bottom: 1rem !important;
-    font-weight: bold !important;
 }
 
 .prose blockquote {
@@ -150,35 +192,43 @@ button {
     padding: 1rem !important;
 }
 
-/* Menyamakan container prose dengan gaya editor */
+/* Ukuran Font Standar */
+.ql-editor,
 .prose {
     font-size: 16px !important;
     line-height: 1.8 !important;
     color: #333 !important;
+    font-family: "Inter", sans-serif !important;
 }
 
-/* Pastikan gambar tidak terlalu lebar dari container */
+/* Headings */
+.prose h2,
+.prose h3,
+.prose h4 {
+    margin-top: 2rem !important;
+    margin-bottom: 1rem !important;
+    font-weight: bold !important;
+    font-family: "Playfair Display", Georgia, serif !important;
+}
+.prose h2 {
+    font-size: 1.5em !important;
+}
+.prose h3 {
+    font-size: 1.25em !important;
+}
+.prose h4 {
+    font-size: 1.1em !important;
+}
+
+/* Gambar */
 .prose img {
     border-radius: 12px;
     margin: 20px 0;
 }
 
-/* Menyamakan persis ukuran font dan tinggi baris antara editor dan web publik */
-.ql-editor, .prose {
-    font-size: 16px !important;
-    line-height: 1.8 !important;
-    color: #333 !important;
-    font-family: 'Inter', sans-serif !important;
-}
-
-/* Memastikan elemen heading di dalam artikel konsisten */
-.prose h2 { font-size: 1.5em !important; font-family: 'Playfair Display', Georgia, serif !important; }
-.prose h3 { font-size: 1.25em !important; font-family: 'Playfair Display', Georgia, serif !important; }
-.prose h4 { font-size: 1.1em !important; font-family: 'Playfair Display', Georgia, serif !important; }
-
-/* Mencegah browser memutus kata pada tanda hubung (-) */
-.prose p, 
-.prose li, 
+/* Pemutusan Kata (Word Break) */
+.prose p,
+.prose li,
 .prose span {
     word-break: normal !important;
     overflow-wrap: break-word !important;
@@ -186,7 +236,6 @@ button {
     -webkit-hyphens: manual !important;
 }
 
-/* Pastikan tidak ada tag p kosong berurutan yang membuat jarak berlebih */
 .prose p:empty {
     display: none;
 }

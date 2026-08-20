@@ -1,57 +1,137 @@
-import { ArrowRight, BookOpen } from 'lucide-react';
-import { Category, Quote } from '../types';
-import { Link } from '@inertiajs/react';
+import { Link } from "@inertiajs/react";
+import { ArrowRight, BookOpen, Sparkles } from "lucide-react";
+import React from "react";
+import { Category, Quote } from "@/types";
 
-// Komponen internal QuoteCard (tidak pakai export default)
 function QuoteCard({ quote }: { quote: Quote | null }) {
-    if (!quote) return null; // Sembunyikan jika admin belum mengisi data
+    if (!quote) return null;
+
+    // JIKA QUOTE ADALAH GAMBAR (Pastikan backend mengirimkan field quote.image)
+    // Asumsi: di tabel ada kolom 'image' untuk quote
+    if (quote.image) {
+        return (
+            <div className="rounded-2xl border border-[#e8e4da] bg-white p-1.5 shadow-sm">
+                <img
+                    src={quote.image}
+                    alt="Ayat Pilihan"
+                    className="w-full rounded-[12px] object-cover"
+                />
+                {quote.article && (
+                    <div className="mt-2 w-full border-t border-[#e8e4da] pt-3 pb-1">
+                        <Link
+                            href={`/artikel/${quote.article.slug}`}
+                            className="group flex w-full items-center justify-center gap-2 text-[12px] font-bold text-[#0F4C3A] transition-colors hover:text-[#0a382a]"
+                        >
+                            Baca Tafsir Lengkap{" "}
+                            <ArrowRight
+                                size={14}
+                                className="transition-transform group-hover:translate-x-1"
+                            />
+                        </Link>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // JIKA QUOTE ADALAH TEKS (KODE DESAIN ESTETIK SEBELUMNYA)
+    const isLongAyat = quote.arabic && quote.arabic.length > 60;
 
     return (
-        <div className="rounded-xl border border-[#e8dfce] bg-[#faf7f0] p-6 text-center shadow-sm">
-            <h3 className="mb-5 text-[10px] font-bold uppercase tracking-widest text-[#0c6247]">
-                Ayat Pilihan
-            </h3>
-            <p dir="rtl" className="font-serif text-[26px] leading-[1.8] text-[#173c2f]">
-                {quote.arabic}
-            </p>
-            <p className="mt-4 text-[11px] italic leading-relaxed text-[#555]">
-                “{quote.translation}”
-            </p>
-            <p className="mt-3 text-[10px] font-bold text-[#174f3b]">
-                ({quote.reference})
-            </p>
+        <div className="rounded-2xl border border-[#e2ddd3] bg-white p-1.5 shadow-md shadow-[#0f4c3a]/5">
+            <div className="relative flex flex-col items-center rounded-[12px] border border-[#e8e3d9] bg-gradient-to-b from-[#fdfbf7] to-[#f4f0e6] px-5 py-7 overflow-hidden">
+                <div className="absolute -left-4 -top-4 h-16 w-16 rounded-full bg-[#0f4c3a]/[0.03]"></div>
+                <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-full bg-[#0f4c3a]/[0.03]"></div>
 
-            {/* Tombol Baca Tafsir yang mengarah ke halaman artikel */}
-            {quote.article && (
-                <Link
-                    href={`/artikel/${quote.article.slug}`}
-                    className="mx-auto mt-5 flex w-fit items-center justify-center gap-1 text-[11px] font-bold text-[#126047] transition hover:underline"
+                <div className="relative z-10 mb-5 flex w-full items-center justify-center gap-3">
+                    <div className="h-[1px] w-8 bg-[#d8d2c4]"></div>
+                    <h3 className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0F4C3A]">
+                        <Sparkles size={12} className="text-[#C5A059]" />
+                        Ayat Pilihan
+                    </h3>
+                    <div className="h-[1px] w-8 bg-[#d8d2c4]"></div>
+                </div>
+
+                <p
+                    dir="rtl"
+                    lang="ar"
+                    style={{
+                        lineHeight: isLongAyat ? "1.55" : "1.7",
+                        letterSpacing: "normal",
+                        fontVariantLigatures: "normal",
+                        fontFeatureSettings: '"liga" 1, "calt" 1',
+                    }}
+                    className={`relative z-10 quote-card-arabic font-traditional-arabic text-[#0F4C3A] [text-wrap:balance] ${
+                        isLongAyat ? "text-[24px]" : "text-[28px]"
+                    }`}
                 >
-                    Baca Tafsir <ArrowRight size={12} />
-                </Link>
-            )}
+                    {quote.arabic}
+                </p>
+
+                <div className="relative z-10 mx-auto my-5 flex w-full max-w-[100px] items-center justify-center gap-3">
+                    <div className="h-[1px] w-full bg-[#d8d2c4]"></div>
+                    <div className="text-[9px] text-[#C5A059]">♦</div>
+                    <div className="h-[1px] w-full bg-[#d8d2c4]"></div>
+                </div>
+
+                <p className="relative z-10 text-center text-[13px] italic leading-relaxed text-[#555] [text-wrap:balance]">
+                    "{quote.translation}"
+                </p>
+
+                <div className="relative z-10 mt-5 inline-flex items-center justify-center rounded-full bg-[#E8EFEA] px-4 py-1.5 text-[11px] font-bold tracking-wide text-[#0F4C3A]">
+                    {quote.reference}
+                </div>
+
+                {quote.article && (
+                    <div className="relative z-10 mt-6 w-full border-t border-[#e8e3d9] pt-4">
+                        <Link
+                            href={`/artikel/${quote.article.slug}`}
+                            className="group flex w-full items-center justify-center gap-2 text-[12px] font-bold text-[#0F4C3A] transition-colors hover:text-[#0a382a]"
+                        >
+                            Baca Tafsir Lengkap{" "}
+                            <ArrowRight
+                                size={14}
+                                className="transition-transform group-hover:translate-x-1"
+                            />
+                        </Link>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
 
-// Hanya ada SATU export default di sini untuk komponen Sidebar
-export default function Sidebar({ categories, quote }: { categories: Category[], quote: Quote | null }) {
+export default function Sidebar({
+    categories,
+    quote,
+}: {
+    categories: Category[];
+    quote: Quote | null;
+}) {
+    // ... (Kode Sidebar bagian Kategori tetap sama persis seperti sebelumnya)
     return (
         <aside className="space-y-6">
             <QuoteCard quote={quote} />
 
-            <section className="rounded-xl border border-[#e8e4da] bg-white p-6">
-                <h3 className="font-serif text-[15px] font-bold text-[#17251f] border-b border-[#f0eee9] pb-3 mb-4">
+            <section className="rounded-2xl border border-[#e8e4da] bg-white p-6 shadow-sm">
+                <h3 className="mb-4 border-b border-[#f0eee9] pb-3 font-serif text-[16px] font-bold text-[#17251f]">
                     Kategori
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-1">
                     {categories.map((category) => (
-                        <Link href={`/kategori/${category.slug}`} key={category.id} className="flex items-center justify-between text-[12px] group">
-                            <span className="flex items-center gap-2 text-[#555] group-hover:text-[#126047] transition-colors">
-                                <BookOpen size={13} className="text-[#126047]" />
+                        <Link
+                            href={`/kategori/${category.slug}`}
+                            key={category.id}
+                            className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-[13px] transition hover:bg-[#fafaf8]"
+                        >
+                            <span className="flex items-center gap-3 text-[#555] transition-colors group-hover:font-medium group-hover:text-[#063f2f]">
+                                <BookOpen
+                                    size={14}
+                                    className="text-[#063f2f]/60 transition-colors group-hover:text-[#063f2f]"
+                                />
                                 {category.name}
                             </span>
-                            <span className="text-[#999] bg-[#f5f5f5] px-2 py-0.5 rounded text-[10px]">
+                            <span className="rounded-full bg-[#f0eee9] px-2.5 py-0.5 text-[10px] font-bold text-[#777] transition-colors group-hover:bg-[#063f2f] group-hover:text-white">
                                 {category.articles_count}
                             </span>
                         </Link>

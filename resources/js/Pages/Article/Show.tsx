@@ -12,10 +12,10 @@ import {
     FaWhatsapp,
 } from "react-icons/fa";
 import { Link, Head } from "@inertiajs/react";
-import { useState, useEffect } from "react"; // 1. IMPORT STATE & EFFECT
+import { useState, useEffect } from "react";
 import MainLayout from "../../Layouts/MainLayout";
 import Sidebar from "../../Components/Sidebar";
-import { ArticleMeta, CategoryBadge } from "../../Components/ArticleComponents";
+import { CategoryBadge } from "../../Components/ArticleComponents";
 import { Article, Category, Quote } from "../../types";
 
 interface ShowProps {
@@ -69,20 +69,16 @@ export default function Show({
     categories,
     quote,
 }: ShowProps) {
-    // 2. STATE UNTUK SHARE & COPY LINK
     const [copied, setCopied] = useState(false);
     const [currentUrl, setCurrentUrl] = useState("");
 
-    // Ambil URL saat ini ketika komponen dimuat (aman untuk SSR)
     useEffect(() => {
         setCurrentUrl(window.location.href);
     }, []);
 
-    // Encode URL & Judul agar aman untuk query parameter
     const encodedUrl = encodeURIComponent(currentUrl);
     const encodedTitle = encodeURIComponent(article.title);
 
-    // Daftar link berbagi sosmed
     const shareLinks = {
         facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
         twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
@@ -90,12 +86,11 @@ export default function Show({
         telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
     };
 
-    // Fungsi salin tautan
     const copyLinkToClipboard = async () => {
         try {
             await navigator.clipboard.writeText(currentUrl);
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000); // Hilang setelah 2 detik
+            setTimeout(() => setCopied(false), 2000);
         } catch (err) {
             console.error("Gagal menyalin: ", err);
             alert("Gagal menyalin tautan.");
@@ -108,12 +103,11 @@ export default function Show({
 
     return (
         <MainLayout>
+            {/* Hanya memuat title tab tanpa Google Fonts tambahan */}
             <Head title={`${article.title} - Abu Haidar`} />
 
             <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
-                {/* ================= BAGIAN KIRI: KONTEN ARTIKEL ================= */}
                 <article className="min-w-0">
-                    {/* BREADCRUMB */}
                     <nav className="mb-6 flex items-center gap-2 text-[11px] text-[#777]">
                         <Link href="/home" className="hover:text-[#126047]">
                             Beranda
@@ -128,62 +122,80 @@ export default function Show({
                         </span>
                     </nav>
 
-                    {/* HEADER ARTIKEL */}
                     <header className="mb-8">
                         <CategoryBadge>{article.category.name}</CategoryBadge>
                         <h1 className="mt-4 font-serif text-[28px] font-bold leading-tight text-[#10251d] sm:text-[36px] lg:text-[42px]">
                             {article.title}
                         </h1>
 
-                        {/* Mengganti ArticleMeta dengan susunan kustom yang baru */}
-                        <div className="mt-5 border-y border-[#e9e6df] py-4 flex flex-wrap items-center gap-3 text-[13px] font-medium text-[#555]">
+                        <div className="mt-5 flex flex-wrap items-center gap-3 border-y border-[#e9e6df] py-4 text-[13px] font-medium text-[#555]">
                             <span>
                                 Ditulis: {formatDate(article.created_at)}
                             </span>
-
-                            {/* Titik Pemisah */}
                             <span className="h-1 w-1 rounded-full bg-[#ccc]"></span>
-
-                            {/* Keterangan Terakhir Update */}
                             <span className="italic text-[#888]">
                                 {timeAgo(article.updated_at)}
                             </span>
                         </div>
                     </header>
 
-                    {/* GAMBAR UTAMA */}
-                    <div className="mb-10 overflow-hidden rounded-2xl aspect-[2/1] bg-[#f0eee9]">
-                        <img
-                            src={article.image}
-                            alt={article.title}
-                            className="h-full w-full object-cover"
-                        />
+                    <div className="mb-10 aspect-[2/1] overflow-hidden rounded-2xl bg-[#f0eee9]">
+                        {/* FUNGSI DETEKSI YOUTUBE (Letakkan di dalam komponen Show, sebelum return) */}
+                        {(() => {
+                            const getYouTubeId = (url: string) => {
+                                if (!url) return null;
+                                const regExp =
+                                    /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                                const match = url.match(regExp);
+                                return match && match[2].length === 11
+                                    ? match[2]
+                                    : null;
+                            };
+                            const ytId = getYouTubeId(article.image);
+
+                            return ytId ? (
+                                /* JIKA LINK YOUTUBE -> TAMPILKAN PLAYER VIDEO */
+                                <div className="mb-10 aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/${ytId}`}
+                                        title={article.title}
+                                        className="h-full w-full border-0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    ></iframe>
+                                </div>
+                            ) : (
+                                /* JIKA GAMBAR BIASA -> TAMPILKAN GAMBAR */
+                                <div className="mb-10 aspect-[2/1] overflow-hidden rounded-2xl bg-[#f0eee9] shadow-sm">
+                                    <img
+                                        src={article.image}
+                                        alt={article.title}
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                            );
+                        })()}
                     </div>
-                    {/* ISI ARTIKEL DENGAN ID UNTUK PDF */}
+
                     <div
                         id="article-content-body"
-                        className="rounded-2xl bg-white p-6 sm:p-12 shadow-sm border border-[#e8e4da]"
+                        className="rounded-2xl border border-[#e8e4da] bg-white p-6 shadow-sm sm:p-12"
                     >
+                        {/* Karena "app.css" sudah diatur, seluruh font Arab yang dikirim dari Editor (Quill) otomatis mengenali gaya Adobe Naskh dan Al Jazeera di sini */}
                         <div
-                            className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] 
-        prose-headings:text-[#17251f] 
-        prose-li:list-decimal prose-li:pl-2
-        prose-p:leading-relaxed prose-p:text-justify md:prose-p:text-left
-        [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
+                            className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] prose-headings:text-[#17251f] prose-li:list-decimal prose-li:pl-2 prose-p:leading-relaxed prose-p:text-justify md:prose-p:text-left [hyphens:none] [overflow-wrap:normal] [word-break:normal]"
                             dangerouslySetInnerHTML={{
                                 __html: article.content,
                             }}
                         />
                     </div>
 
-                    {/* BAGIKAN ARTIKEL & TOMBOL PDF */}
                     <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-[#e9e6df] pt-6">
                         <div className="flex items-center gap-4">
                             <span className="text-[12px] font-bold text-[#17251f]">
                                 Bagikan Artikel:
                             </span>
-                            <div className="flex gap-2 relative">
-                                {/* 3. UBAH BUTTON MENJADI ANCHOR UNTUK SOSMED */}
+                            <div className="relative flex gap-2">
                                 <a
                                     href={shareLinks.facebook}
                                     target="_blank"
@@ -224,7 +236,6 @@ export default function Show({
                                     <FaTelegramPlane size={14} />
                                 </a>
 
-                                {/* 4. BUTTON COPY LINK DENGAN NOTIFIKASI */}
                                 <div className="relative flex items-center">
                                     <button
                                         onClick={copyLinkToClipboard}
@@ -234,9 +245,8 @@ export default function Show({
                                         <Link2 size={14} />
                                     </button>
 
-                                    {/* Tooltip notifikasi "Tautan disalin!" */}
                                     {copied && (
-                                        <span className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#17251f] px-2.5 py-1 text-[10px] font-medium text-white shadow-sm animate-fade-in">
+                                        <span className="animate-fade-in absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#17251f] px-2.5 py-1 text-[10px] font-medium text-white shadow-sm">
                                             Tautan disalin!
                                         </span>
                                     )}
@@ -244,7 +254,6 @@ export default function Show({
                             </div>
                         </div>
 
-                        {/* Tombol Download PDF */}
                         <button
                             onClick={handleDownloadPDF}
                             className="inline-flex items-center gap-2 rounded-lg bg-[#063f2f] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#07513c]"
@@ -253,9 +262,8 @@ export default function Show({
                         </button>
                     </div>
 
-                    {/* ARTIKEL TERKAIT */}
                     <section className="mt-14">
-                        <h2 className="mb-6 font-serif text-[20px] font-bold text-[#17251f] border-b border-[#e9e6df] pb-3">
+                        <h2 className="mb-6 border-b border-[#e9e6df] pb-3 font-serif text-[20px] font-bold text-[#17251f]">
                             Artikel Terkait
                         </h2>
                         <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
@@ -265,14 +273,14 @@ export default function Show({
                                     key={relArticle.id}
                                     className="group block"
                                 >
-                                    <div className="aspect-[1.5/1] overflow-hidden rounded-xl bg-[#f0eee9] mb-3">
+                                    <div className="mb-3 aspect-[1.5/1] overflow-hidden rounded-xl bg-[#f0eee9]">
                                         <img
                                             src={relArticle.image}
                                             alt={relArticle.title}
                                             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                         />
                                     </div>
-                                    <h3 className="font-serif text-[13px] font-bold leading-snug text-[#14251e] line-clamp-2 group-hover:text-[#126047]">
+                                    <h3 className="line-clamp-2 font-serif text-[13px] font-bold leading-snug text-[#14251e] group-hover:text-[#126047]">
                                         {relArticle.title}
                                     </h3>
                                 </Link>
@@ -281,12 +289,9 @@ export default function Show({
                     </section>
                 </article>
 
-                {/* ================= BAGIAN KANAN: PANGGIL SIDEBAR & ARTIKEL POPULER ================= */}
                 <aside className="space-y-8">
-                    {/* Memanggil komponen Sidebar yang sudah membawa QuoteCard & Kategori */}
                     <Sidebar categories={categories} quote={quote} />
 
-                    {/* ARTIKEL POPULER */}
                     <section className="rounded-xl border border-[#e8e4da] bg-white p-6">
                         <h3 className="mb-4 border-b border-[#f0eee9] pb-3 font-serif text-[15px] font-bold text-[#17251f]">
                             Artikel Populer
@@ -302,7 +307,7 @@ export default function Show({
                                         {index + 1}
                                     </span>
                                     <div>
-                                        <h4 className="text-[12px] font-medium leading-relaxed text-[#333] transition-colors group-hover:text-[#126047] line-clamp-2">
+                                        <h4 className="line-clamp-2 text-[12px] font-medium leading-relaxed text-[#333] transition-colors group-hover:text-[#126047]">
                                             {popArticle.title}
                                         </h4>
                                         <p className="mt-1 text-[10px] text-[#888]">

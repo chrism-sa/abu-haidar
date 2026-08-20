@@ -19,6 +19,7 @@
         "@inertiajs/react": "^2.3.27",
         "@tailwindcss/vite": "^4.3.3",
         "framer-motion": "^13.1.0",
+        "html-to-image": "^1.11.13",
         "html2canvas": "^1.4.1",
         "jspdf": "^4.2.1",
         "lucide-react": "^1.31.0",
