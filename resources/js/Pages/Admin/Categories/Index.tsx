@@ -80,7 +80,7 @@ export default function CategoriesIndex({ categories }: CategoriesProps) {
     };
 
     return (
-        <div className="min-h-screen bg-[#f4f4f0] text-[#17251f]">
+        <div className="min-h-screen bg-[#eaf6efc0] text-[#17251f]">
             <Head title="Kelola Kategori - Abu Haidar" />
 
             {/* HEADER KONTROL */}
@@ -138,7 +138,7 @@ export default function CategoriesIndex({ categories }: CategoriesProps) {
                                 <button
                                     type="button"
                                     onClick={() => handleOpenEdit(cat)}
-                                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-[#555] transition hover:bg-[#f0eee9] hover:text-black"
+                                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-[#555] transition hover:bg-[#eaf6efc0] hover:text-black"
                                 >
                                     <Edit2 size={13} /> Edit
                                 </button>

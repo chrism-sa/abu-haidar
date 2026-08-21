@@ -83,7 +83,7 @@ export default function UserIndex({ users }: UserIndexProps) {
     };
 
     return (
-        <div className="min-h-screen bg-[#fafaf8] text-[#17251f] selection:bg-[#063f2f] selection:text-white pb-20">
+        <div className="min-h-screen bg-[#eaf6efc0] text-[#17251f] selection:bg-[#063f2f] selection:text-white pb-20">
             <Head title="Kelola Pengguna - Abu Haidar" />
             <Toaster position="top-center" />
 

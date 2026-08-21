@@ -42,7 +42,7 @@ export default function Dashboard({ auth }: DashboardProps) {
     };
 
     return (
-        <div className="min-h-screen bg-[#fafaf8] text-[#17251f] selection:bg-[#063f2f] selection:text-white">
+        <div className="min-h-screen bg-[#eaf6efc0] text-[#17251f] selection:bg-[#063f2f] selection:text-white">
             <Head title="Dashboard Admin - Abu Haidar" />
 
             {/* HEADER STATIC - Tetap di atas */}
@@ -57,10 +57,10 @@ export default function Dashboard({ auth }: DashboardProps) {
                             />
                         </div>
                         <div>
-                            <h1 className="font-serif text-[16px] font-bold text-[#111]">
+                            <h1 className="font-serif text-[16px] font-bold text-[#FFFOOO]">
                                 Dashboard Admin
                             </h1>
-                            <p className="text-[10px] uppercase tracking-wider text-[#777] font-bold mt-0.5">
+                            <p className="text-[10px] uppercase tracking-wider text-[#0F4C3A] font-bold mt-0.5">
                                 Portal Dakwah Abu Haidar
                             </p>
                         </div>

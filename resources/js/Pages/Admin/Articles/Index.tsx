@@ -23,7 +23,7 @@ export default function ArticleIndex({ articles }: IndexProps) {
     };
 
     return (
-        <div className="min-h-screen bg-[#F2F7F4] text-[#162B22]">
+        <div className="min-h-screen bg-[#eaf6efc0] text-[#162B22]">
             <Head title="Kelola Artikel - Dashboard Admin" />
 
             {/* HEADER */}

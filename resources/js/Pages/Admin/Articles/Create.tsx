@@ -247,7 +247,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         imageSourceType === "youtube" ? getYouTubeId(data.image_url) : null;
 
     return (
-        <div className="min-h-screen bg-[#F2F7F4] text-[#162B22]">
+        <div className="min-h-screen bg-[#eaf6efc0] text-[#162B22]">
             <Head title="Tulis Artikel - Abu Haidar" />
 
             <header className="sticky top-0 z-30 border-b border-[#E0EAE3] bg-white shadow-xs">

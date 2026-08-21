@@ -277,7 +277,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
             : null;
 
     return (
-        <div className="min-h-screen bg-[#F2F7F4] text-[#162B22]">
+        <div className="min-h-screen bg-[#eaf6efc0] text-[#162B22]">
             <Head title={`Edit: ${article.title} - Abu Haidar`} />
 
             <header className="sticky top-0 z-30 border-b border-[#E0EAE3] bg-white shadow-xs">
