@@ -218,6 +218,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'image_url' => 'nullable|string',
             'description' => 'nullable|string',
             'content' => 'required|string',
+            'quote_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'quote_arabic' => 'nullable|string',
             'quote_translation' => 'nullable|string',
             'quote_reference' => 'nullable|string',
@@ -245,12 +246,19 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'is_published' => true,
         ]);
 
-        if ($request->filled('quote_arabic')) {
-            Quote::create([
+
+        if ($request->hasFile('quote_image') || $request->filled('quote_arabic')) {
+            $quoteImagePath = null;
+            if ($request->hasFile('quote_image')) {
+                $quoteImagePath = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
+            }
+
+            \App\Models\Quote::create([
                 'article_id' => $article->id,
                 'arabic' => $request->quote_arabic ?? '',
                 'translation' => $request->quote_translation ?? '',
                 'reference' => $request->quote_reference ?? '',
+                'image' => $quoteImagePath,
             ]);
         }
 
@@ -277,6 +285,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'image_url' => 'nullable|string',
             'description' => 'nullable|string',
             'content' => 'required|string',
+            'quote_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'quote_arabic' => 'nullable|string',
             'quote_translation' => 'nullable|string',
             'quote_reference' => 'nullable|string',
@@ -315,17 +324,25 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
         $article->update($updateData);
 
-        if ($request->filled('quote_arabic')) {
-            Quote::updateOrCreate(
+        // Update atau Buat Quote terkait
+        if ($request->hasFile('quote_image') || $request->filled('quote_arabic') || $request->filled('quote_reference')) {
+            $quoteData = [
+                'arabic' => $request->quote_arabic ?? '',
+                'translation' => $request->quote_translation ?? '',
+                'reference' => $request->quote_reference ?? '',
+            ];
+
+            if ($request->hasFile('quote_image')) {
+                $quoteData['image'] = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
+            }
+
+            \App\Models\Quote::updateOrCreate(
                 ['article_id' => $article->id],
-                [
-                    'arabic' => $request->quote_arabic ?? '',
-                    'translation' => $request->quote_translation ?? '',
-                    'reference' => $request->quote_reference ?? '',
-                ]
+                $quoteData
             );
         } else {
-            Quote::where('article_id', $article->id)->delete();
+            // Jika tidak ada input quote sama sekali
+            \App\Models\Quote::where('article_id', $article->id)->delete();
         }
 
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil diperbarui!');

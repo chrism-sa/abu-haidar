@@ -167,7 +167,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                 e.target.value = "";
                 return;
             }
-            setData("quote_image_file", file);
+            setData("quote_image", file);
         }
     };
 

@@ -202,7 +202,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                 e.target.value = "";
                 return;
             }
-            setData("quote_image_file", file);
+            setData("quote_image", file);
         }
     };
 

@@ -1,7 +1,12 @@
-import { ArrowRight, ChevronRight } from "lucide-react";
+import {
+    ArrowRight,
+    ChevronRight,
+    BookOpen,
+    Sparkles,
+} from "lucide-react";
 import { Link } from "@inertiajs/react";
 import { motion } from "framer-motion";
-import { FaYoutube } from "react-icons/fa"; // Untuk icon overlay video YouTube
+import { FaYoutube } from "react-icons/fa";
 import MainLayout from "../Layouts/MainLayout";
 import Sidebar from "../Components/Sidebar";
 import {
@@ -30,9 +35,9 @@ const getYouTubeId = (url: string | null | undefined) => {
 
 export default function Home({
     heroArticle,
-    latestArticles,
-    selectedArticles,
-    categories,
+    latestArticles = [],
+    selectedArticles = [],
+    categories = [],
     quote,
 }: HomeProps) {
     // Varian animasi untuk efek scroll dan kemunculan
@@ -53,19 +58,19 @@ export default function Home({
         },
     };
 
-    // Pengecekan thumbnail Hero (Apakah dari YouTube atau Gambar Biasa)
+    // Pengecekan thumbnail Hero
     const heroYtId = heroArticle?.image
         ? getYouTubeId(heroArticle.image)
         : null;
     const heroImageUrl = heroYtId
-        ? `https://img.youtube.com/vi/${heroYtId}/maxresdefault.jpg` // Gunakan resolusi tinggi untuk Hero
+        ? `https://img.youtube.com/vi/${heroYtId}/maxresdefault.jpg`
         : heroArticle?.image;
 
     return (
         <MainLayout title="Beranda">
             <div className="mx-auto max-w-[1140px] px-5 lg:px-0 py-8 lg:py-12">
                 {/* HERO SECTION */}
-                {heroArticle && (
+                {heroArticle ? (
                     <motion.section
                         initial="hidden"
                         animate="visible"
@@ -74,11 +79,13 @@ export default function Home({
                     >
                         <div className="grid lg:grid-cols-[1.2fr_1fr] items-stretch">
                             <div className="flex flex-col justify-center p-8 lg:p-14">
-                                <div>
-                                    <CategoryBadge>
-                                        {heroArticle.category.name}
-                                    </CategoryBadge>
-                                </div>
+                                {heroArticle.category && (
+                                    <div>
+                                        <CategoryBadge>
+                                            {heroArticle.category.name}
+                                        </CategoryBadge>
+                                    </div>
+                                )}
                                 <Link href={`/artikel/${heroArticle.slug}`}>
                                     <h1 className="mt-5 font-serif text-[28px] font-bold leading-[1.15] text-[#162B22] sm:text-[34px] lg:text-[42px] transition-colors group-hover:text-[#0F4C3A]">
                                         {heroArticle.title}
@@ -108,10 +115,8 @@ export default function Home({
                                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                     />
                                 )}
-                                {/* Overlay gradien tipis untuk kesan premium */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#162B22]/40 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
-                                {/* Overlay Logo Play Jika Artikel Adalah Video YouTube */}
                                 {heroYtId && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:bg-red-600/90">
@@ -120,6 +125,32 @@ export default function Home({
                                     </div>
                                 )}
                             </Link>
+                        </div>
+                    </motion.section>
+                ) : (
+                    /* HERO EMPTY STATE JIKA BELUM ADA ARTIKEL */
+                    <motion.section
+                        initial="hidden"
+                        animate="visible"
+                        variants={fadeUp}
+                        className="mb-12 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0F4C3A] to-[#0A382A] p-10 lg:p-14 text-white shadow-sm text-center md:text-left relative"
+                    >
+                        <div className="max-w-2xl relative z-10">
+                            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[12px] font-bold tracking-wide backdrop-blur-sm mb-4">
+                                <Sparkles
+                                    size={14}
+                                    className="text-yellow-300"
+                                />
+                                <span>Portal Dakwah & Kajian Islam</span>
+                            </div>
+                            <h1 className="font-serif text-[28px] sm:text-[38px] font-bold leading-tight">
+                                Selamat Datang di Portal Abu Haidar
+                            </h1>
+                            <p className="mt-4 text-[15px] leading-relaxed text-white/80">
+                                Dapatkan mutiara ilmu, kajian sunnah, dan faidah
+                                Islam yang bermanfaat. Artikel dan kutipan
+                                mutiara baru akan segera hadir insyaAllah.
+                            </p>
                         </div>
                     </motion.section>
                 )}
@@ -139,61 +170,80 @@ export default function Home({
                                 <h2 className="font-serif text-[24px] font-bold text-[#162B22] flex items-center gap-2">
                                     Terbitan Terbaru
                                 </h2>
-                                <Link
-                                    href="/artikel"
-                                    className="group text-[12px] font-bold uppercase tracking-wider text-[#0F4C3A] transition-colors flex items-center gap-1"
-                                >
-                                    <span>Lihat Semua</span>
-                                    <ChevronRight
-                                        size={14}
-                                        className="transition-transform group-hover:translate-x-1"
-                                    />
-                                </Link>
+                                {latestArticles.length > 0 && (
+                                    <Link
+                                        href="/artikel"
+                                        className="group text-[12px] font-bold uppercase tracking-wider text-[#0F4C3A] transition-colors flex items-center gap-1"
+                                    >
+                                        <span>Lihat Semua</span>
+                                        <ChevronRight
+                                            size={14}
+                                            className="transition-transform group-hover:translate-x-1"
+                                        />
+                                    </Link>
+                                )}
                             </div>
 
-                            <motion.div
-                                variants={staggerContainer}
-                                className="grid gap-6 sm:grid-cols-2"
-                            >
-                                {latestArticles.map((article) => (
-                                    <motion.div
-                                        key={article.id}
-                                        variants={fadeUp}
-                                    >
-                                        {/* Jika Anda punya logic YT di ArticleCard, pastikan itu sudah ter-update juga */}
-                                        <ArticleCard article={article} />
-                                    </motion.div>
-                                ))}
-                            </motion.div>
+                            {latestArticles.length > 0 ? (
+                                <motion.div
+                                    variants={staggerContainer}
+                                    className="grid gap-6 sm:grid-cols-2"
+                                >
+                                    {latestArticles.map((article) => (
+                                        <motion.div
+                                            key={article.id}
+                                            variants={fadeUp}
+                                        >
+                                            <ArticleCard article={article} />
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            ) : (
+                                /* EMPTY STATE JIKA BELUM ADA ARTIKEL TERBARU */
+                                <div className="rounded-2xl border border-dashed border-[#CCD8D2] bg-white p-10 text-center">
+                                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EBF1ED] text-[#0F4C3A] mb-4">
+                                        <BookOpen size={24} />
+                                    </div>
+                                    <h3 className="font-serif text-[18px] font-bold text-[#162B22]">
+                                        Belum Ada Artikel Terbaru
+                                    </h3>
+                                    <p className="mt-1 text-[13px] text-[#6C857A]">
+                                        Artikel kajian ilmiah dan tulisan dakwah
+                                        akan segera dipublikasikan di sini.
+                                    </p>
+                                </div>
+                            )}
                         </motion.section>
 
                         {/* ARTIKEL PILIHAN */}
-                        <motion.section
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, margin: "-50px" }}
-                            variants={fadeUp}
-                            className="mt-16"
-                        >
-                            <div className="mb-6 border-b border-[#E0EAE3] pb-4">
-                                <h2 className="font-serif text-[24px] font-bold text-[#162B22]">
-                                    Pilihan Redaksi
-                                </h2>
-                            </div>
-                            <motion.div
-                                variants={staggerContainer}
-                                className="flex flex-col gap-4"
+                        {selectedArticles.length > 0 && (
+                            <motion.section
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, margin: "-50px" }}
+                                variants={fadeUp}
+                                className="mt-16"
                             >
-                                {selectedArticles.map((article) => (
-                                    <motion.div
-                                        key={article.id}
-                                        variants={fadeUp}
-                                    >
-                                        <CompactArticle article={article} />
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        </motion.section>
+                                <div className="mb-6 border-b border-[#E0EAE3] pb-4">
+                                    <h2 className="font-serif text-[24px] font-bold text-[#162B22]">
+                                        Pilihan Redaksi
+                                    </h2>
+                                </div>
+                                <motion.div
+                                    variants={staggerContainer}
+                                    className="flex flex-col gap-4"
+                                >
+                                    {selectedArticles.map((article) => (
+                                        <motion.div
+                                            key={article.id}
+                                            variants={fadeUp}
+                                        >
+                                            <CompactArticle article={article} />
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            </motion.section>
+                        )}
                     </div>
 
                     {/* RIGHT SIDEBAR */}

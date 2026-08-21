@@ -104,7 +104,7 @@ export default function ArticleIndex({ articles, title, categories, currentCateg
                                 Lihat Semua Artikel
                             </Link>
                             <Link
-                                href="/"
+                                href="/home"
                                 className="flex items-center gap-2 rounded-lg border border-[#dedbd2] bg-white px-5 py-2.5 text-[12px] font-bold text-[#444] transition hover:bg-[#fafaf8]"
                             >
                                 <Home size={14} /> Beranda
