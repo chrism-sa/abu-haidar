@@ -36,7 +36,6 @@ Sistem memiliki tiga area utama:
 | Role                | Akses                                                          |
 | ------------------- | -------------------------------------------------------------- |
 | **Public**          | Beranda, kategori, artikel, dan konten publik                  |
-| **Member / Jamaah** | Dashboard, artikel, bookmark, dan profil                       |
 | **Admin**           | Dashboard, artikel, kategori, pengguna, dan pengelolaan konten |
 
 ---
