@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { UserRound, Search, Menu, X } from "lucide-react";
+import { UserRound, Search, X, ChevronDown } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
 import LoginModal from "../Components/LoginModal";
 import { Category } from "../types";
-import { ChevronDown } from "lucide-react";
 import { FaYoutube, FaInstagram, FaFacebookF } from "react-icons/fa";
 
 export default function MainLayout({
@@ -11,10 +10,15 @@ export default function MainLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const [mobileMenu, setMobileMenu] = useState<boolean>(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
     const [footerDropdownOpen, setFooterDropdownOpen] = useState(false);
+    const [mobileSearchOpen, setMobileSearchOpen] = useState<boolean>(false);
+
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const desktopSearchRef = useRef<HTMLDivElement>(null);
+    const mobileSearchRef = useRef<HTMLDivElement>(null);
+    const mobileInputRef = useRef<HTMLInputElement>(null);
+
     const { auth, categories } = usePage().props as {
         auth: any;
         categories: Category[];
@@ -23,8 +27,15 @@ export default function MainLayout({
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState<boolean>(false);
-    const searchRef = useRef<HTMLDivElement>(null);
 
+    // Auto-focus input saat pencarian mobile dibuka
+    useEffect(() => {
+        if (mobileSearchOpen) {
+            mobileInputRef.current?.focus();
+        }
+    }, [mobileSearchOpen]);
+
+    // Tutup dropdown footer saat klik di luar
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -39,6 +50,7 @@ export default function MainLayout({
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Live Search Fetching
     useEffect(() => {
         const trimmedQuery = searchQuery.trim();
 
@@ -64,12 +76,17 @@ export default function MainLayout({
         return () => clearTimeout(timerId);
     }, [searchQuery]);
 
+    // Tutup dropdown hasil pencarian saat klik di luar
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (
-                searchRef.current &&
-                !searchRef.current.contains(event.target as Node)
-            ) {
+            const isClickInsideDesktop =
+                desktopSearchRef.current &&
+                desktopSearchRef.current.contains(event.target as Node);
+            const isClickInsideMobile =
+                mobileSearchRef.current &&
+                mobileSearchRef.current.contains(event.target as Node);
+
+            if (!isClickInsideDesktop && !isClickInsideMobile) {
                 setSearchResults([]);
             }
         };
@@ -86,14 +103,12 @@ export default function MainLayout({
     };
 
     return (
-        /* BACKGROUND UTAMA: Off-White Solid (#FBFBF9) yang elegan, BUKAN transparan */
         <div className="min-h-screen bg-[#eaf6efc0] text-[#162B22]">
             {/* ================= HEADER ================= */}
-            {/* Header putih bersih dengan border tipis dan bayangan ekstra halus */}
             <header className="sticky top-0 z-50 border-b border-[#E8E6E1] bg-white/95 backdrop-blur-md shadow-[0_4px_20px_-15px_rgba(0,0,0,0.1)]">
                 <div className="mx-auto max-w-[1140px] px-5 lg:px-0">
                     <div className="flex h-[75px] items-center justify-between gap-4">
-                        {/* LOGO */}
+                        {/* LOGO & NAMA BRAND */}
                         <Link
                             href="/home"
                             className="flex shrink-0 items-center gap-3 transition-transform hover:opacity-90"
@@ -104,7 +119,7 @@ export default function MainLayout({
                                 className="h-11 w-auto sm:h-12"
                             />
                             <div className="hidden sm:block">
-                                <div className="font-serif text-[18px] font-bold leading-none text-[#0F4C3A]">
+                                <div className="font-brand text-[19px] font-bold tracking-tight leading-none text-[#0F4C3A]">
                                     Abu Haidar
                                 </div>
                                 <div className="mt-1 text-[10px] tracking-[0.08em] text-[#6C857A] uppercase font-medium">
@@ -113,10 +128,10 @@ export default function MainLayout({
                             </div>
                         </Link>
 
-                        {/* PENCARIAN PREMIUM */}
+                        {/* PENCARIAN DESKTOP */}
                         <div
                             className="flex-1 max-w-[450px] relative hidden md:block"
-                            ref={searchRef}
+                            ref={desktopSearchRef}
                         >
                             <form
                                 onSubmit={handleSearchSubmit}
@@ -126,7 +141,6 @@ export default function MainLayout({
                                     size={16}
                                     className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A5B9AD] transition-colors group-focus-within:text-[#0F4C3A]"
                                 />
-                                {/* Warna background diganti ke Soft Gray/Ivory (#F4F4F0), bukan hijau mint */}
                                 <input
                                     type="text"
                                     value={searchQuery}
@@ -138,7 +152,7 @@ export default function MainLayout({
                                 />
                             </form>
 
-                            {/* DROPDOWN HASIL PENCARIAN */}
+                            {/* DROPDOWN HASIL PENCARIAN DESKTOP */}
                             {searchQuery.trim().length > 1 && (
                                 <div className="absolute top-full left-0 right-0 mt-3 rounded-2xl bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#E8E6E1] overflow-hidden z-50 max-h-[400px] overflow-y-auto">
                                     {isSearching ? (
@@ -151,9 +165,10 @@ export default function MainLayout({
                                                 <Link
                                                     key={article.id}
                                                     href={`/artikel/${article.slug}`}
-                                                    onClick={() =>
-                                                        setSearchQuery("")
-                                                    }
+                                                    onClick={() => {
+                                                        setSearchQuery("");
+                                                        setSearchResults([]);
+                                                    }}
                                                     className="flex items-center gap-4 p-4 hover:bg-[#FAFAF8] transition-colors"
                                                 >
                                                     <img
@@ -165,7 +180,7 @@ export default function MainLayout({
                                                         className="h-14 w-16 rounded-lg object-cover border border-[#E8E6E1]"
                                                     />
                                                     <div className="flex-1 min-w-0">
-                                                        <h4 className="text-[14px] font-bold text-[#162B22] truncate transition-colors hover:text-[#0F4C3A]">
+                                                        <h4 className="font-brand text-[14px] font-bold text-[#162B22] truncate transition-colors hover:text-[#0F4C3A]">
                                                             {article.title}
                                                         </h4>
                                                         <p className="text-[12px] text-[#6C857A] line-clamp-1 mt-1">
@@ -190,11 +205,22 @@ export default function MainLayout({
                             )}
                         </div>
 
-                        {/* AKSI LOGIN / DASHBOARD */}
-                        <div className="flex items-center gap-4">
-                            {/* Tombol Search untuk Mobile */}
-                            <button className="md:hidden flex h-10 w-10 items-center justify-center rounded-full bg-[#F4F4F0] text-[#6C857A] transition hover:bg-[#E8E6E1]">
-                                <Search size={16} />
+                        {/* AKSI LOGIN / DASHBOARD & TOGGLE PENCARIAN MOBILE */}
+                        <div className="flex items-center gap-3">
+                            {/* Tombol Toggle Search Mobile */}
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setMobileSearchOpen(!mobileSearchOpen)
+                                }
+                                className="md:hidden flex h-10 w-10 items-center justify-center rounded-full bg-[#F4F4F0] text-[#6C857A] transition hover:bg-[#E8E6E1] hover:text-[#0F4C3A]"
+                                aria-label="Toggle Pencarian Mobile"
+                            >
+                                {mobileSearchOpen ? (
+                                    <X size={18} />
+                                ) : (
+                                    <Search size={18} />
+                                )}
                             </button>
 
                             {auth?.user ? (
@@ -208,7 +234,6 @@ export default function MainLayout({
                                     </span>
                                 </Link>
                             ) : (
-                                /* Tombol User Outlined (Bukan Hijau Solid/Mint) agar lebih mewah */
                                 <button
                                     onClick={() => setIsLoginModalOpen(true)}
                                     className="flex h-10 w-10 items-center justify-center rounded-full border border-[#E8E6E1] bg-white text-[#6C857A] hover:border-[#0F4C3A] hover:bg-[#0F4C3A] hover:text-white transition-all shadow-sm"
@@ -219,6 +244,100 @@ export default function MainLayout({
                             )}
                         </div>
                     </div>
+
+                    {/* ================= BAR PENCARIAN MODE MOBILE ================= */}
+                    {mobileSearchOpen && (
+                        <div
+                            ref={mobileSearchRef}
+                            className="md:hidden pb-4 pt-1 relative"
+                        >
+                            <form
+                                onSubmit={handleSearchSubmit}
+                                className="relative w-full flex items-center"
+                            >
+                                <Search
+                                    size={16}
+                                    className="absolute left-4 text-[#A5B9AD]"
+                                />
+                                <input
+                                    ref={mobileInputRef}
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    placeholder="Cari artikel, kajian, atau tafsir..."
+                                    className="w-full rounded-full border border-[#E8E6E1] bg-[#F4F4F0] py-2.5 pl-11 pr-10 text-[13px] text-[#333] outline-none focus:border-[#0F4C3A] focus:bg-white"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            setSearchResults([]);
+                                        }}
+                                        className="absolute right-3 text-[#A5B9AD] hover:text-[#162B22]"
+                                    >
+                                        <X size={15} />
+                                    </button>
+                                )}
+                            </form>
+
+                            {/* HASIL PENCARIAN MOBILE */}
+                            {searchQuery.trim().length > 1 && (
+                                <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-white shadow-xl border border-[#E8E6E1] overflow-hidden z-50 max-h-[350px] overflow-y-auto">
+                                    {isSearching ? (
+                                        <div className="p-4 text-center text-[12px] font-medium text-[#8CA397]">
+                                            Mencari artikel...
+                                        </div>
+                                    ) : searchResults.length > 0 ? (
+                                        <div className="divide-y divide-[#F4F4F0]">
+                                            {searchResults.map((article) => (
+                                                <Link
+                                                    key={article.id}
+                                                    href={`/artikel/${article.slug}`}
+                                                    onClick={() => {
+                                                        setSearchQuery("");
+                                                        setSearchResults([]);
+                                                        setMobileSearchOpen(
+                                                            false,
+                                                        );
+                                                    }}
+                                                    className="flex items-center gap-3 p-3.5 hover:bg-[#FAFAF8] transition-colors"
+                                                >
+                                                    <img
+                                                        src={
+                                                            article.image ||
+                                                            "/storage/default.jpg"
+                                                        }
+                                                        alt={article.title}
+                                                        className="h-12 w-14 rounded-lg object-cover border border-[#E8E6E1]"
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-brand text-[13px] font-bold text-[#162B22] truncate">
+                                                            {article.title}
+                                                        </h4>
+                                                        <p className="text-[11px] text-[#6C857A] line-clamp-1 mt-0.5">
+                                                            {
+                                                                article.description
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 text-center text-[12px] text-[#8CA397]">
+                                            Tidak ditemukan hasil untuk{" "}
+                                            <span className="font-bold text-[#162B22]">
+                                                "{searchQuery}"
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </header>
 
@@ -232,7 +351,6 @@ export default function MainLayout({
                 <div className="mx-auto max-w-[1140px] px-5 lg:px-0 grid gap-10 md:grid-cols-3">
                     {/* INFO BRAND */}
                     <div>
-                        {/* Box Logo Transparan Elegan tanpa border putih */}
                         <div className="flex items-center gap-4 mb-2">
                             <div className="shrink-0">
                                 <img
@@ -243,7 +361,7 @@ export default function MainLayout({
                             </div>
                             <div className="h-10 w-[1px] bg-gradient-to-b from-[#0A382A] via-[#C5A059]/40 to-[#0A382A]"></div>
                             <div className="flex flex-col justify-center">
-                                <div className="font-serif text-[20px] font-bold tracking-wide text-[#C5A059] drop-shadow-sm">
+                                <div className="font-brand text-[20px] font-bold tracking-tight text-[#C5A059] drop-shadow-sm">
                                     Abu Haidar
                                 </div>
                                 <div className="mt-1 text-[9px] tracking-[0.2em] text-[#E8E6E1]/60 uppercase font-medium">
@@ -260,73 +378,74 @@ export default function MainLayout({
                         </p>
                     </div>
 
-                    {/* MENU & KATEGORI */}
+                    {/* TAUTAN CEPAT & KATEGORI */}
                     <div>
-                        <div>
-                            <h4 className="font-serif text-[14px] font-bold tracking-wider uppercase text-[#C5A059] mb-4">
-                                Tautan Cepat & Kategori
-                            </h4>
-                            <ul className="space-y-3 text-[13px] text-white/80">
-                                <li>
-                                    <Link
-                                        href="/home"
-                                        className="flex items-center gap-2 hover:text-[#C5A059] transition-colors"
-                                    >
-                                        Beranda Utama
-                                    </Link>
-                                </li>
+                        <h4 className="font-brand text-[14px] font-bold tracking-wider uppercase text-[#C5A059] mb-4">
+                            Tautan Cepat & Kategori
+                        </h4>
+                        <ul className="space-y-3 text-[13px] text-white/80">
+                            <li>
+                                <Link
+                                    href="/home"
+                                    className="flex items-center gap-2 hover:text-[#C5A059] transition-colors"
+                                >
+                                    Beranda Utama
+                                </Link>
+                            </li>
 
-                                <div className="my-2 border-t border-white/10" />
+                            <div className="my-2 border-t border-white/10" />
 
-                                <li className="relative" ref={dropdownRef}>
-                                    <button
-                                        onClick={() =>
-                                            setFooterDropdownOpen(
-                                                !footerDropdownOpen,
-                                            )
-                                        }
-                                        className="flex w-full items-center justify-between rounded-xl border border-white/20 bg-[#072B20] px-4 py-2.5 text-[12px] font-medium text-white/90 transition hover:border-[#C5A059]"
-                                    >
-                                        <span>Pilih Kategori Artikel</span>
-                                        <ChevronDown
-                                            size={16}
-                                            className={`transition-transform duration-300 ${footerDropdownOpen ? "rotate-180 text-[#C5A059]" : ""}`}
-                                        />
-                                    </button>
+                            <li className="relative" ref={dropdownRef}>
+                                <button
+                                    onClick={() =>
+                                        setFooterDropdownOpen(
+                                            !footerDropdownOpen,
+                                        )
+                                    }
+                                    className="flex w-full items-center justify-between rounded-xl border border-white/20 bg-[#072B20] px-4 py-2.5 text-[12px] font-medium text-white/90 transition hover:border-[#C5A059]"
+                                >
+                                    <span>Pilih Kategori Artikel</span>
+                                    <ChevronDown
+                                        size={16}
+                                        className={`transition-transform duration-300 ${
+                                            footerDropdownOpen
+                                                ? "rotate-180 text-[#C5A059]"
+                                                : ""
+                                        }`}
+                                    />
+                                </button>
 
-                                    {footerDropdownOpen && (
-                                        <div className="absolute bottom-full left-0 right-0 mb-3 rounded-xl bg-[#072B20] border border-[#0F4C3A] shadow-2xl overflow-hidden z-50 py-2 max-h-[240px] overflow-y-auto">
-                                            {categories &&
-                                            categories.length > 0 ? (
-                                                categories.map((cat) => (
-                                                    <Link
-                                                        key={cat.id}
-                                                        href={`/kategori/${cat.slug}`}
-                                                        onClick={() =>
-                                                            setFooterDropdownOpen(
-                                                                false,
-                                                            )
-                                                        }
-                                                        className="block px-5 py-2.5 text-[13px] text-white/80 hover:bg-[#0F4C3A] hover:text-[#C5A059] transition-colors"
-                                                    >
-                                                        {cat.name}
-                                                    </Link>
-                                                ))
-                                            ) : (
-                                                <div className="px-5 py-3 text-[12px] text-white/50 text-center">
-                                                    Tidak ada kategori
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </li>
-                            </ul>
-                        </div>
+                                {footerDropdownOpen && (
+                                    <div className="absolute bottom-full left-0 right-0 mb-3 rounded-xl bg-[#072B20] border border-[#0F4C3A] shadow-2xl overflow-hidden z-50 py-2 max-h-[240px] overflow-y-auto">
+                                        {categories && categories.length > 0 ? (
+                                            categories.map((cat) => (
+                                                <Link
+                                                    key={cat.id}
+                                                    href={`/kategori/${cat.slug}`}
+                                                    onClick={() =>
+                                                        setFooterDropdownOpen(
+                                                            false,
+                                                        )
+                                                    }
+                                                    className="block px-5 py-2.5 text-[13px] text-white/80 hover:bg-[#0F4C3A] hover:text-[#C5A059] transition-colors"
+                                                >
+                                                    {cat.name}
+                                                </Link>
+                                            ))
+                                        ) : (
+                                            <div className="px-5 py-3 text-[12px] text-white/50 text-center">
+                                                Tidak ada kategori
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </li>
+                        </ul>
                     </div>
 
                     {/* SOSIAL MEDIA */}
                     <div>
-                        <h4 className="font-serif text-[14px] font-bold tracking-wider uppercase text-[#C5A059] mb-4">
+                        <h4 className="font-brand text-[14px] font-bold tracking-wider uppercase text-[#C5A059] mb-4">
                             Media Sosial & Saluran
                         </h4>
                         <p className="text-[13px] text-white/70 mb-5 leading-relaxed">

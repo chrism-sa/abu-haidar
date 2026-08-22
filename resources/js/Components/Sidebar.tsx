@@ -6,8 +6,7 @@ import { Category, Quote } from "@/types";
 function QuoteCard({ quote }: { quote: Quote | null }) {
     if (!quote) return null;
 
-    // JIKA QUOTE ADALAH GAMBAR (Pastikan backend mengirimkan field quote.image)
-    // Asumsi: di tabel ada kolom 'image' untuk quote
+    // JIKA QUOTE ADALAH GAMBAR
     if (quote.image) {
         return (
             <div className="rounded-2xl border border-[#e8e4da] bg-white p-1.5 shadow-sm">
@@ -34,8 +33,12 @@ function QuoteCard({ quote }: { quote: Quote | null }) {
         );
     }
 
-    // JIKA QUOTE ADALAH TEKS (KODE DESAIN ESTETIK SEBELUMNYA)
+    // JIKA QUOTE ADALAH TEKS
     const isLongAyat = quote.arabic && quote.arabic.length > 60;
+
+    // KUNCI DINAMIS: Ambil class font dari database (misal: "font-tajawal", "font-amiri")
+    // Fallback ke "font-amiri" jika data font kosong atau belum ada di database
+    const arabicFontClass = (quote as any).font || "font-amiri";
 
     return (
         <div className="rounded-2xl border border-[#e2ddd3] bg-white p-1.5 shadow-md shadow-[#0f4c3a]/5">
@@ -57,11 +60,10 @@ function QuoteCard({ quote }: { quote: Quote | null }) {
                     lang="ar"
                     style={{
                         lineHeight: isLongAyat ? "1.55" : "1.7",
-                        letterSpacing: "normal",
-                        fontVariantLigatures: "normal",
-                        fontFeatureSettings: '"liga" 1, "calt" 1',
+                        letterSpacing: "normal", // Wajib "normal", jangan "0"
+                        // PERBAIKAN: fontFeatureSettings dihapus karena merusak ligatures Arab!
                     }}
-                    className={`relative z-10 quote-card-arabic font-traditional-arabic text-[#0F4C3A] [text-wrap:balance] ${
+                    className={`relative z-10 quote-card-arabic ${arabicFontClass} text-[#0F4C3A] [text-wrap:balance] ${
                         isLongAyat ? "text-[24px]" : "text-[28px]"
                     }`}
                 >
