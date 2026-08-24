@@ -1,6 +1,6 @@
 import { Article } from "../types";
 import { Link } from "@inertiajs/react";
-import { FaYoutube } from "react-icons/fa"; // Import Icon YouTube
+import { FaYoutube } from "react-icons/fa";
 
 // Format tanggal standar Indonesia (contoh: 18 Ags 2026)
 const formatDate = (dateString: string) => {
@@ -98,7 +98,7 @@ export function ArticleCard({ article }: { article: Article }) {
                     </div>
                 )}
 
-                {/* Overlay Logo Play Jika Artikel Adalah Video YouTube */}
+                {/* Overlay Logo Play Jika Video YouTube */}
                 {ytId && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:bg-red-600/90">
@@ -111,7 +111,8 @@ export function ArticleCard({ article }: { article: Article }) {
             <div className="flex flex-1 flex-col p-4">
                 <CategoryBadge>{article.category.name}</CategoryBadge>
 
-                <h3 className="mt-3 font-serif text-[15px] font-bold leading-snug text-[#162B22] line-clamp-2 transition-colors group-hover:text-[#0F4C3A]">
+                {/* Judul menggunakan font-brand */}
+                <h3 className="mt-3 font-brand text-[15px] font-bold leading-snug tracking-tight text-[#162B22] line-clamp-2 transition-colors group-hover:text-[#0F4C3A]">
                     {article.title}
                 </h3>
 
@@ -153,7 +154,7 @@ export function CompactArticle({ article }: { article: Article }) {
                     </div>
                 )}
 
-                {/* Overlay Logo Play Kecil Jika Artikel Adalah Video YouTube */}
+                {/* Overlay Logo Play Kecil */}
                 {ytId && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white transition-transform duration-500 group-hover:bg-red-600/90">
@@ -166,7 +167,8 @@ export function CompactArticle({ article }: { article: Article }) {
             <div className="flex min-w-0 flex-col justify-center">
                 <CategoryBadge>{article.category.name}</CategoryBadge>
 
-                <h4 className="mt-2 font-serif text-[14px] font-bold leading-snug text-[#162B22] line-clamp-2 transition-colors group-hover:text-[#0F4C3A]">
+                {/* Judul menggunakan font-brand */}
+                <h4 className="mt-2 font-brand text-[14px] font-bold leading-snug tracking-tight text-[#162B22] line-clamp-2 transition-colors group-hover:text-[#0F4C3A]">
                     {article.title}
                 </h4>
 

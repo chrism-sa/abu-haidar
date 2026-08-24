@@ -13,6 +13,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Quote;
 use App\Models\User;
+use App\Models\Ebook;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,7 +69,6 @@ Route::get('/kategori/{slug}', function ($slug) {
     ]);
 })->name('kategori.show');
 
-
 /*
 |--------------------------------------------------------------------------
 | API PENCARIAN REAL-TIME
@@ -90,7 +90,6 @@ Route::get('/api/articles/search', function (Request $request) {
     ]);
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | RUTE AUTENTIKASI
@@ -99,7 +98,6 @@ Route::get('/api/articles/search', function (Request $request) {
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
 Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -117,7 +115,6 @@ Route::middleware('auth')->get('/dashboard', function () {
     return redirect()->route('user.dashboard');
 })->name('dashboard');
 
-
 /*
 |--------------------------------------------------------------------------
 | RUTE KHUSUS USER (JAMAAH)
@@ -132,7 +129,6 @@ Route::middleware('auth')->prefix('user')->group(function () {
         ]);
     })->name('user.dashboard');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -210,18 +206,38 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         ]);
     })->name('admin.articles.create');
 
+    // ================= STORE ARTIKEL =================
     Route::post('/articles', function (Request $request) {
+        $rawContent = $request->content ?? '';
+        $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $rawContent);
+        $cleanDescription = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->description ?? '');
+
+        $plainText = trim(strip_tags($cleanContent));
+        if (empty($plainText)) {
+            $request->merge(['content' => null]);
+        } else {
+            $request->merge(['content' => $cleanContent]);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'image_file' => 'nullable',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'image_url' => 'nullable|string',
             'description' => 'nullable|string',
             'content' => 'required|string',
+            'quote_type' => 'nullable|in:text,image,youtube',
             'quote_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'quote_youtube_url' => 'nullable|string',
             'quote_arabic' => 'nullable|string',
             'quote_translation' => 'nullable|string',
             'quote_reference' => 'nullable|string',
+        ], [
+            'title.required' => 'Judul artikel wajib diisi.',
+            'category_id.required' => 'Silakan pilih salah satu kategori.',
+            'content.required' => 'Konten atau isi naskah artikel tidak boleh kosong!',
+            'image_file.max' => 'Ukuran file gambar sampul maksimal 2 MB.',
+            'quote_image.max' => 'Ukuran file gambar quote maksimal 2 MB.',
         ]);
 
         $imagePath = '';
@@ -233,9 +249,6 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             $imagePath = 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?q=80&w=1200&auto=format&fit=crop';
         }
 
-        $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->content ?? '');
-        $cleanDescription = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->description ?? '');
-
         $article = Article::create([
             'category_id' => $request->category_id,
             'title' => $request->title,
@@ -244,39 +257,35 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'description' => $cleanDescription ?? '',
             'content' => $cleanContent ?? '',
             'is_published' => true,
+            'is_hero' => false,
+            'is_featured' => false,
         ]);
 
+        $quoteType = $request->quote_type ?? 'text';
+        $quoteImage = null;
 
-        if ($request->hasFile('quote_image') || $request->filled('quote_arabic')) {
-            $quoteImagePath = null;
-            if ($request->hasFile('quote_image')) {
-                $quoteImagePath = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
-            }
+        if ($quoteType === 'youtube' && $request->filled('quote_youtube_url')) {
+            $quoteImage = $request->quote_youtube_url;
+        } elseif ($quoteType === 'image' && $request->hasFile('quote_image')) {
+            $quoteImage = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
+        }
 
-            \App\Models\Quote::create([
+        if ($quoteImage || $request->filled('quote_arabic') || $request->filled('quote_reference')) {
+            Quote::create([
                 'article_id' => $article->id,
-                'arabic' => $request->quote_arabic ?? '',
-                'translation' => $request->quote_translation ?? '',
+                'arabic' => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
+                'translation' => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
                 'reference' => $request->quote_reference ?? '',
-                'image' => $quoteImagePath,
+                'image' => $quoteImage,
             ]);
         }
 
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil dipublikasikan!');
     })->name('admin.articles.store');
 
-    Route::get('/articles/{id}/edit', function ($id) {
-        $article = Article::with('quotes')->findOrFail($id);
-
-        return Inertia::render('Admin/Articles/Edit', [
-            'article' => $article,
-            'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
-            'quote' => $article->quotes->first()
-        ]);
-    })->name('admin.articles.edit');
-
+    // ================= UPDATE ARTIKEL =================
     Route::post('/articles/{id}', function (Request $request, $id) {
-        $article = Article::findOrFail($id);
+        $article = Article::with('quotes')->findOrFail($id);
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -285,7 +294,9 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'image_url' => 'nullable|string',
             'description' => 'nullable|string',
             'content' => 'required|string',
+            'quote_type' => 'nullable|in:text,image,youtube',
             'quote_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'quote_youtube_url' => 'nullable|string',
             'quote_arabic' => 'nullable|string',
             'quote_translation' => 'nullable|string',
             'quote_reference' => 'nullable|string',
@@ -309,7 +320,6 @@ Route::middleware('auth')->prefix('admin')->group(function () {
                     Storage::disk('public')->delete($oldPath);
                 }
             }
-
             $imagePath = $request->file('image_file')->store('articles', 'public');
             $updateData['image'] = '/storage/' . $imagePath;
         } elseif ($request->filled('image_url') && $request->image_url !== $article->image) {
@@ -324,44 +334,107 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
         $article->update($updateData);
 
-        // Update atau Buat Quote terkait
-        if ($request->hasFile('quote_image') || $request->filled('quote_arabic') || $request->filled('quote_reference')) {
-            $quoteData = [
-                'arabic' => $request->quote_arabic ?? '',
-                'translation' => $request->quote_translation ?? '',
-                'reference' => $request->quote_reference ?? '',
-            ];
+        $quoteType = $request->quote_type ?? 'text';
+        $existingQuote = $article->quotes->first();
+        $quoteImage = $existingQuote ? $existingQuote->image : null;
 
-            if ($request->hasFile('quote_image')) {
-                $quoteData['image'] = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
+        if ($quoteType === 'youtube') {
+            if ($quoteImage && str_starts_with($quoteImage, '/storage/')) {
+                $oldQuoteFile = str_replace('/storage/', '', $quoteImage);
+                if (Storage::disk('public')->exists($oldQuoteFile)) {
+                    Storage::disk('public')->delete($oldQuoteFile);
+                }
             }
+            $quoteImage = $request->quote_youtube_url;
+        } elseif ($quoteType === 'image') {
+            if ($request->hasFile('quote_image')) {
+                if ($quoteImage && str_starts_with($quoteImage, '/storage/')) {
+                    $oldQuoteFile = str_replace('/storage/', '', $quoteImage);
+                    if (Storage::disk('public')->exists($oldQuoteFile)) {
+                        Storage::disk('public')->delete($oldQuoteFile);
+                    }
+                }
+                $quoteImage = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
+            }
+        } else {
+            if ($quoteImage && str_starts_with($quoteImage, '/storage/')) {
+                $oldQuoteFile = str_replace('/storage/', '', $quoteImage);
+                if (Storage::disk('public')->exists($oldQuoteFile)) {
+                    Storage::disk('public')->delete($oldQuoteFile);
+                }
+            }
+            $quoteImage = null;
+        }
 
-            \App\Models\Quote::updateOrCreate(
+        if ($quoteImage || $request->filled('quote_arabic') || $request->filled('quote_reference')) {
+            Quote::updateOrCreate(
                 ['article_id' => $article->id],
-                $quoteData
+                [
+                    'arabic' => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
+                    'translation' => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
+                    'reference' => $request->quote_reference ?? '',
+                    'image' => $quoteImage,
+                ]
             );
         } else {
-            // Jika tidak ada input quote sama sekali
-            \App\Models\Quote::where('article_id', $article->id)->delete();
+            Quote::where('article_id', $article->id)->delete();
         }
 
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil diperbarui!');
     })->name('admin.articles.update');
 
+    Route::get('/articles/{id}/edit', function ($id) {
+        $article = Article::with('quotes')->findOrFail($id);
+
+        return Inertia::render('Admin/Articles/Edit', [
+            'article' => $article,
+            'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
+            'quote' => $article->quotes->first()
+        ]);
+    })->name('admin.articles.edit');
+
     Route::delete('/articles/{id}', function ($id) {
         $article = Article::findOrFail($id);
-
-        if ($article->image && str_starts_with($article->image, '/storage/')) {
-            $oldPath = str_replace('/storage/', '', $article->image);
-            if (Storage::disk('public')->exists($oldPath)) {
-                Storage::disk('public')->delete($oldPath);
-            }
-        }
-
         $article->delete();
 
-        return redirect()->back()->with('success', 'Artikel beserta foto berhasil dihapus!');
+        return redirect()->back()->with('success', 'Artikel beserta seluruh aset gambar berhasil dihapus bersih!');
     })->name('admin.articles.destroy');
+
+    // ================= TOGGLE ARTIKEL =================
+    Route::post('/articles/{id}/toggle-publish', function ($id) {
+        $article = Article::findOrFail($id);
+        $article->update(['is_published' => !$article->is_published]);
+        return response()->json(['success' => true, 'is_published' => $article->is_published]);
+    })->name('admin.articles.togglePublish');
+
+    Route::post('/articles/{id}/toggle-hero', function ($id) {
+        $article = Article::findOrFail($id);
+        if (!$article->is_hero) {
+            Article::query()->update(['is_hero' => false]);
+            $article->update(['is_hero' => true]);
+            $status = true;
+        } else {
+            $article->update(['is_hero' => false]);
+            $status = false;
+        }
+        return response()->json(['success' => true, 'is_hero' => $status]);
+    })->name('admin.articles.toggleHero');
+
+    Route::post('/articles/{id}/toggle-featured', function ($id) {
+        $article = Article::findOrFail($id);
+        if (!$article->is_featured) {
+            $currentFeaturedCount = Article::where('is_featured', true)->count();
+            if ($currentFeaturedCount >= 3) {
+                return response()->json(['success' => false, 'message' => 'Maksimal 3 artikel pilihan redaksi!'], 422);
+            }
+            $article->update(['is_featured' => true]);
+            $status = true;
+        } else {
+            $article->update(['is_featured' => false]);
+            $status = false;
+        }
+        return response()->json(['success' => true, 'is_featured' => $status]);
+    })->name('admin.articles.toggleFeatured');
 
     // 4. KELOLA KATEGORI
     Route::get('/categories', function () {
@@ -413,4 +486,153 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
         return redirect()->back()->with('success', 'Kategori berhasil dihapus!');
     })->name('admin.categories.destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| RUTE EBOOK PUBLIK
+|--------------------------------------------------------------------------
+*/
+Route::get('/ebook', function () {
+    return Inertia::render('Ebook/Index', [
+        'ebooks' => Ebook::where('is_published', true)->latest()->get()
+    ]);
+})->name('ebook.index');
+
+Route::get('/ebook/{slug}', function ($slug) {
+    $ebook = Ebook::where('slug', $slug)->where('is_published', true)->firstOrFail();
+    return Inertia::render('Ebook/Show', [
+        'ebook' => $ebook
+    ]);
+})->name('ebook.show');
+
+/*
+|--------------------------------------------------------------------------
+| RUTE ADMIN EBOOK
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/ebooks', function () {
+        return Inertia::render('Admin/Ebooks/Index', [
+            'ebooks' => Ebook::latest()->get()
+        ]);
+    })->name('ebooks.index');
+
+    Route::post('/ebooks', function (Request $request) {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'author' => 'nullable|string',
+            'total_pages' => 'nullable|integer',
+            'pdf_file' => 'required|mimes:pdf|max:20480',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        $pdfFile = $request->file('pdf_file');
+        $pdfSizeInMB = round($pdfFile->getSize() / (1024 * 1024), 2) . ' MB';
+
+        $originalPdfName = pathinfo($pdfFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $cleanPdfName = Str::slug($originalPdfName) . '.' . $pdfFile->getClientOriginalExtension();
+
+        $pdfStoredPath = $pdfFile->storeAs('ebooks/files', $cleanPdfName, 'public');
+        $pdfPath = '/storage/' . $pdfStoredPath;
+
+        $coverPath = null;
+        if ($request->hasFile('cover_image')) {
+            $coverFile = $request->file('cover_image');
+            $originalCoverName = pathinfo($coverFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanCoverName = Str::slug($originalCoverName) . '-' . time() . '.' . $coverFile->getClientOriginalExtension();
+
+            $coverStoredPath = $coverFile->storeAs('ebooks/covers', $cleanCoverName, 'public');
+            $coverPath = '/storage/' . $coverStoredPath;
+        }
+
+        Ebook::create([
+            'title' => $request->title,
+            'slug' => Str::slug($request->title) . '-' . time(),
+            'description' => $request->description,
+            'author' => $request->author ?? 'Abu Haidar',
+            'file_path' => $pdfPath,
+            'file_size' => $pdfSizeInMB,
+            'total_pages' => $request->total_pages,
+            'cover_image' => $coverPath,
+            'is_published' => $request->boolean('is_published', true),
+        ]);
+
+        return redirect()->back()->with('success', 'E-Book PDF berhasil diunggah dengan nama file asli!');
+    })->name('ebooks.store');
+
+    Route::post('/ebooks/{id}', function (Request $request, $id) {
+        $ebook = Ebook::findOrFail($id);
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'author' => 'nullable|string',
+            'total_pages' => 'nullable|integer',
+            'pdf_file' => 'nullable|mimes:pdf|max:20480',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        $updateData = [
+            'title' => $request->title,
+            'slug' => Str::slug($request->title) . '-' . $ebook->id,
+            'description' => $request->description,
+            'author' => $request->author ?? 'Abu Haidar',
+            'total_pages' => $request->total_pages,
+            'is_published' => $request->boolean('is_published'),
+        ];
+
+        if ($request->hasFile('pdf_file')) {
+            if ($ebook->file_path && str_starts_with($ebook->file_path, '/storage/')) {
+                $oldPdf = str_replace('/storage/', '', $ebook->file_path);
+                if (Storage::disk('public')->exists($oldPdf)) {
+                    Storage::disk('public')->delete($oldPdf);
+                }
+            }
+
+            $pdfFile = $request->file('pdf_file');
+            $pdfSizeInMB = round($pdfFile->getSize() / (1024 * 1024), 2) . ' MB';
+            $originalPdfName = pathinfo($pdfFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanPdfName = Str::slug($originalPdfName) . '.' . $pdfFile->getClientOriginalExtension();
+
+            $pdfStoredPath = $pdfFile->storeAs('ebooks/files', $cleanPdfName, 'public');
+            $updateData['file_path'] = '/storage/' . $pdfStoredPath;
+            $updateData['file_size'] = $pdfSizeInMB;
+        }
+
+        if ($request->hasFile('cover_image')) {
+            if ($ebook->cover_image && str_starts_with($ebook->cover_image, '/storage/')) {
+                $oldCover = str_replace('/storage/', '', $ebook->cover_image);
+                if (Storage::disk('public')->exists($oldCover)) {
+                    Storage::disk('public')->delete($oldCover);
+                }
+            }
+
+            $coverFile = $request->file('cover_image');
+            $originalCoverName = pathinfo($coverFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanCoverName = Str::slug($originalCoverName) . '-' . time() . '.' . $coverFile->getClientOriginalExtension();
+
+            $coverStoredPath = $coverFile->storeAs('ebooks/covers', $cleanCoverName, 'public');
+            $updateData['cover_image'] = '/storage/' . $coverStoredPath;
+        }
+
+        $ebook->update($updateData);
+
+        return redirect()->back()->with('success', 'E-Book berhasil diperbarui!');
+    })->name('admin.ebooks.update');
+
+    // ================= TOGGLE E-BOOK =================
+    Route::post('/ebooks/{id}/toggle-status', function ($id) {
+        $ebook = Ebook::findOrFail($id);
+        $ebook->update(['is_published' => !$ebook->is_published]);
+        return response()->json(['success' => true, 'is_published' => $ebook->is_published]);
+    })->name('ebooks.toggle');
+
+    Route::delete('/ebooks/{id}', function ($id) {
+        $ebook = Ebook::findOrFail($id);
+        $ebook->delete();
+
+        return redirect()->back()->with('success', 'E-Book beserta seluruh file dokumen berhasil dihapus!');
+    })->name('ebooks.destroy');
 });

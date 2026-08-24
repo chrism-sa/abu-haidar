@@ -124,7 +124,7 @@ export default function Show({
 
                     <header className="mb-8">
                         <CategoryBadge>{article.category.name}</CategoryBadge>
-                        <h1 className="mt-4 font-serif text-[28px] font-bold leading-tight text-[#10251d] sm:text-[36px] lg:text-[42px]">
+                        <h1 className="mt-4 font-brand text-[28px] font-bold leading-tight text-[#10251d] sm:text-[36px] lg:text-[42px]">
                             {article.title}
                         </h1>
 
@@ -263,7 +263,7 @@ export default function Show({
                     </div>
 
                     <section className="mt-14">
-                        <h2 className="mb-6 border-b border-[#e9e6df] pb-3 font-serif text-[20px] font-bold text-[#17251f]">
+                        <h2 className="mb-6 border-b border-[#e9e6df] pb-3 font-brand text-[20px] font-bold text-[#17251f]">
                             Artikel Terkait
                         </h2>
                         <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
@@ -271,18 +271,47 @@ export default function Show({
                                 <Link
                                     href={`/artikel/${relArticle.slug}`}
                                     key={relArticle.id}
-                                    className="group block"
+                                    className="group flex flex-col justify-between"
                                 >
-                                    <div className="mb-3 aspect-[1.5/1] overflow-hidden rounded-xl bg-[#f0eee9]">
-                                        <img
-                                            src={relArticle.image}
-                                            alt={relArticle.title}
-                                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                                        />
+                                    <div>
+                                        {/* Thumbnail Gambar */}
+                                        <div className="mb-3 aspect-[1.5/1] overflow-hidden rounded-xl bg-[#f0eee9]">
+                                            <img
+                                                src={relArticle.image}
+                                                alt={relArticle.title}
+                                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                            />
+                                        </div>
+
+                                        {/* Judul Artikel */}
+                                        <h3 className="line-clamp-2 font-brand text-[13px] font-bold leading-snug text-[#14251e] transition-colors group-hover:text-[#126047]">
+                                            {relArticle.title}
+                                        </h3>
+
+                                        {/* Deskripsi Singkat */}
+                                        {relArticle.description && (
+                                            <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-[#6C857A]">
+                                                {relArticle.description}
+                                            </p>
+                                        )}
                                     </div>
-                                    <h3 className="line-clamp-2 font-serif text-[13px] font-bold leading-snug text-[#14251e] group-hover:text-[#126047]">
-                                        {relArticle.title}
-                                    </h3>
+
+                                    {/* Waktu Pembuatan & Pembaruan */}
+                                    <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 text-[10px] text-[#8CA397]">
+                                        <span>
+                                            {formatDate(relArticle.created_at)}
+                                        </span>
+                                        {relArticle.updated_at && (
+                                            <>
+                                                <span className="h-1 w-1 rounded-full bg-[#A5B9AD]" />
+                                                <span className="italic">
+                                                    {timeAgo(
+                                                        relArticle.updated_at,
+                                                    )}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
                                 </Link>
                             ))}
                         </div>
@@ -293,7 +322,7 @@ export default function Show({
                     <Sidebar categories={categories} quote={quote} />
 
                     <section className="rounded-xl border border-[#e8e4da] bg-white p-6">
-                        <h3 className="mb-4 border-b border-[#f0eee9] pb-3 font-serif text-[15px] font-bold text-[#17251f]">
+                        <h3 className="mb-4 border-b border-[#f0eee9] pb-3 font-brand text-[15px] font-bold text-[#17251f]">
                             Artikel Populer
                         </h3>
                         <div className="space-y-5">

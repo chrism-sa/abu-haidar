@@ -1,8 +1,10 @@
-import { Link } from '@inertiajs/react';
-import MainLayout from '../../Layouts/MainLayout';
-import { ArticleCard } from '../../Components/ArticleComponents';
-import { Article, Category } from '../../types';
-import { SearchX, Home, Filter } from 'lucide-react';
+import React from "react";
+import { Head, Link } from "@inertiajs/react";
+import { motion } from "framer-motion";
+import MainLayout from "../../Layouts/MainLayout";
+import { ArticleCard } from "../../Components/ArticleComponents";
+import { Article, Category } from "../../types";
+import { SearchX, Home, Filter, Sparkles, RefreshCw } from "lucide-react";
 
 interface IndexProps {
     articles: Article[];
@@ -11,106 +13,159 @@ interface IndexProps {
     currentCategory?: Category | null;
 }
 
-export default function ArticleIndex({ articles, title, categories, currentCategory }: IndexProps) {
+export default function ArticleIndex({
+    articles = [],
+    title,
+    categories = [],
+    currentCategory,
+}: IndexProps) {
+    const fadeUp = {
+        hidden: { opacity: 0, y: 25 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+        },
+    };
+
+    const staggerContainer = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.08 },
+        },
+    };
+
     return (
         <MainLayout>
+            <Head title={`${title} - Abu Haidar`} />
+
             <div className="mx-auto max-w-[1140px]">
                 {/* Header Judul & Keterangan Hasil */}
-                <div className="mb-8 border-b border-[#e9e6df] pb-6">
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={fadeUp}
+                    className="mb-8 border-b border-[#F9D2BA] pb-6"
+                >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                            <h1 className="font-serif text-[26px] font-bold text-[#17251f] sm:text-[32px]">
+                            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4533]/10 px-3 py-1 text-[11px] font-bold text-[#1D4533] mb-2 border border-[#F9D2BA]/80">
+                                <Sparkles
+                                    size={12}
+                                    className="text-[#1D4533]"
+                                />
+                                <span>Pustaka Artikel Ilmiah</span>
+                            </div>
+                            <h1 className="font-brand text-[26px] font-bold text-[#1D4533] sm:text-[34px] leading-tight">
                                 {title}
                             </h1>
-                            <p className="mt-1 text-[13px] text-[#666]">
-                                {articles.length > 0 
-                                    ? `Ditemukan ${articles.length} artikel yang sesuai dengan kriteria Anda.` 
-                                    : 'Tidak ada artikel yang cocok dengan pencarian atau kategori ini.'}
+                            <p className="mt-1 text-[13px] text-[#5E3122]/70">
+                                {articles.length > 0
+                                    ? `Ditemukan ${articles.length} naskah kajian yang sesuai dengan kriteria Anda.`
+                                    : "Tidak ada naskah kajian yang cocok dengan filter saat ini."}
                             </p>
                         </div>
 
-                        {/* Tombol Reset Filter jika sedang di kategori / pencarian tertentu */}
-                        {(currentCategory || title.includes('Pencarian')) && (
+                        {/* Tombol Reset Filter */}
+                        {(currentCategory || title.includes("Pencarian")) && (
                             <Link
                                 href="/artikel"
-                                className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-[#dedbd2] bg-white px-3 py-2 text-[11px] font-bold text-[#444] transition hover:bg-[#fafaf8]"
+                                className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#F9D2BA] bg-white px-4 py-2 text-[11px] font-bold text-[#1D4533] transition hover:bg-[#F9D2BA]/30 shadow-2xs cursor-pointer"
                             >
-                                Lihat Semua Artikel
+                                <RefreshCw size={12} />
+                                <span>Lihat Semua Artikel</span>
                             </Link>
                         )}
                     </div>
 
-                    {/* FILTER KATEGORI BADGES DI ATAS */}
+                    {/* FILTER KATEGORI BADGES */}
                     <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                        <span className="flex items-center gap-1 text-[11px] font-bold text-[#888] shrink-0 mr-1">
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-[#5E3122]/70 shrink-0 mr-1">
                             <Filter size={12} /> Filter:
                         </span>
-                        
-                        {/* Tombol "Semua" HANYA aktif jika currentCategory bernilai null/undefined DAN bukan halaman pencarian */}
+
                         <Link
                             href="/artikel"
-                            className={`rounded-full px-3.5 py-1.5 text-[11px] font-medium transition shrink-0 ${
-                                !currentCategory && !title.includes('Kategori') && !title.includes('Pencarian')
-                                    ? 'bg-[#063f2f] text-white font-bold shadow-sm'
-                                    : 'bg-white border border-[#dedbd2] text-[#555] hover:bg-[#f5f4ef]'
+                            className={`rounded-full px-4 py-1.5 text-[11px] font-bold transition shrink-0 ${
+                                !currentCategory &&
+                                !title.includes("Kategori") &&
+                                !title.includes("Pencarian")
+                                    ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
+                                    : "bg-white border border-[#F9D2BA] text-[#5E3122] hover:bg-[#F9D2BA]/30"
                             }`}
                         >
                             Semua
                         </Link>
 
-                        {categories && categories.map((cat) => {
-                            // Deteksi aktif berdasarkan ID atau jika judul halaman mengandung nama kategori tersebut
-                            const isActive = currentCategory?.id === cat.id || title.includes(cat.name);
-                            return (
-                                <Link
-                                    key={cat.id}
-                                    href={`/kategori/${cat.slug}`}
-                                    className={`rounded-full px-3.5 py-1.5 text-[11px] font-medium transition shrink-0 ${
-                                        isActive
-                                            ? 'bg-[#063f2f] text-white font-bold shadow-sm'
-                                            : 'bg-white border border-[#dedbd2] text-[#555] hover:bg-[#f5f4ef]'
-                                    }`}
-                                >
-                                    {cat.name}
-                                </Link>
-                            );
-                        })}
+                        {categories &&
+                            categories.map((cat) => {
+                                const isActive =
+                                    currentCategory?.id === cat.id ||
+                                    title.includes(cat.name);
+                                return (
+                                    <Link
+                                        key={cat.id}
+                                        href={`/kategori/${cat.slug}`}
+                                        className={`rounded-full px-4 py-1.5 text-[11px] font-bold transition shrink-0 ${
+                                            isActive
+                                                ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
+                                                : "bg-white border border-[#F9D2BA] text-[#5E3122] hover:bg-[#F9D2BA]/30"
+                                        }`}
+                                    >
+                                        {cat.name}
+                                    </Link>
+                                );
+                            })}
                     </div>
-                </div>
+                </motion.div>
 
-                {/* KONDISI: Jika Artikel Ada vs Tidak Ditemukan (Not Found) */}
+                {/* GRID ARTIKEL ATAU NOT FOUND */}
                 {articles.length > 0 ? (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={staggerContainer}
+                        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    >
                         {articles.map((article) => (
-                            <ArticleCard key={article.id} article={article} />
+                            <motion.div key={article.id} variants={fadeUp}>
+                                <ArticleCard article={article} />
+                            </motion.div>
                         ))}
-                    </div>
+                    </motion.div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#dedbd2] bg-white py-16 px-6 text-center shadow-sm">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f3f1eb] text-[#063f2f] mb-4">
+                    <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={fadeUp}
+                        className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#F9D2BA] bg-white/60 backdrop-blur-xs py-16 px-6 text-center shadow-2xs"
+                    >
+                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F7EAE0] text-[#1D4533] mb-4 border border-[#F9D2BA]">
                             <SearchX size={26} />
                         </div>
-                        <h2 className="font-serif text-[18px] font-bold text-[#17251f]">
+                        <h2 className="font-brand text-[18px] font-bold text-[#1D4533]">
                             Artikel Tidak Ditemukan
                         </h2>
-                        <p className="mt-1 max-w-md text-[13px] text-[#666] leading-relaxed">
-                            Maaf, kata kunci pencarian atau kategori yang Anda pilih belum memiliki artikel terkait saat ini.
+                        <p className="mt-1.5 max-w-md text-[13px] text-[#5E3122]/75 leading-relaxed">
+                            Maaf, kata kunci pencarian atau kategori yang Anda
+                            pilih belum memiliki artikel terkait saat ini.
                         </p>
                         <div className="mt-6 flex items-center gap-3">
                             <Link
                                 href="/artikel"
-                                className="flex items-center gap-2 rounded-lg bg-[#063f2f] px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-[#07513c]"
+                                className="flex items-center gap-2 rounded-xl bg-[#1D4533] px-5 py-2.5 text-[12px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] shadow-xs"
                             >
                                 Lihat Semua Artikel
                             </Link>
                             <Link
                                 href="/home"
-                                className="flex items-center gap-2 rounded-lg border border-[#dedbd2] bg-white px-5 py-2.5 text-[12px] font-bold text-[#444] transition hover:bg-[#fafaf8]"
+                                className="flex items-center gap-2 rounded-xl border border-[#F9D2BA] bg-white px-5 py-2.5 text-[12px] font-bold text-[#5E3122] transition hover:bg-[#F9D2BA]/30"
                             >
                                 <Home size={14} /> Beranda
                             </Link>
                         </div>
-                    </div>
+                    </motion.div>
                 )}
             </div>
         </MainLayout>

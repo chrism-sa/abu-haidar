@@ -1,9 +1,26 @@
-import { useState, useRef, useEffect } from "react";
-import { UserRound, Search, X, ChevronDown } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import {
+    UserRound,
+    Search,
+    X,
+    BookOpen,
+    FileText,
+    Home as HomeIcon,
+    LayoutDashboard,
+} from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
+import { motion, AnimatePresence } from "framer-motion";
 import LoginModal from "../Components/LoginModal";
 import { Category } from "../types";
-import { FaYoutube, FaInstagram, FaFacebookF } from "react-icons/fa";
+import { FaYoutube, FaInstagram, FaFacebookF } from "react-icons/fa6";
+
+interface SearchArticle {
+    id: number;
+    title: string;
+    slug: string;
+    image?: string;
+    description?: string;
+}
 
 export default function MainLayout({
     children,
@@ -11,44 +28,30 @@ export default function MainLayout({
     children: React.ReactNode;
 }) {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
-    const [footerDropdownOpen, setFooterDropdownOpen] = useState(false);
     const [mobileSearchOpen, setMobileSearchOpen] = useState<boolean>(false);
 
-    const dropdownRef = useRef<HTMLDivElement>(null);
     const desktopSearchRef = useRef<HTMLDivElement>(null);
     const mobileSearchRef = useRef<HTMLDivElement>(null);
     const mobileInputRef = useRef<HTMLInputElement>(null);
 
-    const { auth, categories } = usePage().props as {
-        auth: any;
-        categories: Category[];
+    const { url } = usePage();
+    const { auth } = usePage().props as {
+        auth?: { user?: { name: string; email: string } };
+        categories?: Category[];
     };
 
     const [searchQuery, setSearchQuery] = useState<string>("");
-    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchResults, setSearchResults] = useState<SearchArticle[]>([]);
     const [isSearching, setIsSearching] = useState<boolean>(false);
 
     // Auto-focus input saat pencarian mobile dibuka
     useEffect(() => {
         if (mobileSearchOpen) {
-            mobileInputRef.current?.focus();
+            setTimeout(() => {
+                mobileInputRef.current?.focus();
+            }, 150);
         }
     }, [mobileSearchOpen]);
-
-    // Tutup dropdown footer saat klik di luar
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node)
-            ) {
-                setFooterDropdownOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     // Live Search Fetching
     useEffect(() => {
@@ -98,403 +101,558 @@ export default function MainLayout({
     const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            window.location.href = `/artikel?search=${encodeURIComponent(searchQuery)}`;
+            window.location.href = `/artikel?search=${encodeURIComponent(searchQuery.trim())}`;
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#eaf6efc0] text-[#162B22]">
+        <div className="relative min-h-screen bg-[#F7EAE0] text-[#5E3122] flex flex-col justify-between selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-20 md:pb-0">
+            {/* ======================================================== */}
+            {/* BACKGROUND: FLUID GLOWING ORBS */}
+            {/* ======================================================== */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                <motion.div
+                    animate={{
+                        x: [0, 20, -15, 0],
+                        y: [0, -20, 15, 0],
+                        scale: [1, 1.05, 0.95, 1],
+                    }}
+                    transition={{
+                        duration: 14,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                    style={{ willChange: "transform" }}
+                    className="absolute -top-[10%] -left-[10%] h-[60vw] w-[60vw] max-w-[450px] max-h-[450px] rounded-full bg-[#1D4533] opacity-[0.12] blur-[70px]"
+                />
+
+                <motion.div
+                    animate={{
+                        x: [0, -20, 20, 0],
+                        y: [0, 20, -15, 0],
+                        scale: [1, 0.95, 1.05, 1],
+                    }}
+                    transition={{
+                        duration: 16,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                    style={{ willChange: "transform" }}
+                    className="absolute -bottom-[10%] -right-[10%] h-[65vw] w-[65vw] max-w-[500px] max-h-[500px] rounded-full bg-[#F9D2BA] opacity-[0.35] blur-[80px]"
+                />
+            </div>
+
             {/* ================= HEADER ================= */}
-            <header className="sticky top-0 z-50 border-b border-[#E8E6E1] bg-white/95 backdrop-blur-md shadow-[0_4px_20px_-15px_rgba(0,0,0,0.1)]">
-                <div className="mx-auto max-w-[1140px] px-5 lg:px-0">
-                    <div className="flex h-[75px] items-center justify-between gap-4">
-                        {/* LOGO & NAMA BRAND */}
+            <header className="sticky top-0 z-40 border-b border-[#E8D9CE] bg-[#F7EAE0]/90 backdrop-blur-md shadow-2xs">
+                <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-0">
+                    <div className="flex h-[64px] sm:h-[78px] items-center justify-between gap-2.5 sm:gap-3">
+                        {/* 1. BRAND LOGO + KAPSUL */}
                         <Link
                             href="/home"
-                            className="flex shrink-0 items-center gap-3 transition-transform hover:opacity-90"
+                            className="flex shrink-0 items-center gap-2 sm:gap-3 rounded-full border border-[#F9D2BA] bg-white px-2.5 sm:px-3.5 py-1.5 shadow-2xs transition-all duration-300 hover:border-[#1D4533]/40"
                         >
                             <img
                                 src="/LOGO.png"
                                 alt="Abu Haidar"
-                                className="h-11 w-auto sm:h-12"
+                                style={{
+                                    filter: "brightness(0) saturate(100%) invert(20%) sepia(35%) saturate(1600%) hue-rotate(345deg) brightness(90%) contrast(92%)",
+                                }}
+                                className="h-8 sm:h-11 w-auto object-contain drop-shadow-2xs"
                             />
-                            <div className="hidden sm:block">
-                                <div className="font-brand text-[19px] font-bold tracking-tight leading-none text-[#0F4C3A]">
+
+                            <div className="h-6 sm:h-7 w-[1px] bg-[#5E3122]/20"></div>
+
+                            <div className="flex flex-col justify-center pr-1 sm:pr-1.5">
+                                <div className="font-brand text-[14px] sm:text-[17px] font-bold leading-none tracking-tight text-[#1D4533]">
                                     Abu Haidar
                                 </div>
-                                <div className="mt-1 text-[10px] tracking-[0.08em] text-[#6C857A] uppercase font-medium">
+                                <div className="mt-0.5 sm:mt-1 text-[7.5px] sm:text-[8.5px] font-bold tracking-[0.14em] text-[#8C5E43] uppercase">
                                     Artikel Islam & Dakwah
                                 </div>
                             </div>
                         </Link>
 
-                        {/* PENCARIAN DESKTOP */}
-                        <div
-                            className="flex-1 max-w-[450px] relative hidden md:block"
-                            ref={desktopSearchRef}
-                        >
-                            <form
-                                onSubmit={handleSearchSubmit}
-                                className="relative w-full group"
+                        {/* 2. MENU NAVIGASI DESKTOP */}
+                        <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-bold text-[#1D4533]">
+                            <Link
+                                href="/home"
+                                className={`flex items-center gap-1.5 transition ${
+                                    url === "/home" || url === "/"
+                                        ? "text-[#1D4533]"
+                                        : "text-[#5E3122]/75 hover:text-[#1D4533]"
+                                }`}
                             >
-                                <Search
-                                    size={16}
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A5B9AD] transition-colors group-focus-within:text-[#0F4C3A]"
-                                />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) =>
-                                        setSearchQuery(e.target.value)
-                                    }
-                                    placeholder="Cari artikel, tafsir, atau kajian..."
-                                    className="w-full rounded-full border border-[#E8E6E1] bg-[#F4F4F0] py-2.5 pl-11 pr-4 text-[13px] text-[#333] outline-none transition-all focus:border-[#0F4C3A] focus:bg-white focus:shadow-[0_0_0_4px_rgba(15,76,58,0.05)]"
-                                />
-                            </form>
+                                <HomeIcon size={15} />
+                                <span>Beranda</span>
+                            </Link>
+                            <Link
+                                href="/artikel"
+                                className={`flex items-center gap-1.5 transition ${
+                                    url.startsWith("/artikel")
+                                        ? "text-[#1D4533]"
+                                        : "text-[#5E3122]/75 hover:text-[#1D4533]"
+                                }`}
+                            >
+                                <BookOpen size={15} />
+                                <span>Kajian & Artikel</span>
+                            </Link>
+                            <Link
+                                href="/ebook"
+                                className={`flex items-center gap-1.5 transition ${
+                                    url.startsWith("/ebook")
+                                        ? "text-[#1D4533]"
+                                        : "text-[#5E3122]/75 hover:text-[#1D4533]"
+                                }`}
+                            >
+                                <FileText size={15} />
+                                <span>E-Book PDF</span>
+                            </Link>
+                        </nav>
 
-                            {/* DROPDOWN HASIL PENCARIAN DESKTOP */}
-                            {searchQuery.trim().length > 1 && (
-                                <div className="absolute top-full left-0 right-0 mt-3 rounded-2xl bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#E8E6E1] overflow-hidden z-50 max-h-[400px] overflow-y-auto">
-                                    {isSearching ? (
-                                        <div className="p-5 text-center text-[12px] font-medium text-[#8CA397]">
-                                            Mencari artikel...
-                                        </div>
-                                    ) : searchResults.length > 0 ? (
-                                        <div className="divide-y divide-[#F4F4F0]">
-                                            {searchResults.map((article) => (
-                                                <Link
-                                                    key={article.id}
-                                                    href={`/artikel/${article.slug}`}
-                                                    onClick={() => {
-                                                        setSearchQuery("");
-                                                        setSearchResults([]);
-                                                    }}
-                                                    className="flex items-center gap-4 p-4 hover:bg-[#FAFAF8] transition-colors"
-                                                >
-                                                    <img
-                                                        src={
-                                                            article.image ||
-                                                            "/storage/default.jpg"
-                                                        }
-                                                        alt={article.title}
-                                                        className="h-14 w-16 rounded-lg object-cover border border-[#E8E6E1]"
-                                                    />
-                                                    <div className="flex-1 min-w-0">
-                                                        <h4 className="font-brand text-[14px] font-bold text-[#162B22] truncate transition-colors hover:text-[#0F4C3A]">
-                                                            {article.title}
-                                                        </h4>
-                                                        <p className="text-[12px] text-[#6C857A] line-clamp-1 mt-1">
-                                                            {
-                                                                article.description
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="p-5 text-center text-[12px] text-[#8CA397]">
-                                            Tidak ada artikel yang ditemukan
-                                            untuk{" "}
-                                            <span className="font-bold text-[#162B22]">
-                                                "{searchQuery}"
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                        {/* 3. PENCARIAN DESKTOP & TOMBOL AKUN */}
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            {/* Input Pencarian Desktop */}
+                            <div
+                                className="relative hidden md:block w-48 lg:w-64"
+                                ref={desktopSearchRef}
+                            >
+                                <form
+                                    onSubmit={handleSearchSubmit}
+                                    className="relative w-full"
+                                >
+                                    <Search
+                                        size={14}
+                                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5E3122]/40"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        placeholder="Cari kajian..."
+                                        className="w-full rounded-full border border-[#F9D2BA] bg-white py-1.5 pl-9 pr-3.5 text-[12px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:ring-1 focus:ring-[#1D4533]/20"
+                                    />
+                                </form>
 
-                        {/* AKSI LOGIN / DASHBOARD & TOGGLE PENCARIAN MOBILE */}
-                        <div className="flex items-center gap-3">
-                            {/* Tombol Toggle Search Mobile */}
+                                {/* Dropdown Hasil Pencarian Desktop */}
+                                {searchQuery.trim().length > 1 && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-white shadow-xl border border-[#F9D2BA] overflow-hidden z-50 max-h-[350px] overflow-y-auto">
+                                        {isSearching ? (
+                                            <div className="p-4 text-center text-[12px] font-medium text-[#5E3122]/60">
+                                                Mencari artikel...
+                                            </div>
+                                        ) : searchResults.length > 0 ? (
+                                            <div className="divide-y divide-[#F9D2BA]/40">
+                                                {searchResults.map(
+                                                    (article) => (
+                                                        <Link
+                                                            key={article.id}
+                                                            href={`/artikel/${article.slug}`}
+                                                            onClick={() => {
+                                                                setSearchQuery(
+                                                                    "",
+                                                                );
+                                                                setSearchResults(
+                                                                    [],
+                                                                );
+                                                            }}
+                                                            className="flex items-center gap-3 p-3 hover:bg-[#F9D2BA]/20 transition-colors"
+                                                        >
+                                                            <img
+                                                                src={
+                                                                    article.image ||
+                                                                    "/storage/default.jpg"
+                                                                }
+                                                                alt={
+                                                                    article.title
+                                                                }
+                                                                className="h-10 w-12 rounded-lg object-cover border border-[#F9D2BA]"
+                                                            />
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-brand text-[13px] font-bold text-[#1D4533] truncate">
+                                                                    {
+                                                                        article.title
+                                                                    }
+                                                                </h4>
+                                                                <p className="text-[11px] text-[#5E3122]/70 line-clamp-1">
+                                                                    {
+                                                                        article.description
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                    ),
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 text-center text-[12px] text-[#5E3122]/60">
+                                                Tidak ada artikel yang cocok.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Tombol Toggle Pencarian Mobile */}
                             <button
                                 type="button"
                                 onClick={() =>
                                     setMobileSearchOpen(!mobileSearchOpen)
                                 }
-                                className="md:hidden flex h-10 w-10 items-center justify-center rounded-full bg-[#F4F4F0] text-[#6C857A] transition hover:bg-[#E8E6E1] hover:text-[#0F4C3A]"
-                                aria-label="Toggle Pencarian Mobile"
+                                className="md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#5E3122] border border-[#F9D2BA] transition hover:bg-[#F9D2BA]/30 cursor-pointer shadow-2xs"
+                                aria-label="Cari Artikel"
                             >
                                 {mobileSearchOpen ? (
-                                    <X size={18} />
+                                    <X size={16} />
                                 ) : (
-                                    <Search size={18} />
+                                    <Search size={16} />
                                 )}
                             </button>
 
+                            {/* Tombol Dashboard / Login Admin (Desktop & Mobile) */}
                             {auth?.user ? (
                                 <Link
                                     href="/admin/dashboard"
-                                    className="flex items-center gap-2 rounded-full border-2 border-[#0F4C3A] bg-white px-5 py-2 text-[12px] font-bold text-[#0F4C3A] hover:bg-[#0F4C3A] hover:text-white transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] shadow-2xs"
                                 >
-                                    <UserRound size={14} />
-                                    <span className="hidden sm:inline">
-                                        Dashboard
-                                    </span>
+                                    <LayoutDashboard size={13} />
+                                    <span>Dashboard</span>
                                 </Link>
                             ) : (
                                 <button
+                                    type="button"
                                     onClick={() => setIsLoginModalOpen(true)}
-                                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#E8E6E1] bg-white text-[#6C857A] hover:border-[#0F4C3A] hover:bg-[#0F4C3A] hover:text-white transition-all shadow-sm"
+                                    className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-[#F9D2BA] bg-white text-[#5E3122] hover:border-[#1D4533] hover:bg-[#1D4533] hover:text-[#F7EAE0] transition-all shadow-2xs cursor-pointer"
                                     title="Login Admin"
                                 >
-                                    <UserRound size={16} />
+                                    <UserRound size={15} />
                                 </button>
                             )}
                         </div>
                     </div>
 
-                    {/* ================= BAR PENCARIAN MODE MOBILE ================= */}
-                    {mobileSearchOpen && (
-                        <div
-                            ref={mobileSearchRef}
-                            className="md:hidden pb-4 pt-1 relative"
-                        >
-                            <form
-                                onSubmit={handleSearchSubmit}
-                                className="relative w-full flex items-center"
+                    {/* ================= PENCARIAN MOBILE DRAWER ================= */}
+                    <AnimatePresence>
+                        {mobileSearchOpen && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                ref={mobileSearchRef}
+                                className="md:hidden pb-3 pt-1 border-t border-[#E8D9CE] overflow-hidden"
                             >
-                                <Search
-                                    size={16}
-                                    className="absolute left-4 text-[#A5B9AD]"
-                                />
-                                <input
-                                    ref={mobileInputRef}
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) =>
-                                        setSearchQuery(e.target.value)
-                                    }
-                                    placeholder="Cari artikel, kajian, atau tafsir..."
-                                    className="w-full rounded-full border border-[#E8E6E1] bg-[#F4F4F0] py-2.5 pl-11 pr-10 text-[13px] text-[#333] outline-none focus:border-[#0F4C3A] focus:bg-white"
-                                />
-                                {searchQuery && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSearchQuery("");
-                                            setSearchResults([]);
-                                        }}
-                                        className="absolute right-3 text-[#A5B9AD] hover:text-[#162B22]"
-                                    >
-                                        <X size={15} />
-                                    </button>
-                                )}
-                            </form>
-
-                            {/* HASIL PENCARIAN MOBILE */}
-                            {searchQuery.trim().length > 1 && (
-                                <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-white shadow-xl border border-[#E8E6E1] overflow-hidden z-50 max-h-[350px] overflow-y-auto">
-                                    {isSearching ? (
-                                        <div className="p-4 text-center text-[12px] font-medium text-[#8CA397]">
-                                            Mencari artikel...
-                                        </div>
-                                    ) : searchResults.length > 0 ? (
-                                        <div className="divide-y divide-[#F4F4F0]">
-                                            {searchResults.map((article) => (
-                                                <Link
-                                                    key={article.id}
-                                                    href={`/artikel/${article.slug}`}
-                                                    onClick={() => {
-                                                        setSearchQuery("");
-                                                        setSearchResults([]);
-                                                        setMobileSearchOpen(
-                                                            false,
-                                                        );
-                                                    }}
-                                                    className="flex items-center gap-3 p-3.5 hover:bg-[#FAFAF8] transition-colors"
-                                                >
-                                                    <img
-                                                        src={
-                                                            article.image ||
-                                                            "/storage/default.jpg"
-                                                        }
-                                                        alt={article.title}
-                                                        className="h-12 w-14 rounded-lg object-cover border border-[#E8E6E1]"
-                                                    />
-                                                    <div className="flex-1 min-w-0">
-                                                        <h4 className="font-brand text-[13px] font-bold text-[#162B22] truncate">
-                                                            {article.title}
-                                                        </h4>
-                                                        <p className="text-[11px] text-[#6C857A] line-clamp-1 mt-0.5">
-                                                            {
-                                                                article.description
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="p-4 text-center text-[12px] text-[#8CA397]">
-                                            Tidak ditemukan hasil untuk{" "}
-                                            <span className="font-bold text-[#162B22]">
-                                                "{searchQuery}"
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </header>
-
-            {/* ================= MAIN KONTEN ================= */}
-            <main className="mx-auto max-w-[1140px] px-5 lg:px-0 py-10 lg:py-14 min-h-[60vh]">
-                {children}
-            </main>
-
-            {/* ================= FOOTER ================= */}
-            <footer className="bg-[#0A382A] text-white pt-16 pb-8 border-t border-[#072B20]">
-                <div className="mx-auto max-w-[1140px] px-5 lg:px-0 grid gap-10 md:grid-cols-3">
-                    {/* INFO BRAND */}
-                    <div>
-                        <div className="flex items-center gap-4 mb-2">
-                            <div className="shrink-0">
-                                <img
-                                    src="/LOGO.png"
-                                    alt="Abu Haidar"
-                                    className="h-12 w-auto drop-shadow-md"
-                                />
-                            </div>
-                            <div className="h-10 w-[1px] bg-gradient-to-b from-[#0A382A] via-[#C5A059]/40 to-[#0A382A]"></div>
-                            <div className="flex flex-col justify-center">
-                                <div className="font-brand text-[20px] font-bold tracking-tight text-[#C5A059] drop-shadow-sm">
-                                    Abu Haidar
-                                </div>
-                                <div className="mt-1 text-[9px] tracking-[0.2em] text-[#E8E6E1]/60 uppercase font-medium">
-                                    Artikel Islam & Dakwah
-                                </div>
-                            </div>
-                        </div>
-
-                        <p className="mt-6 text-[13px] text-white/70 leading-relaxed max-w-sm">
-                            Media dakwah dan artikel Islam terpercaya yang
-                            menyajikan pembahasan seputar Al-Qur'an, hadis,
-                            akidah, fiqih, sirah, dan panduan harian kehidupan
-                            seorang muslim.
-                        </p>
-                    </div>
-
-                    {/* TAUTAN CEPAT & KATEGORI */}
-                    <div>
-                        <h4 className="font-brand text-[14px] font-bold tracking-wider uppercase text-[#C5A059] mb-4">
-                            Tautan Cepat & Kategori
-                        </h4>
-                        <ul className="space-y-3 text-[13px] text-white/80">
-                            <li>
-                                <Link
-                                    href="/home"
-                                    className="flex items-center gap-2 hover:text-[#C5A059] transition-colors"
+                                <form
+                                    onSubmit={handleSearchSubmit}
+                                    className="relative w-full flex items-center"
                                 >
-                                    Beranda Utama
-                                </Link>
-                            </li>
-
-                            <div className="my-2 border-t border-white/10" />
-
-                            <li className="relative" ref={dropdownRef}>
-                                <button
-                                    onClick={() =>
-                                        setFooterDropdownOpen(
-                                            !footerDropdownOpen,
-                                        )
-                                    }
-                                    className="flex w-full items-center justify-between rounded-xl border border-white/20 bg-[#072B20] px-4 py-2.5 text-[12px] font-medium text-white/90 transition hover:border-[#C5A059]"
-                                >
-                                    <span>Pilih Kategori Artikel</span>
-                                    <ChevronDown
-                                        size={16}
-                                        className={`transition-transform duration-300 ${
-                                            footerDropdownOpen
-                                                ? "rotate-180 text-[#C5A059]"
-                                                : ""
-                                        }`}
+                                    <Search
+                                        size={15}
+                                        className="absolute left-3.5 text-[#5E3122]/40"
                                     />
-                                </button>
+                                    <input
+                                        ref={mobileInputRef}
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        placeholder="Ketik judul artikel / kajian..."
+                                        className="w-full rounded-full border border-[#F9D2BA] bg-white py-2 pl-9 pr-9 text-[12px] text-[#5E3122] outline-none focus:border-[#1D4533]"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearchQuery("");
+                                                setSearchResults([]);
+                                            }}
+                                            className="absolute right-3 text-[#5E3122]/40"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </form>
 
-                                {footerDropdownOpen && (
-                                    <div className="absolute bottom-full left-0 right-0 mb-3 rounded-xl bg-[#072B20] border border-[#0F4C3A] shadow-2xl overflow-hidden z-50 py-2 max-h-[240px] overflow-y-auto">
-                                        {categories && categories.length > 0 ? (
-                                            categories.map((cat) => (
-                                                <Link
-                                                    key={cat.id}
-                                                    href={`/kategori/${cat.slug}`}
-                                                    onClick={() =>
-                                                        setFooterDropdownOpen(
-                                                            false,
-                                                        )
-                                                    }
-                                                    className="block px-5 py-2.5 text-[13px] text-white/80 hover:bg-[#0F4C3A] hover:text-[#C5A059] transition-colors"
-                                                >
-                                                    {cat.name}
-                                                </Link>
-                                            ))
+                                {/* Hasil Pencarian Mobile */}
+                                {searchQuery.trim().length > 1 && (
+                                    <div className="mt-2 rounded-xl bg-white shadow-lg border border-[#F9D2BA] overflow-hidden max-h-[250px] overflow-y-auto">
+                                        {isSearching ? (
+                                            <div className="p-3 text-center text-[11px] text-[#5E3122]/60">
+                                                Mencari artikel...
+                                            </div>
+                                        ) : searchResults.length > 0 ? (
+                                            <div className="divide-y divide-[#F9D2BA]/40">
+                                                {searchResults.map(
+                                                    (article) => (
+                                                        <Link
+                                                            key={article.id}
+                                                            href={`/artikel/${article.slug}`}
+                                                            onClick={() => {
+                                                                setSearchQuery(
+                                                                    "",
+                                                                );
+                                                                setSearchResults(
+                                                                    [],
+                                                                );
+                                                                setMobileSearchOpen(
+                                                                    false,
+                                                                );
+                                                            }}
+                                                            className="flex items-center gap-2.5 p-2.5 hover:bg-[#F9D2BA]/20 transition-colors"
+                                                        >
+                                                            <img
+                                                                src={
+                                                                    article.image ||
+                                                                    "/storage/default.jpg"
+                                                                }
+                                                                alt={
+                                                                    article.title
+                                                                }
+                                                                className="h-9 w-11 rounded object-cover border border-[#F9D2BA]"
+                                                            />
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-brand text-[12px] font-bold text-[#1D4533] truncate">
+                                                                    {
+                                                                        article.title
+                                                                    }
+                                                                </h4>
+                                                                <p className="text-[10px] text-[#5E3122]/70 line-clamp-1">
+                                                                    {
+                                                                        article.description
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                    ),
+                                                )}
+                                            </div>
                                         ) : (
-                                            <div className="px-5 py-3 text-[12px] text-white/50 text-center">
-                                                Tidak ada kategori
+                                            <div className="p-3 text-center text-[11px] text-[#5E3122]/60">
+                                                Tidak ditemukan hasil.
                                             </div>
                                         )}
                                     </div>
                                 )}
-                            </li>
-                        </ul>
-                    </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </header>
 
-                    {/* SOSIAL MEDIA */}
-                    <div>
-                        <h4 className="font-brand text-[14px] font-bold tracking-wider uppercase text-[#C5A059] mb-4">
-                            Media Sosial & Saluran
-                        </h4>
-                        <p className="text-[13px] text-white/70 mb-5 leading-relaxed">
-                            Ikuti perkembangan kajian dan sebaran artikel
-                            terbaru kami melalui kanal resmi di bawah ini:
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <a
-                                href="https://youtube.com/SHOLATTV"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/90 transition-all hover:bg-[#FF0000] hover:text-white hover:scale-110"
-                                aria-label="YouTube"
-                            >
-                                <FaYoutube size={18} />
-                            </a>
-                            <a
-                                href="https://instagram.com/sholat.tv"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/90 transition-all hover:bg-[#E4405F] hover:text-white hover:scale-110"
-                                aria-label="Instagram"
-                            >
-                                <FaInstagram size={18} />
-                            </a>
-                            <a
-                                href="https://facebook.com/sholattv"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/90 transition-all hover:bg-[#1877F2] hover:text-white hover:scale-110"
-                                aria-label="Facebook"
-                            >
-                                <FaFacebookF size={18} />
-                            </a>
+            {/* ================= MAIN KONTEN ================= */}
+            <main className="relative z-10 mx-auto w-full max-w-[1140px] px-4 sm:px-6 lg:px-0 py-6 sm:py-10 flex-grow">
+                {children}
+            </main>
+
+            {/* ================= FOOTER ================= */}
+            <footer className="relative z-10 bg-[#F7EAE0] text-[#3A1C12] pt-12 sm:pt-16 pb-12 border-t border-[#DFC9BC] mt-12 sm:mt-16">
+                <div className="mx-auto max-w-[1140px] px-5 sm:px-6 lg:px-0">
+                    {/* GRID UTAMA (Mobile: Stack 1 Kolom Rata Garis, Desktop: 12-Kolom Seimbang) */}
+                    <div className="grid gap-10 md:gap-12 md:grid-cols-12 pb-10 sm:pb-12 border-b border-[#DFC9BC]">
+                        {/* ================= 1. BRAND INFO ================= */}
+                        <div className="md:col-span-5 flex flex-col justify-start">
+                            {/* Header Logo + Nama */}
+                            <div className="flex items-center gap-3.5 mb-3.5">
+                                <img
+                                    src="/LOGO.png"
+                                    alt="Abu Haidar"
+                                    style={{
+                                        filter: "brightness(0) saturate(100%) invert(18%) sepia(45%) saturate(1800%) hue-rotate(345deg) brightness(85%) contrast(100%)",
+                                    }}
+                                    className="h-11 sm:h-12 w-auto object-contain drop-shadow-2xs shrink-0"
+                                />
+
+                                {/* Garis Pembatas Vertikal */}
+                                <div className="h-8 w-[2px] bg-[#143325]/40 shrink-0"></div>
+
+                                {/* Teks Nama Brand */}
+                                <div>
+                                    <div className="font-brand text-[19px] sm:text-[21px] font-extrabold text-[#143325] leading-none tracking-tight">
+                                        Abu Haidar
+                                    </div>
+                                    <div className="mt-1 text-[8.5px] sm:text-[9.5px] font-bold tracking-[0.18em] text-[#6E3E26] uppercase">
+                                        Artikel Islam & Dakwah
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Deskripsi Brand: Rata garis di Mobile, Normal di Desktop */}
+                            <p className="pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0 text-[13px] sm:text-[13.5px] text-[#3A1C12] font-medium leading-relaxed max-w-sm">
+                                Media dakwah dan risalah Islam terpercaya yang
+                                menyajikan pembahasan seputar Al-Qur'an, hadis
+                                shahih, akidah, fiqih ibadah, dan panduan amalan
+                                harian seorang muslim.
+                            </p>
+                        </div>
+
+                        {/* ================= 2. TAUTAN CEPAT ================= */}
+                        {/* pl hanya aktif di mobile agar sejajar lurus, di desktop md:pl-0 */}
+                        <div className="md:col-span-3 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0">
+                            <h4 className="text-[13px] sm:text-[13.5px] font-extrabold tracking-[0.16em] uppercase text-[#143325] mb-3.5 flex items-center gap-2">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#143325]"></span>
+                                Tautan Cepat
+                            </h4>
+                            <ul className="space-y-2.5 text-[13px] sm:text-[13.5px]">
+                                <li>
+                                    <Link
+                                        href="/home"
+                                        className="text-[#3A1C12] hover:text-[#143325] hover:translate-x-1 font-semibold transition-all inline-flex items-center gap-1.5"
+                                    >
+                                        <span className="text-[#6E3E26] font-bold text-xs">
+                                            ›
+                                        </span>
+                                        Beranda Utama
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link
+                                        href="/artikel"
+                                        className="text-[#3A1C12] hover:text-[#143325] hover:translate-x-1 font-semibold transition-all inline-flex items-center gap-1.5"
+                                    >
+                                        <span className="text-[#6E3E26] font-bold text-xs">
+                                            ›
+                                        </span>
+                                        Semua Artikel Kajian
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link
+                                        href="/ebook"
+                                        className="text-[#3A1C12] hover:text-[#143325] hover:translate-x-1 font-semibold transition-all inline-flex items-center gap-1.5"
+                                    >
+                                        <span className="text-[#6E3E26] font-bold text-xs">
+                                            ›
+                                        </span>
+                                        E-Book & Risalah PDF
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* ================= 3. SALURAN MEDIA DAKWAH ================= */}
+                        {/* pl hanya aktif di mobile agar sejajar lurus, di desktop md:pl-0 */}
+                        <div className="md:col-span-4 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0">
+                            <h4 className="text-[13px] sm:text-[13.5px] font-extrabold tracking-[0.16em] uppercase text-[#143325] mb-3.5 flex items-center gap-2">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#143325]"></span>
+                                Saluran Media Dakwah
+                            </h4>
+                            <p className="text-[12.5px] sm:text-[13px] text-[#3A1C12] font-medium mb-4 leading-relaxed">
+                                Ikuti siaran kajian, update naskah ilmiah, dan
+                                faidah harian melalui saluran resmi kami:
+                            </p>
+
+                            <div className="flex items-center gap-3">
+                                <a
+                                    href="https://youtube.com/SHOLATTV"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#FF0000] hover:text-white hover:border-[#FF0000] hover:-translate-y-0.5 hover:shadow-md"
+                                    aria-label="YouTube"
+                                >
+                                    <FaYoutube size={17} />
+                                </a>
+                                <a
+                                    href="https://instagram.com/sholat.tv"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#E4405F] hover:text-white hover:border-[#E4405F] hover:-translate-y-0.5 hover:shadow-md"
+                                    aria-label="Instagram"
+                                >
+                                    <FaInstagram size={17} />
+                                </a>
+                                <a
+                                    href="https://facebook.com/sholattv"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] hover:-translate-y-0.5 hover:shadow-md"
+                                    aria-label="Facebook"
+                                >
+                                    <FaFacebookF size={16} />
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="mx-auto max-w-[1140px] mt-16 border-t border-white/10 pt-6 px-5 lg:px-0 flex flex-col sm:flex-row items-center justify-between text-[12px] text-white/50 gap-4">
-                    <p>© 2026 Abu Haidar. Hak Cipta Dilindungi.</p>
-                    <p className="flex items-center gap-1.5">
-                        Dibuat khusus untuk{" "}
-                        <span className="font-bold text-[#C5A059]">
-                            Abu Haidar Official
-                        </span>
-                    </p>
+                    {/* ================= 4. COPYRIGHT ================= */}
+                    <div className="mt-6 sm:mt-8 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0 flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11.5px] sm:text-[12px] text-[#4A2619] font-medium gap-2">
+                        <p>© 2026 Abu Haidar. Hak Cipta Dilindungi.</p>
+                        <p className="flex items-center gap-1.5">
+                            Dibuat khusus untuk{" "}
+                            <span className="font-extrabold text-[#143325]">
+                                Abu Haidar Official
+                            </span>
+                        </p>
+                    </div>
                 </div>
             </footer>
 
+            {/* ================= BOTTOM BAR MOBILE (FLOATING IOS GLASS PILL) ================= */}
+            <div className="md:hidden fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+                <nav className="pointer-events-auto w-full max-w-[340px] rounded-full border border-white/70 bg-white/65 px-3 py-2 shadow-[0_8px_32px_0_rgba(94,49,34,0.12)] backdrop-blur-xl transition-all duration-300">
+                    <div className="flex items-center justify-between">
+                        {/* 1. BERANDA */}
+                        <Link
+                            href="/home"
+                            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-1.5 transition-all duration-300 ${
+                                url === "/home" || url === "/"
+                                    ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
+                                    : "text-[#5E3122]/70 hover:text-[#1D4533] active:scale-95"
+                            }`}
+                        >
+                            <HomeIcon
+                                size={17}
+                                strokeWidth={
+                                    url === "/home" || url === "/" ? 2.5 : 2
+                                }
+                            />
+                            <span className="text-[10px] font-semibold leading-none tracking-tight">
+                                Beranda
+                            </span>
+                        </Link>
+
+                        {/* 2. ARTIKEL */}
+                        <Link
+                            href="/artikel"
+                            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-1.5 transition-all duration-300 ${
+                                url.startsWith("/artikel")
+                                    ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
+                                    : "text-[#5E3122]/70 hover:text-[#1D4533] active:scale-95"
+                            }`}
+                        >
+                            <BookOpen
+                                size={17}
+                                strokeWidth={
+                                    url.startsWith("/artikel") ? 2.5 : 2
+                                }
+                            />
+                            <span className="text-[10px] font-semibold leading-none tracking-tight">
+                                Artikel
+                            </span>
+                        </Link>
+
+                        {/* 3. E-BOOK */}
+                        <Link
+                            href="/ebook"
+                            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-1.5 transition-all duration-300 ${
+                                url.startsWith("/ebook")
+                                    ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
+                                    : "text-[#5E3122]/70 hover:text-[#1D4533] active:scale-95"
+                            }`}
+                        >
+                            <FileText
+                                size={17}
+                                strokeWidth={url.startsWith("/ebook") ? 2.5 : 2}
+                            />
+                            <span className="text-[10px] font-semibold leading-none tracking-tight">
+                                E-Book
+                            </span>
+                        </Link>
+                    </div>
+                </nav>
+            </div>
+            {/* MODAL LOGIN */}
             <LoginModal
                 isOpen={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}

@@ -40,6 +40,21 @@ FontStyle.whitelist = [
 ];
 Quill.register(FontStyle, true);
 
+// 2. Daftarkan Whitelist Ukuran Font Menggunakan Style Attributor (Pixel)
+const SizeStyle = Quill.import("attributors/style/size") as any;
+SizeStyle.whitelist = [
+    "12px",
+    "14px",
+    "16px",
+    "18px",
+    "20px",
+    "24px",
+    "28px",
+    "32px",
+    "36px",
+];
+Quill.register(SizeStyle, true);
+
 // Daftarkan Direction Attributor untuk RTL
 const DirectionStyle = Quill.import("attributors/style/direction") as any;
 Quill.register(DirectionStyle, true);
@@ -55,19 +70,6 @@ const getYouTubeId = (url: string | null | undefined) => {
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
 };
-
-const fontOptions = [
-    { label: "Amiri (Qur'anic / Klasik)", value: "font-amiri" },
-    { label: "Tajawal (Modern & Bersih)", value: "font-tajawal" },
-    { label: "Cairo (Website Modern)", value: "font-cairo" },
-    { label: "Almarai (Teks Panjang / Rapi)", value: "font-almarai" },
-    {
-        label: "Scheherazade New (Naskh Tradisional)",
-        value: "font-scheherazade",
-    },
-    { label: "Adobe Naskh (Lokal)", value: "font-adobe-naskh" },
-    { label: "Al Jazeera (Lokal)", value: "font-al-jazeera" },
-];
 
 interface CreateProps {
     categories: Category[];
@@ -94,10 +96,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    const [arabicFont, setArabicFont] = useState<string>("font-amiri");
-
     // Form Inertia
-    const { data, setData, post, processing, transform } = useForm({
+    const { data, setData, post, processing, transform, errors } = useForm({
         title: "",
         category_id: categories[0]?.id || "",
         image_file: null as File | null,
@@ -224,10 +224,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
+    // Quill toolbar dengan Font & Size
     const quillModules = useMemo(
         () => ({
             toolbar: [
                 [{ font: FontStyle.whitelist }],
+                [{ size: SizeStyle.whitelist }],
                 [{ header: [2, 3, 4, false] }],
                 ["bold", "italic", "underline", "strike"],
                 [{ color: [] }, { background: [] }],
@@ -260,6 +262,14 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Cek apakah editor kosong (mengabaikan tag HTML bawaan quill)
+        const strippedContent = data.content.replace(/<[^>]*>?/gm, "").trim();
+        if (!strippedContent) {
+            alert("Mohon isi naskah artikel kajian terlebih dahulu!");
+            return;
+        }
+
         post("/admin/articles", {
             forceFormData: true,
         });
@@ -269,20 +279,20 @@ export default function ArticleCreate({ categories }: CreateProps) {
         imageSourceType === "youtube" ? getYouTubeId(data.image_url) : null;
 
     return (
-        <div className="min-h-screen bg-[#eaf6efc0] text-[#162B22] selection:bg-[#0F4C3A] selection:text-white pb-16">
+        <div className="min-h-screen bg-[#F7EAE0] text-[#5E3122] selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-16">
             <Head title="Tulis Artikel - Abu Haidar" />
 
-            <header className="sticky top-0 z-30 border-b border-[#E0EAE3] bg-white/90 backdrop-blur-md shadow-xs">
+            <header className="sticky top-0 z-30 border-b border-[#F9D2BA] bg-[#F7EAE0]/95 backdrop-blur-md shadow-xs">
                 <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4">
                     <div className="flex items-center gap-3 min-w-0">
                         <Link
                             href="/admin/articles"
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E0EAE3] bg-white text-[#555] transition hover:bg-[#F2F7F4] shrink-0"
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#F9D2BA] bg-white text-[#5E3122] transition hover:bg-[#F9D2BA]/30 shrink-0"
                             aria-label="Kembali"
                         >
                             <ArrowLeft size={18} />
                         </Link>
-                        <h1 className="font-brand text-[16px] sm:text-[18px] font-bold text-[#111] truncate max-w-sm">
+                        <h1 className="font-brand text-[16px] sm:text-[18px] font-bold text-[#1D4533] truncate max-w-sm">
                             Editor Artikel Dakwah
                         </h1>
                     </div>
@@ -291,7 +301,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         type="button"
                         onClick={handleSubmit}
                         disabled={processing}
-                        className="flex items-center gap-1.5 rounded-full bg-[#0F4C3A] px-4 sm:px-5 py-2 text-[12px] sm:text-[13px] font-bold text-white shadow-xs transition hover:bg-[#0a382a] disabled:opacity-50 cursor-pointer"
+                        className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-4 sm:px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-xs transition hover:bg-[#143325] disabled:opacity-50 cursor-pointer"
                     >
                         <Save size={15} /> <span>Simpan & Publikasikan</span>
                     </button>
@@ -304,10 +314,10 @@ export default function ArticleCreate({ categories }: CreateProps) {
                     className="space-y-6"
                     encType="multipart/form-data"
                 >
-                    <div className="rounded-2xl border border-[#E0EAE3] bg-white p-5 sm:p-8 shadow-xs space-y-5">
+                    <div className="rounded-2xl border border-[#F9D2BA] bg-white p-5 sm:p-8 shadow-xs space-y-5">
                         {/* Judul Artikel */}
                         <div>
-                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#555] mb-1.5">
+                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5">
                                 Judul Artikel
                             </label>
                             <input
@@ -317,13 +327,13 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     setData("title", e.target.value)
                                 }
                                 placeholder="Ketik judul kajian di sini..."
-                                className="w-full rounded-xl border border-[#E0EAE3] bg-[#FAFAF8] px-4 py-2.5 sm:py-3 text-[15px] sm:text-[16px] font-brand font-bold focus:border-[#0F4C3A] focus:bg-white focus:outline-none"
+                                className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 sm:py-3 text-[15px] sm:text-[16px] font-brand font-bold text-[#1D4533] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             />
                         </div>
 
                         {/* Kategori */}
                         <div>
-                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#555] mb-1.5">
+                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5">
                                 Kategori
                             </label>
                             <select
@@ -334,7 +344,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         Number(e.target.value),
                                     )
                                 }
-                                className="w-full rounded-xl border border-[#E0EAE3] bg-[#FAFAF8] px-4 py-2.5 sm:py-3 text-[13px] sm:text-[14px] focus:border-[#0F4C3A] focus:bg-white focus:outline-none"
+                                className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 sm:py-3 text-[13px] sm:text-[14px] text-[#5E3122] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             >
                                 {categories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>
@@ -345,22 +355,22 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         </div>
 
                         {/* GAMBAR SAMPUL SUPPORT YOUTUBE */}
-                        <div className="space-y-3 rounded-xl border border-[#E0EAE3] bg-[#F9FBF9] p-4">
+                        <div className="space-y-3 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] p-4">
                             <div className="flex items-center justify-between flex-wrap gap-2">
-                                <label className="text-[12px] font-bold uppercase tracking-wider font-brand text-[#555] flex items-center gap-2">
+                                <label className="text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] flex items-center gap-2">
                                     <ImageIcon
                                         size={16}
-                                        className="text-[#0F4C3A]"
+                                        className="text-[#1D4533]"
                                     />{" "}
                                     Gambar / Video Sampul
                                 </label>
-                                <div className="flex rounded-lg border border-[#E0EAE3] bg-white p-0.5 text-[11px] font-bold">
+                                <div className="flex rounded-lg border border-[#F9D2BA] bg-white p-0.5 text-[11px] font-bold">
                                     <button
                                         type="button"
                                         onClick={() =>
                                             setImageSourceType("file")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "file" ? "bg-[#0F4C3A] text-white" : "text-[#777]"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "file" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
                                     >
                                         <Upload size={12} /> Upload
                                     </button>
@@ -369,7 +379,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         onClick={() =>
                                             setImageSourceType("url")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "url" ? "bg-[#0F4C3A] text-white" : "text-[#777]"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "url" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
                                     >
                                         <Link2 size={12} /> Tautan
                                     </button>
@@ -378,7 +388,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         onClick={() =>
                                             setImageSourceType("youtube")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "youtube" ? "bg-red-600 text-white" : "text-[#777]"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "youtube" ? "bg-red-600 text-white" : "text-[#5E3122]/70"}`}
                                     >
                                         <FaYoutube size={14} /> YouTube
                                     </button>
@@ -391,9 +401,9 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         type="file"
                                         accept="image/*"
                                         onChange={handleFileSelect}
-                                        className="w-full text-[13px] text-[#555] file:mr-4 file:rounded-lg file:border-0 file:bg-[#EBF1ED] file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#0F4C3A] hover:file:bg-[#e0e8e4] cursor-pointer"
+                                        className="w-full text-[13px] text-[#5E3122] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F9D2BA]/40 file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#1D4533] hover:file:bg-[#F9D2BA]/60 cursor-pointer"
                                     />
-                                    <p className="mt-1 text-[11px] text-[#888]">
+                                    <p className="mt-1 text-[11px] text-[#5E3122]/60">
                                         Maksimal ukuran gambar 2 MB.
                                     </p>
                                 </div>
@@ -409,10 +419,10 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             ? "Contoh: https://www.youtube.com/watch?v=..."
                                             : "https://domain.com/gambar-artikel.jpg"
                                     }
-                                    className={`w-full rounded-xl border border-[#E0EAE3] bg-white px-4 py-2.5 text-[13px] focus:outline-none ${
+                                    className={`w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2.5 text-[13px] text-[#5E3122] focus:outline-none ${
                                         imageSourceType === "youtube"
                                             ? "focus:border-red-600"
-                                            : "focus:border-[#0F4C3A]"
+                                            : "focus:border-[#1D4533]"
                                     }`}
                                 />
                             )}
@@ -428,7 +438,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 </div>
                             ) : imageSourceType !== "youtube" &&
                               imagePreview ? (
-                                <div className="mt-3 relative h-44 w-full max-w-sm overflow-hidden rounded-xl border border-[#E0EAE3] group bg-[#f0eee9]">
+                                <div className="mt-3 relative h-44 w-full max-w-sm overflow-hidden rounded-xl border border-[#F9D2BA] group bg-[#F7EAE0]">
                                     <img
                                         src={imagePreview}
                                         alt="Thumbnail Preview"
@@ -454,11 +464,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         {cropModalOpen && tempImageSrc && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
                                 <div className="w-full max-w-2xl rounded-2xl bg-white p-5 sm:p-6 shadow-2xl space-y-4">
-                                    <div className="flex items-center justify-between border-b border-[#E0EAE3] pb-3">
-                                        <h3 className="font-brand text-[16px] font-bold text-[#162B22] flex items-center gap-2">
+                                    <div className="flex items-center justify-between border-b border-[#F9D2BA] pb-3">
+                                        <h3 className="font-brand text-[16px] font-bold text-[#1D4533] flex items-center gap-2">
                                             <Crop
                                                 size={18}
-                                                className="text-[#0F4C3A]"
+                                                className="text-[#1D4533]"
                                             />{" "}
                                             Sesuaikan Gambar Sampul
                                         </h3>
@@ -467,7 +477,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onClick={() =>
                                                 setCropModalOpen(false)
                                             }
-                                            className="text-[#777] hover:text-black"
+                                            className="text-[#5E3122]/60 hover:text-black"
                                         >
                                             <X size={18} />
                                         </button>
@@ -493,7 +503,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     <div className="flex items-center gap-3 px-2">
                                         <ZoomIn
                                             size={16}
-                                            className="text-[#777]"
+                                            className="text-[#5E3122]/60"
                                         />
                                         <input
                                             type="range"
@@ -504,7 +514,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onChange={(e) =>
                                                 setZoom(Number(e.target.value))
                                             }
-                                            className="w-full h-1.5 bg-[#E0EAE3] rounded-lg appearance-none cursor-pointer accent-[#0F4C3A]"
+                                            className="w-full h-1.5 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
                                         />
                                     </div>
                                     <div className="flex justify-end gap-2.5 pt-2">
@@ -513,14 +523,14 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onClick={() =>
                                                 setCropModalOpen(false)
                                             }
-                                            className="rounded-xl border border-[#E0EAE3] px-4 py-2 text-[12px] sm:text-[13px] font-bold text-[#555] hover:bg-[#F2F7F4]"
+                                            className="rounded-xl border border-[#F9D2BA] px-4 py-2 text-[12px] sm:text-[13px] font-bold text-[#5E3122] hover:bg-[#F9D2BA]/30"
                                         >
                                             Batal
                                         </button>
                                         <button
                                             type="button"
                                             onClick={handleSaveCrop}
-                                            className="flex items-center gap-1.5 rounded-xl bg-[#0F4C3A] px-5 py-2 text-[12px] sm:text-[13px] font-bold text-white hover:bg-[#0a382a]"
+                                            className="flex items-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] hover:bg-[#143325]"
                                         >
                                             <Check size={16} /> Terapkan
                                             Potongan
@@ -532,20 +542,20 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
                         {/* BAGIAN TAFSIR & QUOTE (TEKS/GAMBAR) */}
                         {isTafsirCategory && (
-                            <div className="space-y-4 rounded-xl border border-[#0F4C3A]/20 bg-[#F4F9F6] p-4 sm:p-5">
-                                <div className="flex items-center justify-between border-b border-[#0F4C3A]/10 pb-3 flex-wrap gap-2">
-                                    <h4 className="text-[13px] font-bold font-brand text-[#0F4C3A] flex items-center gap-2">
-                                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0F4C3A] text-[10px] text-white">
+                            <div className="space-y-4 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] p-4 sm:p-5">
+                                <div className="flex items-center justify-between border-b border-[#F9D2BA] pb-3 flex-wrap gap-2">
+                                    <h4 className="text-[13px] font-bold font-brand text-[#1D4533] flex items-center gap-2">
+                                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D4533] text-[10px] text-[#F7EAE0]">
                                             ✓
                                         </span>
                                         Kutipan Tafsir Ayat
                                     </h4>
 
-                                    <div className="flex rounded-lg border border-[#E0EAE3] bg-white p-0.5 text-[11px] font-bold">
+                                    <div className="flex rounded-lg border border-[#F9D2BA] bg-white p-0.5 text-[11px] font-bold">
                                         <button
                                             type="button"
                                             onClick={() => setQuoteType("text")}
-                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${quoteType === "text" ? "bg-[#0F4C3A] text-white" : "text-[#777]"}`}
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${quoteType === "text" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
                                         >
                                             <Type size={12} /> Teks Tulis
                                         </button>
@@ -554,7 +564,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onClick={() =>
                                                 setQuoteType("image")
                                             }
-                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${quoteType === "image" ? "bg-[#0F4C3A] text-white" : "text-[#777]"}`}
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${quoteType === "image" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
                                         >
                                             <ImagePlus size={12} /> Upload
                                             Gambar
@@ -564,30 +574,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
                                 {quoteType === "text" ? (
                                     <>
-                                        <div className="flex items-center justify-end mb-1 gap-2">
-                                            <span className="text-[11px] font-bold text-[#555]">
-                                                Pilih Font Arab:
-                                            </span>
-                                            <select
-                                                value={arabicFont}
-                                                onChange={(e) =>
-                                                    setArabicFont(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="rounded-lg border border-[#E0EAE3] bg-white px-2 py-1 text-[11px] focus:outline-none"
-                                            >
-                                                {fontOptions.map((opt) => (
-                                                    <option
-                                                        key={opt.value}
-                                                        value={opt.value}
-                                                    >
-                                                        {opt.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
                                         <textarea
                                             rows={3}
                                             dir="rtl"
@@ -599,12 +585,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 )
                                             }
                                             placeholder="إِنَّ أَكْرَمَكُمْ عِندَ اللَّهِ أَتْقَاكُمْ"
-                                            className={`w-full rounded-xl border border-[#E0EAE3] bg-white px-4 py-3 text-[26px] leading-[2.2] focus:border-[#0F4C3A] focus:outline-none text-right transition-all tracking-normal ${arabicFont}`}
+                                            className="font-amiri w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-3 text-[26px] leading-[2.2] text-[#1D4533] focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal"
                                         />
 
                                         <div className="grid gap-3 sm:grid-cols-2 mt-2">
                                             <div>
-                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#555] mb-1">
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
                                                     Terjemahan Arti
                                                 </label>
                                                 <input
@@ -619,11 +605,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                         )
                                                     }
                                                     placeholder="Sesungguhnya yang paling mulia..."
-                                                    className="w-full rounded-xl border border-[#E0EAE3] bg-white px-4 py-2 text-[13px] focus:border-[#0F4C3A] focus:outline-none"
+                                                    className="w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2 text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#555] mb-1">
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
                                                     Referensi Surat / Ayat
                                                 </label>
                                                 <input
@@ -636,41 +622,29 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                         )
                                                     }
                                                     placeholder="QS. Al-Hujurat: 13"
-                                                    className="w-full rounded-xl border border-[#E0EAE3] bg-white px-4 py-2 text-[13px] focus:border-[#0F4C3A] focus:outline-none"
+                                                    className="w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2 text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
                                                 />
                                             </div>
                                         </div>
                                     </>
                                 ) : (
                                     <div className="space-y-3">
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#555]">
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
                                             Upload Gambar Kartu Quote
                                         </label>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             onChange={handleQuoteImageSelect}
-                                            className="w-full text-[13px] text-[#555] file:mr-4 file:rounded-lg file:border-0 file:bg-[#EBF1ED] file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#0F4C3A] cursor-pointer"
+                                            className="w-full text-[13px] text-[#5E3122] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F9D2BA]/40 file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#1D4533] cursor-pointer"
                                         />
                                         {quoteImagePreview && (
                                             <img
                                                 src={quoteImagePreview}
                                                 alt="Preview Quote"
-                                                className="mt-2 w-48 rounded-xl border border-[#E0EAE3] object-cover shadow-xs"
+                                                className="mt-2 w-48 rounded-xl border border-[#F9D2BA] object-cover shadow-xs"
                                             />
                                         )}
-                                        {/* <input
-                                            type="text"
-                                            value={data.quote_reference}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "quote_reference",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            placeholder="Nama Surat & Ayat (Opsional)"
-                                            className="w-full rounded-xl border border-[#E0EAE3] mt-2 px-4 py-2 text-[13px] focus:border-[#0F4C3A] focus:outline-none"
-                                        /> */}
                                     </div>
                                 )}
                             </div>
@@ -678,7 +652,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
                         {/* Ringkasan Singkat */}
                         <div>
-                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#555] mb-1.5">
+                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5">
                                 Ringkasan Singkat (Deskripsi)
                             </label>
                             <textarea
@@ -688,21 +662,21 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     setData("description", e.target.value)
                                 }
                                 placeholder="Ringkasan singkat artikel..."
-                                className="w-full rounded-xl border border-[#E0EAE3] bg-[#FAFAF8] px-4 py-2.5 text-[14px] focus:border-[#0F4C3A] focus:bg-white focus:outline-none"
+                                className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 text-[14px] text-[#5E3122] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             />
                         </div>
                     </div>
 
                     {/* BLOK EDITOR & PREVIEW */}
-                    <div className="rounded-2xl border border-[#E0EAE3] bg-white shadow-xs">
-                        <div className="flex overflow-hidden rounded-t-2xl border-b border-[#E0EAE3] bg-[#F9FBF9]">
+                    <div className="rounded-2xl border border-[#F9D2BA] bg-white shadow-xs">
+                        <div className="flex overflow-hidden rounded-t-2xl border-b border-[#F9D2BA] bg-[#FDFBF9]">
                             <button
                                 type="button"
                                 onClick={() => setViewMode("edit")}
                                 className={`flex-1 py-3.5 sm:py-4 text-[13px] font-bold font-brand transition-colors cursor-pointer ${
                                     viewMode === "edit"
-                                        ? "border-t-[3px] border-[#0F4C3A] bg-white text-[#0F4C3A]"
-                                        : "text-[#777] hover:bg-[#F2F7F4]"
+                                        ? "border-t-[3px] border-[#1D4533] bg-white text-[#1D4533]"
+                                        : "text-[#5E3122]/70 hover:bg-[#F9D2BA]/20"
                                 }`}
                             >
                                 <Edit3 size={16} className="mr-2 inline" /> Mode
@@ -713,8 +687,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 onClick={() => setViewMode("preview")}
                                 className={`flex-1 py-3.5 sm:py-4 text-[13px] font-bold font-brand transition-colors cursor-pointer ${
                                     viewMode === "preview"
-                                        ? "border-t-[3px] border-[#0F4C3A] bg-white text-[#0F4C3A]"
-                                        : "text-[#777] hover:bg-[#F2F7F4]"
+                                        ? "border-t-[3px] border-[#1D4533] bg-white text-[#1D4533]"
+                                        : "text-[#5E3122]/70 hover:bg-[#F9D2BA]/20"
                                 }`}
                             >
                                 <Eye size={16} className="mr-2 inline" />{" "}
@@ -726,9 +700,9 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         <div
                             className={`${
                                 viewMode === "edit" ? "block" : "hidden"
-                            } quill-wrapper relative rounded-b-2xl bg-[#F2F7F4] p-4 sm:p-8 lg:p-12`}
+                            } quill-wrapper relative rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
                         >
-                            <div className="mx-auto max-w-[800px] relative rounded-b-2xl rounded-t-none border border-[#E0EAE3] bg-white shadow-xs">
+                            <div className="mx-auto max-w-[800px] relative rounded-b-2xl rounded-t-none border border-[#F9D2BA] bg-white shadow-xs">
                                 <ReactQuill
                                     ref={quillRef}
                                     theme="snow"
@@ -741,6 +715,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     className="rounded-lg bg-white"
                                     placeholder="Mulai menulis artikel atau naskah kajian di sini..."
                                 />
+                                {errors.content && (
+                                    <div className="p-3 bg-red-50 border-t border-red-200 text-red-600 font-bold text-[12px] flex items-center gap-2">
+                                        <X size={15} /> {errors.content}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -748,10 +727,10 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         <div
                             className={`${
                                 viewMode === "preview" ? "block" : "hidden"
-                            } rounded-b-2xl bg-[#F2F7F4] p-4 sm:p-8 lg:p-12`}
+                            } rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
                         >
-                            <div className="mx-auto max-w-[800px] rounded-2xl border border-[#E0EAE3] bg-white p-6 sm:p-10 shadow-xs">
-                                <h1 className="mb-4 font-brand text-[24px] sm:text-[32px] md:text-[36px] font-bold leading-tight text-[#162B22]">
+                            <div className="mx-auto max-w-[800px] rounded-2xl border border-[#F9D2BA] bg-white p-6 sm:p-10 shadow-xs">
+                                <h1 className="mb-4 font-brand text-[24px] sm:text-[32px] md:text-[36px] font-bold leading-tight text-[#1D4533]">
                                     {data.title ||
                                         "Judul Artikel Akan Tampil Di Sini"}
                                 </h1>
@@ -766,7 +745,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     </div>
                                 ) : (
                                     imagePreview && (
-                                        <div className="mb-8 aspect-[2/1] w-full overflow-hidden rounded-xl bg-[#f0eee9]">
+                                        <div className="mb-8 aspect-[2/1] w-full overflow-hidden rounded-xl bg-[#F7EAE0]">
                                             <img
                                                 src={imagePreview}
                                                 alt="Preview"
@@ -779,17 +758,17 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 {isTafsirCategory &&
                                     quoteType === "text" &&
                                     data.quote_arabic && (
-                                        <div className="mb-8 rounded-xl border-l-4 border-[#0F4C3A] bg-[#F4F9F6] p-6 text-center">
+                                        <div className="mb-8 rounded-xl border-l-4 border-[#1D4533] bg-[#F9D2BA]/20 p-6 text-center">
                                             <p
-                                                className={`mb-3 text-[26px] leading-loose text-[#0F4C3A] ${arabicFont}`}
+                                                className="font-amiri mb-3 text-[26px] leading-loose text-[#1D4533]"
                                                 dir="rtl"
                                             >
                                                 {data.quote_arabic}
                                             </p>
-                                            <p className="mb-1 text-[13px] italic text-[#555]">
+                                            <p className="mb-1 text-[13px] italic text-[#5E3122]">
                                                 "{data.quote_translation}"
                                             </p>
-                                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F4C3A]">
+                                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#1D4533]">
                                                 {data.quote_reference}
                                             </span>
                                         </div>
@@ -798,7 +777,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 {isTafsirCategory &&
                                     quoteType === "image" &&
                                     quoteImagePreview && (
-                                        <div className="mb-8 rounded-xl bg-[#F4F9F6] p-4 text-center">
+                                        <div className="mb-8 rounded-xl bg-[#F9D2BA]/20 p-4 text-center">
                                             <img
                                                 src={quoteImagePreview}
                                                 className="mx-auto rounded-xl shadow-xs object-cover max-h-80"
@@ -808,7 +787,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     )}
 
                                 <div
-                                    className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333]"
+                                    className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#5E3122]"
                                     dangerouslySetInnerHTML={{
                                         __html: data.content
                                             ? data.content

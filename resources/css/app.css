@@ -5,7 +5,7 @@
 
 /* 2. BASE ROOT */
 :root {
-    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-family: "HelveticaCustom", "Helvetica Neue", Helvetica, "Geneva";
     color: #162b22;
     background: #eaf6efc0;
     text-rendering: optimizeLegibility;
@@ -17,11 +17,14 @@
 }
 
 /* =========================================
+   3. DEFINISI FONT LOKAL (Hapus /public)
+========================================= */
+/* =========================================
    3. DEFINISI FONT LOKAL
 ========================================= */
 @font-face {
     font-family: "Al Jazeera";
-    src: url("/fonts/AL-JAZEERA-ARABIC-REGULAR.TTF") format("truetype");
+    src: url("/public/fonts/AL-JAZEERA-ARABIC-REGULAR.TTF") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -29,8 +32,10 @@
 
 @font-face {
     font-family: "AdobeNaskh";
-    src: url("/fonts/AdobeNaskh-Regular.woff2") format("woff2"),
-         url("/fonts/AdobeNaskh-Regular.ttf") format("truetype");
+    src:
+        url("/public/fonts/AdobeNaskh-Medium.woff2") format("woff2"),
+        url("/public/fonts/AdobeNaskh-Medium.woff") format("woff"),
+        url("/public/fonts/Adobe-Naskh-Medium.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -39,43 +44,24 @@
 @font-face {
     font-family: "HelveticaCustom";
     src:
-        url("/fonts/Helvetica.woff2") format("woff2"),
-        url("/fonts/Helvetica.ttf") format("truetype"),
-        url("/fonts/GENEVA.TTF") format("truetype");
+        url("/public/fonts/Helvetica.ttf") format("truetype"),
+        url("/public/fonts/GENEVA.TTF") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
-}
-
-@font-face {
-    font-family: "HelveticaCustom";
-    src:
-        url("/fonts/Helvetica-Bold.woff2") format("woff2"),
-        url("/fonts/Helvetica-Bold.ttf") format("truetype");
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
-}
-
-/* Helper Class Brand */
-.font-brand {
-    font-family:
-        "HelveticaCustom", "Helvetica Neue", Helvetica, "Geneva", Arial,
-        sans-serif !important;
-}
-
-.font-serif {
-    font-family: "Playfair Display", Georgia, serif !important;
 }
 
 /* =========================================
-   4. CLASS HELPER FONT ARAB (GOOGLE & LOKAL)
+   4. CLASS HELPER FONT ARAB
 ========================================= */
 .font-amiri,
-.ql-font-amiri,
+.ql-font-amiri {
+    font-family: "Amiri", serif !important;
+}
+
 .font-adobe-naskh,
 .ql-font-adobe-naskh {
-    font-family: "Amiri", serif !important;
+    font-family: "AdobeNaskh", serif !important;
 }
 
 .font-tajawal,
@@ -103,9 +89,6 @@
     font-family: "Al Jazeera", sans-serif !important;
 }
 
-/* =========================================
-   5. ATURAN ANTI PUTUS TEKS ARAB (GLOBAL & TEXTAREA)
-========================================= */
 /* =========================================
    3. SETTING GLOBAL TEKS ARAB (RTL)
 ========================================= */
@@ -332,4 +315,14 @@ button {
     padding: 30px !important;
     line-height: 1.8;
     color: #333;
+}
+
+/* Label mapping ukuran font Quill */
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before {
+    content: attr(data-value) !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item:not([data-value])::before {
+    content: "Ukuran" !important;
 }

@@ -87,12 +87,11 @@ export default function UserIndex({ users }: UserIndexProps) {
     };
 
     return (
-        <div className="min-h-screen bg-[#eaf6efc0] text-[#17251f] selection:bg-[#0F4C3A] selection:text-white pb-20">
-            <Head title="Kelola Pengguna - Abu Haidar" />
+        <div className="min-h-screen bg-[#F7EAE0] text-[#162B22] selection:bg-[#0F4C3A] selection:text-white pb-16">
+            <Head title="Kelola Artikel - Dashboard Admin" />
             <Toaster position="top-center" />
-
             {/* ================= HEADER ================= */}
-            <header className="sticky top-0 z-30 border-b border-[#E8E6E1] bg-white/90 backdrop-blur-md shadow-xs">
+            <header className="sticky top-0 z-30 border-b border-[#F9D2BA] bg-[#F7EAE0]/95 backdrop-blur-md shadow-xs">
                 <div className="mx-auto flex max-w-[1140px] items-center justify-between px-4 sm:px-6 lg:px-0 py-3.5 sm:py-4">
                     <div className="flex items-center gap-3">
                         <Link
