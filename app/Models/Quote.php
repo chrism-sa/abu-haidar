@@ -15,6 +15,9 @@ class Quote extends Model
         'translation',
         'reference',
         'image',
+        'font',
+        'font_size',
+        'color',
     ];
 
     public function article()

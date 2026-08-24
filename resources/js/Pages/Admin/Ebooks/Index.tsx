@@ -167,7 +167,7 @@ export default function AdminEbookIndex({ ebooks = [] }: IndexProps) {
 
     return (
         <div className="min-h-screen bg-[#F7EAE0] text-[#5E3122] selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-16">
-            <Head title="Kelola E-Book & Risalah PDF - Abu Haidar" />
+            <Head title="Kelola E-Book PDF - Abu Haidar" />
 
             {/* HEADER */}
             <header className="sticky top-0 z-30 border-b border-[#F9D2BA] bg-[#F7EAE0]/95 backdrop-blur-md shadow-xs">
@@ -182,7 +182,7 @@ export default function AdminEbookIndex({ ebooks = [] }: IndexProps) {
                         </Link>
                         <div>
                             <h1 className="font-brand text-[16px] sm:text-[18px] font-bold text-[#1D4533] leading-tight truncate">
-                                Kelola E-Book & Risalah PDF
+                                Kelola E-Book PDF
                             </h1>
                             <p className="text-[10px] text-[#5E3122]/70 font-semibold uppercase tracking-wider">
                                 Total: {ebooks.length} File Risalah
@@ -195,7 +195,7 @@ export default function AdminEbookIndex({ ebooks = [] }: IndexProps) {
                         onClick={() => setIsUploadModalOpen(true)}
                         className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-4 sm:px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-xs transition hover:bg-[#143325] cursor-pointer"
                     >
-                        <Plus size={16} /> <span>Unggah Risalah Baru</span>
+                        <Plus size={16} /> <span>Unggah Baru</span>
                     </button>
                 </div>
             </header>

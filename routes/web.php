@@ -232,6 +232,9 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'quote_arabic' => 'nullable|string',
             'quote_translation' => 'nullable|string',
             'quote_reference' => 'nullable|string',
+            'quote_font' => 'nullable|string',
+            'quote_font_size' => 'nullable|numeric',
+            'quote_color' => 'nullable|string',
         ], [
             'title.required' => 'Judul artikel wajib diisi.',
             'category_id.required' => 'Silakan pilih salah satu kategori.',
@@ -272,11 +275,14 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
         if ($quoteImage || $request->filled('quote_arabic') || $request->filled('quote_reference')) {
             Quote::create([
-                'article_id' => $article->id,
-                'arabic' => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
-                'translation' => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
-                'reference' => $request->quote_reference ?? '',
-                'image' => $quoteImage,
+                'article_id'  => $article->id,
+                'arabic'       => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
+                'translation'  => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
+                'reference'    => $request->quote_reference ?? '',
+                'font'         => $request->input('quote_font', 'font-adobe-naskh'),
+                'font_size'    => $request->input('quote_font_size', 36),
+                'color'        => $request->input('quote_color', '#1D4533'),
+                'image'        => $quoteImage,
             ]);
         }
 
@@ -300,6 +306,9 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'quote_arabic' => 'nullable|string',
             'quote_translation' => 'nullable|string',
             'quote_reference' => 'nullable|string',
+            'quote_font' => 'nullable|string',
+            'quote_font_size' => 'nullable|numeric',
+            'quote_color' => 'nullable|string',
         ]);
 
         $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->content ?? '');
@@ -370,10 +379,13 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             Quote::updateOrCreate(
                 ['article_id' => $article->id],
                 [
-                    'arabic' => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
+                    'arabic'      => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
                     'translation' => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
-                    'reference' => $request->quote_reference ?? '',
-                    'image' => $quoteImage,
+                    'reference'   => $request->quote_reference ?? '',
+                    'font'        => $request->input('quote_font', 'font-adobe-naskh'),
+                    'font_size'   => $request->input('quote_font_size', 36),
+                    'color'       => $request->input('quote_color', '#1D4533'),
+                    'image'       => $quoteImage,
                 ]
             );
         } else {

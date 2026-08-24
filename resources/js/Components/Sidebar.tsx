@@ -90,7 +90,12 @@ function QuoteCard({ quote }: { quote: Quote | null }) {
     }
 
     // 3. JIKA QUOTE ADALAH TEKS ARAB & TERJEMAHAN
-    const isLongAyat = quote.arabic && quote.arabic.length > 60;
+    // Membaca kustomisasi font, ukuran, dan warna dari database
+    const quoteFontClass = (quote as any).font || "font-adobe-naskh";
+    const quoteFontSize = (quote as any).font_size
+        ? `${(quote as any).font_size}px`
+        : "28px";
+    const quoteColor = (quote as any).color || "#1D4533";
 
     return (
         <div className="rounded-2xl border border-[#F9D2BA] bg-white p-2 shadow-sm">
@@ -111,12 +116,12 @@ function QuoteCard({ quote }: { quote: Quote | null }) {
                     dir="rtl"
                     lang="ar"
                     style={{
-                        lineHeight: isLongAyat ? "1.6" : "1.8",
+                        fontSize: quoteFontSize,
+                        color: quoteColor,
+                        lineHeight: 2.2,
                         letterSpacing: "normal",
                     }}
-                    className={`font-amiri relative z-10 quote-card-arabic text-[#1D4533] [text-wrap:balance] ${
-                        isLongAyat ? "text-[24px]" : "text-[28px]"
-                    }`}
+                    className={`${quoteFontClass} relative z-10 quote-card-arabic [text-wrap:balance]`}
                 >
                     {quote.arabic}
                 </p>
@@ -131,9 +136,11 @@ function QuoteCard({ quote }: { quote: Quote | null }) {
                     "{quote.translation}"
                 </p>
 
-                <div className="relative z-10 mt-4 inline-flex items-center justify-center rounded-full bg-[#1D4533]/10 border border-[#F9D2BA] px-4 py-1.5 text-[11px] font-bold tracking-wide text-[#1D4533]">
-                    {quote.reference}
-                </div>
+                {quote.reference && (
+                    <div className="relative z-10 mt-4 inline-flex items-center justify-center rounded-full bg-[#1D4533]/10 border border-[#F9D2BA] px-4 py-1.5 text-[11px] font-bold tracking-wide text-[#1D4533]">
+                        {quote.reference}
+                    </div>
+                )}
 
                 {quote.article && (
                     <div className="relative z-10 mt-5 w-full border-t border-[#F9D2BA]/60 pt-3.5">

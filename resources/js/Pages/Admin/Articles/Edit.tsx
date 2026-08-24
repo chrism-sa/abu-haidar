@@ -14,6 +14,7 @@ import {
     X,
     Type,
     ImagePlus,
+    Palette,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { Category, Article } from "@/types";
@@ -22,14 +23,11 @@ import "react-quill-new/dist/quill.snow.css";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/Utils/cropImage";
 
-// 1. Daftarkan Whitelist Font
+// 1. Whitelist Quill
 const FontStyle = Quill.import("attributors/style/font") as any;
 FontStyle.whitelist = [
     "helvetica",
-    "inter",
-    "playfair",
     "times",
-    "monospace",
     "amiri",
     "tajawal",
     "cairo",
@@ -40,7 +38,6 @@ FontStyle.whitelist = [
 ];
 Quill.register(FontStyle, true);
 
-// 2. Daftarkan Whitelist Ukuran Font (Pixel)
 const SizeStyle = Quill.import("attributors/style/size") as any;
 SizeStyle.whitelist = [
     "12px",
@@ -52,8 +49,20 @@ SizeStyle.whitelist = [
     "28px",
     "32px",
     "36px",
+    "46px",
 ];
 Quill.register(SizeStyle, true);
+
+// 2. Mapping Pilihan Font Arab untuk Quote (Gunakan Class Helper)
+const ARABIC_FONTS = [
+    { label: "Adobe Naskh", value: "font-adobe-naskh" },
+    { label: "Al Jazeera", value: "font-al-jazeera" },
+    { label: "Amiri (Standar Mushaf)", value: "font-amiri" },
+    { label: "Scheherazade New", value: "font-scheherazade" },
+    { label: "Cairo", value: "font-cairo" },
+    { label: "Tajawal", value: "font-tajawal" },
+    { label: "Almarai", value: "font-almarai" },
+];
 
 // Daftarkan Direction Attributor untuk RTL
 const DirectionStyle = Quill.import("attributors/style/direction") as any;
@@ -77,6 +86,9 @@ interface QuoteItem {
     translation?: string;
     reference?: string;
     image?: string;
+    font?: string;
+    font_size?: number;
+    color?: string;
 }
 
 interface EditProps {
@@ -128,7 +140,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
     // Inertia Form State
-    const { data, setData, post, processing, transform } = useForm({
+    const { data, setData, post, processing, transform, errors } = useForm({
         _method: "POST",
         title: article.title || "",
         category_id: article.category_id || categories[0]?.id || "",
@@ -142,6 +154,9 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         quote_arabic: quote?.arabic || "",
         quote_translation: quote?.translation || "",
         quote_reference: quote?.reference || "",
+        quote_font: quote?.font || "font-adobe-naskh",
+        quote_font_size: quote?.font_size || 36,
+        quote_color: quote?.color || "#1D4533",
         quote_image: null as File | null,
         quote_youtube_url: initialQuoteIsYoutube ? quote?.image || "" : "",
     });
@@ -183,6 +198,9 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
             ? curr.description.replace(/&nbsp;|\u00a0/g, " ")
             : "",
         quote_type: quoteType,
+        quote_font: data.quote_font,
+        quote_font_size: Number(data.quote_font_size),
+        quote_color: data.quote_color,
     }));
 
     // Preview Sinkronisasi Sampul Artikel
@@ -298,6 +316,14 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validasi editor agar tidak kosong
+        const strippedContent = data.content.replace(/<[^>]*>?/gm, "").trim();
+        if (!strippedContent) {
+            alert("Mohon isi naskah artikel kajian terlebih dahulu!");
+            return;
+        }
+
         post(`/admin/articles/${article.id}`, {
             forceFormData: true,
         });
@@ -365,6 +391,11 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                 placeholder="Ketik judul kajian di sini..."
                                 className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 sm:py-3 text-[15px] sm:text-[16px] font-brand font-bold text-[#1D4533] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             />
+                            {errors.title && (
+                                <p className="mt-1 text-[11px] font-bold text-red-600">
+                                    {errors.title}
+                                </p>
+                            )}
                         </div>
 
                         {/* Kategori */}
@@ -388,6 +419,11 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                     </option>
                                 ))}
                             </select>
+                            {errors.category_id && (
+                                <p className="mt-1 text-[11px] font-bold text-red-600">
+                                    {errors.category_id}
+                                </p>
+                            )}
                         </div>
 
                         {/* Gambar / Video Sampul */}
@@ -406,7 +442,11 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         onClick={() =>
                                             setImageSourceType("file")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "file" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${
+                                            imageSourceType === "file"
+                                                ? "bg-[#1D4533] text-[#F7EAE0]"
+                                                : "text-[#5E3122]/70"
+                                        }`}
                                     >
                                         <Upload size={12} /> Upload
                                     </button>
@@ -415,7 +455,11 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         onClick={() =>
                                             setImageSourceType("url")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "url" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${
+                                            imageSourceType === "url"
+                                                ? "bg-[#1D4533] text-[#F7EAE0]"
+                                                : "text-[#5E3122]/70"
+                                        }`}
                                     >
                                         <Link2 size={12} /> Tautan
                                     </button>
@@ -424,7 +468,11 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         onClick={() =>
                                             setImageSourceType("youtube")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "youtube" ? "bg-red-600 text-white" : "text-[#5E3122]/70"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${
+                                            imageSourceType === "youtube"
+                                                ? "bg-red-600 text-white"
+                                                : "text-[#5E3122]/70"
+                                        }`}
                                     >
                                         <FaYoutube size={14} /> YouTube
                                     </button>
@@ -632,6 +680,100 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                 {/* 1. OPSI TEKS */}
                                 {quoteType === "text" && (
                                     <>
+                                        {/* Kustomisasi Font, Warna, & Ukuran */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-[#F9D2BA] bg-white p-3">
+                                            {/* Pilihan Font Arab */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Jenis Font Arab
+                                                </label>
+                                                <select
+                                                    value={data.quote_font}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            "quote_font",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full rounded-lg border border-[#F9D2BA] bg-[#FDFBF9] px-2.5 py-1.5 text-[12px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
+                                                >
+                                                    {ARABIC_FONTS.map(
+                                                        (font) => (
+                                                            <option
+                                                                key={font.value}
+                                                                value={
+                                                                    font.value
+                                                                }
+                                                            >
+                                                                {font.label}
+                                                            </option>
+                                                        ),
+                                                    )}
+                                                </select>
+                                            </div>
+
+                                            {/* Pilihan Warna Teks */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1 flex items-center gap-1">
+                                                    <Palette size={12} /> Warna
+                                                    Teks
+                                                </label>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={data.quote_color}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                "quote_color",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="h-8 w-10 cursor-pointer rounded-md border border-[#F9D2BA] bg-white p-0.5"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={data.quote_color}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                "quote_color",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full rounded-lg border border-[#F9D2BA] bg-[#FDFBF9] px-2.5 py-1.5 text-[12px] font-mono text-[#5E3122] uppercase focus:border-[#1D4533] focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Slider Ukuran Font */}
+                                            <div>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
+                                                        Ukuran Font
+                                                    </label>
+                                                    <span className="text-[11px] font-bold text-[#1D4533]">
+                                                        {data.quote_font_size}px
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={18}
+                                                    max={48}
+                                                    step={1}
+                                                    value={data.quote_font_size}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            "quote_font_size",
+                                                            Number(
+                                                                e.target.value,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="w-full h-1.5 mt-2 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Textarea Input Ayat Arab */}
                                         <textarea
                                             rows={3}
                                             dir="rtl"
@@ -642,8 +784,13 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                                     e.target.value,
                                                 )
                                             }
+                                            style={{
+                                                fontSize: `${data.quote_font_size}px`,
+                                                color: data.quote_color,
+                                                lineHeight: 2.6,
+                                            }}
                                             placeholder="إِنَّ أَكْرَمَكُمْ عِندَ اللَّهِ أَتْقَاكُمْ"
-                                            className="font-amiri w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-3 text-[26px] leading-[2.2] text-[#1D4533] focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal"
+                                            className={`${data.quote_font} w-full rounded-xl border border-[#F9D2BA] bg-white px-5 py-4 focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal`}
                                         />
 
                                         <div className="grid gap-3 sm:grid-cols-2 mt-2">
@@ -759,6 +906,11 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                 placeholder="Ringkasan singkat artikel..."
                                 className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 text-[14px] text-[#5E3122] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             />
+                            {errors.description && (
+                                <p className="mt-1 text-[11px] font-bold text-red-600">
+                                    {errors.description}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -793,7 +945,9 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
 
                         {/* Mode Menulis */}
                         <div
-                            className={`${viewMode === "edit" ? "block" : "hidden"} quill-wrapper relative rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
+                            className={`${
+                                viewMode === "edit" ? "block" : "hidden"
+                            } quill-wrapper relative rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
                         >
                             <div className="mx-auto max-w-[800px] relative rounded-b-2xl rounded-t-none border border-[#F9D2BA] bg-white shadow-xs">
                                 <ReactQuill
@@ -808,12 +962,19 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                     className="rounded-lg bg-white"
                                     placeholder="Mulai menulis artikel atau naskah kajian di sini..."
                                 />
+                                {errors.content && (
+                                    <div className="p-3 bg-red-50 border-t border-red-200 text-red-600 font-bold text-[12px] flex items-center gap-2">
+                                        <X size={15} /> {errors.content}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Mode Pratinjau */}
                         <div
-                            className={`${viewMode === "preview" ? "block" : "hidden"} rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
+                            className={`${
+                                viewMode === "preview" ? "block" : "hidden"
+                            } rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
                         >
                             <div className="mx-auto max-w-[800px] rounded-2xl border border-[#F9D2BA] bg-white p-6 sm:p-10 shadow-xs">
                                 <h1 className="mb-4 font-brand text-[24px] sm:text-[32px] md:text-[36px] font-bold leading-tight text-[#1D4533]">
@@ -846,7 +1007,12 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                     data.quote_arabic && (
                                         <div className="mb-8 rounded-xl border-l-4 border-[#1D4533] bg-[#F9D2BA]/20 p-6 text-center">
                                             <p
-                                                className="font-amiri mb-3 text-[26px] leading-loose text-[#1D4533]"
+                                                className={`${data.quote_font} mb-3 leading-loose`}
+                                                style={{
+                                                    fontSize: `${data.quote_font_size}px`,
+                                                    color: data.quote_color,
+                                                    lineHeight: 2.5,
+                                                }}
                                                 dir="rtl"
                                             >
                                                 {data.quote_arabic}

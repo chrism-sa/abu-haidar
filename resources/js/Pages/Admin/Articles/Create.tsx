@@ -14,6 +14,7 @@ import {
     X,
     Type,
     ImagePlus,
+    Palette,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { Category } from "@/types";
@@ -22,14 +23,11 @@ import "react-quill-new/dist/quill.snow.css";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/Utils/cropImage";
 
-// 1. Daftarkan Whitelist Font Menggunakan Style Attributor
+// 1. Whitelist Quill
 const FontStyle = Quill.import("attributors/style/font") as any;
 FontStyle.whitelist = [
     "helvetica",
-    "inter",
-    "playfair",
     "times",
-    "monospace",
     "amiri",
     "tajawal",
     "cairo",
@@ -40,7 +38,6 @@ FontStyle.whitelist = [
 ];
 Quill.register(FontStyle, true);
 
-// 2. Daftarkan Whitelist Ukuran Font Menggunakan Style Attributor (Pixel)
 const SizeStyle = Quill.import("attributors/style/size") as any;
 SizeStyle.whitelist = [
     "12px",
@@ -52,8 +49,20 @@ SizeStyle.whitelist = [
     "28px",
     "32px",
     "36px",
+    "46px",
 ];
 Quill.register(SizeStyle, true);
+
+// 2. Mapping Pilihan Font Arab untuk Quote (Gunakan Class Helper)
+const ARABIC_FONTS = [
+    { label: "Adobe Naskh", value: "font-adobe-naskh" },
+    { label: "Al Jazeera", value: "font-al-jazeera" },
+    { label: "Amiri (Standar Mushaf)", value: "font-amiri" },
+    { label: "Scheherazade New", value: "font-scheherazade" },
+    { label: "Cairo", value: "font-cairo" },
+    { label: "Tajawal", value: "font-tajawal" },
+    { label: "Almarai", value: "font-almarai" },
+];
 
 // Daftarkan Direction Attributor untuk RTL
 const DirectionStyle = Quill.import("attributors/style/direction") as any;
@@ -79,24 +88,28 @@ export default function ArticleCreate({ categories }: CreateProps) {
     const quillRef = useRef<any>(null);
     const lastSelectedFontRef = useRef<string | null>(null);
 
+    // State Tampilan & Sumber Data
     const [imageSourceType, setImageSourceType] = useState<
         "file" | "url" | "youtube"
     >("file");
-    const [quoteType, setQuoteType] = useState<"text" | "image">("text");
+    const [quoteType, setQuoteType] = useState<"text" | "image" | "youtube">(
+        "text",
+    );
+
     const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
+    const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [quoteImagePreview, setQuoteImagePreview] = useState<string | null>(
         null,
     );
 
-    // State Khusus Cropper
+    // Cropper State
     const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    // Form Inertia
+    // Form Inertia State
     const { data, setData, post, processing, transform, errors } = useForm({
         title: "",
         category_id: categories[0]?.id || "",
@@ -105,11 +118,15 @@ export default function ArticleCreate({ categories }: CreateProps) {
         description: "",
         content: "",
         is_published: true,
-        quote_type: "text",
+        quote_type: "text" as "text" | "image" | "youtube",
         quote_arabic: "",
         quote_translation: "",
         quote_reference: "",
+        quote_font: "font-adobe-naskh",
+        quote_font_size: 36,
+        quote_color: "#1D4533",
         quote_image: null as File | null,
+        quote_youtube_url: "",
     });
 
     const selectedCategory = categories.find(
@@ -119,7 +136,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         ?.toLowerCase()
         .includes("tafsir");
 
-    // Menjaga agar saat Enter / buat baris baru, font terakhir tetap aktif otomatis
+    // Otomatisasi font berikutnya saat baris baru / enter
     const handleChangeSelection = (range: any, source: string, editor: any) => {
         if (range && source === "user") {
             try {
@@ -134,28 +151,26 @@ export default function ArticleCreate({ categories }: CreateProps) {
                     editor.format("font", lastSelectedFontRef.current);
                 }
             } catch (err) {
-                // Abaikan error format get saat range transisi
+                // Ignore transisi range
             }
         }
     };
 
-    // Pembersihan & Penyesuaian Data Sebelum Dikirim
-    transform((currentData) => ({
-        ...currentData,
-        content: currentData.content
-            ? currentData.content
-                  .replace(/&nbsp;/g, " ")
-                  .replace(/\u00a0/g, " ")
+    transform((curr) => ({
+        ...curr,
+        content: curr.content
+            ? curr.content.replace(/&nbsp;|\u00a0/g, " ")
             : "",
-        description: currentData.description
-            ? currentData.description
-                  .replace(/&nbsp;/g, " ")
-                  .replace(/\u00a0/g, " ")
+        description: curr.description
+            ? curr.description.replace(/&nbsp;|\u00a0/g, " ")
             : "",
         quote_type: quoteType,
+        quote_font: data.quote_font,
+        quote_font_size: Number(data.quote_font_size),
+        quote_color: data.quote_color,
     }));
 
-    // Sinkronisasi Preview Gambar Sampul
+    // Preview Sinkronisasi Sampul Artikel
     useEffect(() => {
         if (imageSourceType === "file" && data.image_file) {
             const objectUrl = URL.createObjectURL(data.image_file);
@@ -171,7 +186,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     }, [data.image_file, data.image_url, imageSourceType]);
 
-    // Sinkronisasi Preview Gambar Quote
+    // Preview Sinkronisasi Quote Gambar
     useEffect(() => {
         if (quoteType === "image" && data.quote_image) {
             const objectUrl = URL.createObjectURL(data.quote_image);
@@ -202,7 +217,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
             if (file.size > 2 * 1024 * 1024) {
-                alert("Ukuran gambar terlalu besar! Maks. 2 MB.");
+                alert("Ukuran gambar terlalu besar! Maksimal 2 MB.");
                 return;
             }
             setData("quote_image", file);
@@ -224,13 +239,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
-    // Quill toolbar dengan Font & Size
+    // Toolbar Quill Editor tanpa dropdown Heading
     const quillModules = useMemo(
         () => ({
             toolbar: [
                 [{ font: FontStyle.whitelist }],
                 [{ size: SizeStyle.whitelist }],
-                [{ header: [2, 3, 4, false] }],
                 ["bold", "italic", "underline", "strike"],
                 [{ color: [] }, { background: [] }],
                 [{ align: [] }, { direction: "rtl" }],
@@ -246,7 +260,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             delta.ops.forEach((op: any) => {
                                 if (typeof op.insert === "string") {
                                     op.insert = op.insert.replace(
-                                        /\u00a0/g,
+                                        /&nbsp;|\u00a0/g,
                                         " ",
                                     );
                                 }
@@ -263,7 +277,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Cek apakah editor kosong (mengabaikan tag HTML bawaan quill)
+        // Validasi editor agar tidak kosong
         const strippedContent = data.content.replace(/<[^>]*>?/gm, "").trim();
         if (!strippedContent) {
             alert("Mohon isi naskah artikel kajian terlebih dahulu!");
@@ -278,10 +292,14 @@ export default function ArticleCreate({ categories }: CreateProps) {
     const ytId =
         imageSourceType === "youtube" ? getYouTubeId(data.image_url) : null;
 
+    const quoteYtId =
+        quoteType === "youtube" ? getYouTubeId(data.quote_youtube_url) : null;
+
     return (
         <div className="min-h-screen bg-[#F7EAE0] text-[#5E3122] selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-16">
             <Head title="Tulis Artikel - Abu Haidar" />
 
+            {/* HEADER */}
             <header className="sticky top-0 z-30 border-b border-[#F9D2BA] bg-[#F7EAE0]/95 backdrop-blur-md shadow-xs">
                 <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4">
                     <div className="flex items-center gap-3 min-w-0">
@@ -329,6 +347,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 placeholder="Ketik judul kajian di sini..."
                                 className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 sm:py-3 text-[15px] sm:text-[16px] font-brand font-bold text-[#1D4533] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             />
+                            {errors.title && (
+                                <p className="mt-1 text-[11px] font-bold text-red-600">
+                                    {errors.title}
+                                </p>
+                            )}
                         </div>
 
                         {/* Kategori */}
@@ -352,9 +375,14 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     </option>
                                 ))}
                             </select>
+                            {errors.category_id && (
+                                <p className="mt-1 text-[11px] font-bold text-red-600">
+                                    {errors.category_id}
+                                </p>
+                            )}
                         </div>
 
-                        {/* GAMBAR SAMPUL SUPPORT YOUTUBE */}
+                        {/* Gambar / Video Sampul */}
                         <div className="space-y-3 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] p-4">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                                 <label className="text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] flex items-center gap-2">
@@ -370,7 +398,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         onClick={() =>
                                             setImageSourceType("file")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "file" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${
+                                            imageSourceType === "file"
+                                                ? "bg-[#1D4533] text-[#F7EAE0]"
+                                                : "text-[#5E3122]/70"
+                                        }`}
                                     >
                                         <Upload size={12} /> Upload
                                     </button>
@@ -379,7 +411,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         onClick={() =>
                                             setImageSourceType("url")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "url" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${
+                                            imageSourceType === "url"
+                                                ? "bg-[#1D4533] text-[#F7EAE0]"
+                                                : "text-[#5E3122]/70"
+                                        }`}
                                     >
                                         <Link2 size={12} /> Tautan
                                     </button>
@@ -388,7 +424,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         onClick={() =>
                                             setImageSourceType("youtube")
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${imageSourceType === "youtube" ? "bg-red-600 text-white" : "text-[#5E3122]/70"}`}
+                                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 transition ${
+                                            imageSourceType === "youtube"
+                                                ? "bg-red-600 text-white"
+                                                : "text-[#5E3122]/70"
+                                        }`}
                                     >
                                         <FaYoutube size={14} /> YouTube
                                     </button>
@@ -427,7 +467,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 />
                             )}
 
-                            {/* PREVIEW GAMBAR ATAU VIDEO */}
+                            {/* Preview Sampul */}
                             {imageSourceType === "youtube" && ytId ? (
                                 <div className="mt-3 aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black">
                                     <iframe
@@ -540,7 +580,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             </div>
                         )}
 
-                        {/* BAGIAN TAFSIR & QUOTE (TEKS/GAMBAR) */}
+                        {/* BAGIAN TAFSIR & QUOTE (3 TAB: TEKS / GAMBAR / YOUTUBE) */}
                         {isTafsirCategory && (
                             <div className="space-y-4 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] p-4 sm:p-5">
                                 <div className="flex items-center justify-between border-b border-[#F9D2BA] pb-3 flex-wrap gap-2">
@@ -548,32 +588,147 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D4533] text-[10px] text-[#F7EAE0]">
                                             ✓
                                         </span>
-                                        Kutipan Tafsir Ayat
+                                        Kutipan / Media Tafsir Ayat
                                     </h4>
 
                                     <div className="flex rounded-lg border border-[#F9D2BA] bg-white p-0.5 text-[11px] font-bold">
                                         <button
                                             type="button"
                                             onClick={() => setQuoteType("text")}
-                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${quoteType === "text" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${
+                                                quoteType === "text"
+                                                    ? "bg-[#1D4533] text-[#F7EAE0]"
+                                                    : "text-[#5E3122]/70"
+                                            }`}
                                         >
-                                            <Type size={12} /> Teks Tulis
+                                            <Type size={12} /> Teks
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() =>
                                                 setQuoteType("image")
                                             }
-                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${quoteType === "image" ? "bg-[#1D4533] text-[#F7EAE0]" : "text-[#5E3122]/70"}`}
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${
+                                                quoteType === "image"
+                                                    ? "bg-[#1D4533] text-[#F7EAE0]"
+                                                    : "text-[#5E3122]/70"
+                                            }`}
                                         >
-                                            <ImagePlus size={12} /> Upload
-                                            Gambar
+                                            <ImagePlus size={12} /> Gambar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setQuoteType("youtube")
+                                            }
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${
+                                                quoteType === "youtube"
+                                                    ? "bg-red-600 text-white"
+                                                    : "text-[#5E3122]/70"
+                                            }`}
+                                        >
+                                            <FaYoutube size={13} /> YouTube
                                         </button>
                                     </div>
                                 </div>
 
-                                {quoteType === "text" ? (
+                                {/* 1. OPSI TEKS */}
+                                {quoteType === "text" && (
                                     <>
+                                        {/* Kustomisasi Font, Warna, & Ukuran */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-[#F9D2BA] bg-white p-3">
+                                            {/* Pilihan Font Arab */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Jenis Font Arab
+                                                </label>
+                                                <select
+                                                    value={data.quote_font}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            "quote_font",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full rounded-lg border border-[#F9D2BA] bg-[#FDFBF9] px-2.5 py-1.5 text-[12px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
+                                                >
+                                                    {ARABIC_FONTS.map(
+                                                        (font) => (
+                                                            <option
+                                                                key={font.value}
+                                                                value={
+                                                                    font.value
+                                                                }
+                                                            >
+                                                                {font.label}
+                                                            </option>
+                                                        ),
+                                                    )}
+                                                </select>
+                                            </div>
+
+                                            {/* Pilihan Warna Teks */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1 flex items-center gap-1">
+                                                    <Palette size={12} /> Warna
+                                                    Teks
+                                                </label>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={data.quote_color}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                "quote_color",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="h-8 w-10 cursor-pointer rounded-md border border-[#F9D2BA] bg-white p-0.5"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={data.quote_color}
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                "quote_color",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full rounded-lg border border-[#F9D2BA] bg-[#FDFBF9] px-2.5 py-1.5 text-[12px] font-mono text-[#5E3122] uppercase focus:border-[#1D4533] focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Slider Ukuran Font */}
+                                            <div>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
+                                                        Ukuran Font
+                                                    </label>
+                                                    <span className="text-[11px] font-bold text-[#1D4533]">
+                                                        {data.quote_font_size}px
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={18}
+                                                    max={48}
+                                                    step={1}
+                                                    value={data.quote_font_size}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            "quote_font_size",
+                                                            Number(
+                                                                e.target.value,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="w-full h-1.5 mt-2 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Textarea Input Ayat Arab */}
                                         <textarea
                                             rows={3}
                                             dir="rtl"
@@ -584,8 +739,13 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                     e.target.value,
                                                 )
                                             }
+                                            style={{
+                                                fontSize: `${data.quote_font_size}px`,
+                                                color: data.quote_color,
+                                                lineHeight: 2.6,
+                                            }}
                                             placeholder="إِنَّ أَكْرَمَكُمْ عِندَ اللَّهِ أَتْقَاكُمْ"
-                                            className="font-amiri w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-3 text-[26px] leading-[2.2] text-[#1D4533] focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal"
+                                            className={`${data.quote_font} w-full rounded-xl border border-[#F9D2BA] bg-white px-5 py-4 focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal`}
                                         />
 
                                         <div className="grid gap-3 sm:grid-cols-2 mt-2">
@@ -627,7 +787,10 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             </div>
                                         </div>
                                     </>
-                                ) : (
+                                )}
+
+                                {/* 2. OPSI GAMBAR */}
+                                {quoteType === "image" && (
                                     <div className="space-y-3">
                                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
                                             Upload Gambar Kartu Quote
@@ -638,12 +801,45 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onChange={handleQuoteImageSelect}
                                             className="w-full text-[13px] text-[#5E3122] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F9D2BA]/40 file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#1D4533] cursor-pointer"
                                         />
+                                        <p className="mt-1 text-[11px] text-[#5E3122]/60">
+                                            Maksimal ukuran gambar 2 MB.
+                                        </p>
                                         {quoteImagePreview && (
                                             <img
                                                 src={quoteImagePreview}
                                                 alt="Preview Quote"
                                                 className="mt-2 w-48 rounded-xl border border-[#F9D2BA] object-cover shadow-xs"
                                             />
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* 3. OPSI VIDEO YOUTUBE */}
+                                {quoteType === "youtube" && (
+                                    <div className="space-y-3">
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
+                                            Tautan Video Kajian / Ayat (YouTube)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={data.quote_youtube_url}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "quote_youtube_url",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Contoh: https://www.youtube.com/watch?v=..."
+                                            className="w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2.5 text-[13px] text-[#5E3122] focus:border-red-600 focus:outline-none"
+                                        />
+                                        {quoteYtId && (
+                                            <div className="mt-2 aspect-video w-full max-w-sm overflow-hidden rounded-xl bg-black">
+                                                <iframe
+                                                    src={`https://www.youtube.com/embed/${quoteYtId}`}
+                                                    className="h-full w-full border-0"
+                                                    allowFullScreen
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 )}
@@ -664,6 +860,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 placeholder="Ringkasan singkat artikel..."
                                 className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 text-[14px] text-[#5E3122] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             />
+                            {errors.description && (
+                                <p className="mt-1 text-[11px] font-bold text-red-600">
+                                    {errors.description}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -760,7 +961,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     data.quote_arabic && (
                                         <div className="mb-8 rounded-xl border-l-4 border-[#1D4533] bg-[#F9D2BA]/20 p-6 text-center">
                                             <p
-                                                className="font-amiri mb-3 text-[26px] leading-loose text-[#1D4533]"
+                                                className={`${data.quote_font} mb-3 leading-loose`}
+                                                style={{
+                                                    fontSize: `${data.quote_font_size}px`,
+                                                    color: data.quote_color,
+                                                    lineHeight: 2.5,
+                                                }}
                                                 dir="rtl"
                                             >
                                                 {data.quote_arabic}
@@ -786,13 +992,28 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         </div>
                                     )}
 
+                                {isTafsirCategory &&
+                                    quoteType === "youtube" &&
+                                    quoteYtId && (
+                                        <div className="mb-8 overflow-hidden rounded-xl bg-[#F9D2BA]/20 p-4 text-center">
+                                            <div className="mx-auto aspect-video w-full max-w-lg overflow-hidden rounded-xl bg-black shadow-sm">
+                                                <iframe
+                                                    src={`https://www.youtube.com/embed/${quoteYtId}`}
+                                                    className="h-full w-full border-0"
+                                                    allowFullScreen
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
                                 <div
                                     className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#5E3122]"
                                     dangerouslySetInnerHTML={{
                                         __html: data.content
-                                            ? data.content
-                                                  .replace(/&nbsp;/g, " ")
-                                                  .replace(/\u00a0/g, " ")
+                                            ? data.content.replace(
+                                                  /&nbsp;|\u00a0/g,
+                                                  " ",
+                                              )
                                             : "",
                                     }}
                                 />

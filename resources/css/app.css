@@ -15,16 +15,19 @@
     background: #0f4c3a;
     color: #fdfbf7;
 }
-
 /* =========================================
-   3. DEFINISI FONT LOKAL (Hapus /public)
-========================================= */
-/* =========================================
-   3. DEFINISI FONT LOKAL
+   1. DEFINISI FONT LOKAL (Dua Nama: Kebab-case & Title Case)
 ========================================= */
 @font-face {
     font-family: "Al Jazeera";
-    src: url("/public/fonts/AL-JAZEERA-ARABIC-REGULAR.TTF") format("truetype");
+    src: url("/fonts/AL-JAZEERA-ARABIC-REGULAR.TTF") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "al-jazeera";
+    src: url("/fonts/AL-JAZEERA-ARABIC-REGULAR.TTF") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -33,9 +36,19 @@
 @font-face {
     font-family: "AdobeNaskh";
     src:
-        url("/public/fonts/AdobeNaskh-Medium.woff2") format("woff2"),
-        url("/public/fonts/AdobeNaskh-Medium.woff") format("woff"),
-        url("/public/fonts/Adobe-Naskh-Medium.otf") format("opentype");
+        url("/fonts/AdobeNaskh-Medium.woff2") format("woff2"),
+        url("/fonts/AdobeNaskh-Medium.woff") format("woff"),
+        url("/fonts/Adobe-Naskh-Medium.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "adobe-naskh";
+    src:
+        url("/fonts/AdobeNaskh-Medium.woff2") format("woff2"),
+        url("/fonts/AdobeNaskh-Medium.woff") format("woff"),
+        url("/fonts/Adobe-Naskh-Medium.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -44,15 +57,24 @@
 @font-face {
     font-family: "HelveticaCustom";
     src:
-        url("/public/fonts/Helvetica.ttf") format("truetype"),
-        url("/public/fonts/GENEVA.TTF") format("truetype");
+        url("/fonts/Helvetica.ttf") format("truetype"),
+        url("/fonts/GENEVA.TTF") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "helvetica";
+    src:
+        url("/fonts/Helvetica.ttf") format("truetype"),
+        url("/fonts/GENEVA.TTF") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
 }
 
 /* =========================================
-   4. CLASS HELPER FONT ARAB
+   2. CLASS HELPER FONT ARAB (Untuk Textarea & Preview)
 ========================================= */
 .font-amiri,
 .ql-font-amiri {
@@ -61,7 +83,7 @@
 
 .font-adobe-naskh,
 .ql-font-adobe-naskh {
-    font-family: "AdobeNaskh", serif !important;
+    font-family: "AdobeNaskh", "adobe-naskh", serif !important;
 }
 
 .font-tajawal,
@@ -86,6 +108,57 @@
 
 .font-al-jazeera,
 .ql-font-al-jazeera {
+    font-family: "Al Jazeera", "al-jazeera", sans-serif !important;
+}
+
+/* =========================================
+   3. DROPDOWN MAPPING QUILL (Label Toolbar)
+========================================= */
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="helvetica"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="helvetica"]::before {
+    content: "Helvetica" !important;
+    font-family: "HelveticaCustom", sans-serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="amiri"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="amiri"]::before {
+    content: "Amiri" !important;
+    font-family: "Amiri", serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tajawal"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tajawal"]::before {
+    content: "Tajawal" !important;
+    font-family: "Tajawal", sans-serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="cairo"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="cairo"]::before {
+    content: "Cairo" !important;
+    font-family: "Cairo", sans-serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="almarai"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="almarai"]::before {
+    content: "Almarai" !important;
+    font-family: "Almarai", sans-serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="scheherazade"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="scheherazade"]::before {
+    content: "Scheherazade" !important;
+    font-family: "Scheherazade New", serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="adobe-naskh"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="adobe-naskh"]::before {
+    content: "Adobe Naskh" !important;
+    font-family: "AdobeNaskh", serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="al-jazeera"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="al-jazeera"]::before {
+    content: "Al Jazeera" !important;
     font-family: "Al Jazeera", sans-serif !important;
 }
 
@@ -227,69 +300,6 @@ button {
 
 .prose p:empty {
     display: none;
-}
-
-/* =========================================
-   8. TOOLBAR & DROPDOWN MAPPING QUILL
-========================================= */
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="helvetica"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="helvetica"]::before {
-    content: "Helvetica" !important;
-    font-family: "HelveticaCustom", sans-serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="inter"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="inter"]::before {
-    content: "Inter" !important;
-    font-family: "Inter", sans-serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="playfair"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="playfair"]::before {
-    content: "Playfair" !important;
-    font-family: "Playfair Display", serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="amiri"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="amiri"]::before {
-    content: "Amiri" !important;
-    font-family: "Amiri", serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tajawal"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tajawal"]::before {
-    content: "Tajawal" !important;
-    font-family: "Tajawal", sans-serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="cairo"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="cairo"]::before {
-    content: "Cairo" !important;
-    font-family: "Cairo", sans-serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="almarai"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="almarai"]::before {
-    content: "Almarai" !important;
-    font-family: "Almarai", sans-serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="scheherazade"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="scheherazade"]::before {
-    content: "Scheherazade" !important;
-    font-family: "Scheherazade New", serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="adobe-naskh"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="adobe-naskh"]::before {
-    content: "Adobe Naskh" !important;
-    font-family: "AdobeNaskh", serif;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="al-jazeera"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="al-jazeera"]::before {
-    content: "Al Jazeera" !important;
-    font-family: "Al Jazeera", sans-serif;
 }
 
 .quill-wrapper .ql-toolbar.ql-snow {

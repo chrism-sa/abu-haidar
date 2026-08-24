@@ -101,12 +101,14 @@ export default function MainLayout({
     const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            window.location.href = `/artikel?search=${encodeURIComponent(searchQuery.trim())}`;
+            window.location.href = `/artikel?search=${encodeURIComponent(
+                searchQuery.trim(),
+            )}`;
         }
     };
 
     return (
-        <div className="relative min-h-screen bg-[#F7EAE0] text-[#5E3122] flex flex-col justify-between selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-20 md:pb-0">
+        <div className="relative min-h-screen bg-[#F7EAE0] text-[#5E3122] flex flex-col justify-between selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-24 lg:pb-0">
             {/* ======================================================== */}
             {/* BACKGROUND: FLUID GLOWING ORBS */}
             {/* ======================================================== */}
@@ -144,8 +146,8 @@ export default function MainLayout({
 
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-40 border-b border-[#E8D9CE] bg-[#F7EAE0]/90 backdrop-blur-md shadow-2xs">
-                <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-0">
-                    <div className="flex h-[64px] sm:h-[78px] items-center justify-between gap-2.5 sm:gap-3">
+                <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
+                    <div className="flex h-[64px] sm:h-[76px] items-center justify-between gap-3">
                         {/* 1. BRAND LOGO + KAPSUL */}
                         <Link
                             href="/home"
@@ -157,26 +159,26 @@ export default function MainLayout({
                                 style={{
                                     filter: "brightness(0) saturate(100%) invert(20%) sepia(35%) saturate(1600%) hue-rotate(345deg) brightness(90%) contrast(92%)",
                                 }}
-                                className="h-8 sm:h-11 w-auto object-contain drop-shadow-2xs"
+                                className="h-8 sm:h-10 w-auto object-contain drop-shadow-2xs"
                             />
 
                             <div className="h-6 sm:h-7 w-[1px] bg-[#5E3122]/20"></div>
 
                             <div className="flex flex-col justify-center pr-1 sm:pr-1.5">
-                                <div className="font-brand text-[14px] sm:text-[17px] font-bold leading-none tracking-tight text-[#1D4533]">
+                                <div className="font-brand text-[14px] sm:text-[16px] font-bold leading-none tracking-tight text-[#1D4533] whitespace-nowrap">
                                     Abu Haidar
                                 </div>
-                                <div className="mt-0.5 sm:mt-1 text-[7.5px] sm:text-[8.5px] font-bold tracking-[0.14em] text-[#8C5E43] uppercase">
+                                <div className="mt-0.5 sm:mt-1 text-[7.5px] sm:text-[8px] font-bold tracking-[0.14em] text-[#8C5E43] uppercase whitespace-nowrap">
                                     Artikel Islam & Dakwah
                                 </div>
                             </div>
                         </Link>
 
-                        {/* 2. MENU NAVIGASI DESKTOP */}
-                        <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-bold text-[#1D4533]">
+                        {/* 2. MENU NAVIGASI DESKTOP (Tampil di layar >= lg: 1024px) */}
+                        <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-[13.5px] font-bold text-[#1D4533]">
                             <Link
                                 href="/home"
-                                className={`flex items-center gap-1.5 transition ${
+                                className={`flex items-center gap-1.5 whitespace-nowrap transition ${
                                     url === "/home" || url === "/"
                                         ? "text-[#1D4533]"
                                         : "text-[#5E3122]/75 hover:text-[#1D4533]"
@@ -187,7 +189,7 @@ export default function MainLayout({
                             </Link>
                             <Link
                                 href="/artikel"
-                                className={`flex items-center gap-1.5 transition ${
+                                className={`flex items-center gap-1.5 whitespace-nowrap transition ${
                                     url.startsWith("/artikel")
                                         ? "text-[#1D4533]"
                                         : "text-[#5E3122]/75 hover:text-[#1D4533]"
@@ -198,22 +200,22 @@ export default function MainLayout({
                             </Link>
                             <Link
                                 href="/ebook"
-                                className={`flex items-center gap-1.5 transition ${
+                                className={`flex items-center gap-1.5 whitespace-nowrap transition ${
                                     url.startsWith("/ebook")
                                         ? "text-[#1D4533]"
                                         : "text-[#5E3122]/75 hover:text-[#1D4533]"
                                 }`}
                             >
                                 <FileText size={15} />
-                                <span>E-Book PDF</span>
+                                <span>EBook</span>
                             </Link>
                         </nav>
 
-                        {/* 3. PENCARIAN DESKTOP & TOMBOL AKUN */}
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            {/* Input Pencarian Desktop */}
+                        {/* 3. PENCARIAN & TOMBOL AKUN */}
+                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                            {/* Input Pencarian Desktop (Tampil di >= lg) */}
                             <div
-                                className="relative hidden md:block w-48 lg:w-64"
+                                className="relative hidden lg:block w-48 xl:w-60"
                                 ref={desktopSearchRef}
                             >
                                 <form
@@ -294,13 +296,13 @@ export default function MainLayout({
                                 )}
                             </div>
 
-                            {/* Tombol Toggle Pencarian Mobile */}
+                            {/* Tombol Toggle Pencarian Mobile & Tablet (< lg) */}
                             <button
                                 type="button"
                                 onClick={() =>
                                     setMobileSearchOpen(!mobileSearchOpen)
                                 }
-                                className="md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#5E3122] border border-[#F9D2BA] transition hover:bg-[#F9D2BA]/30 cursor-pointer shadow-2xs"
+                                className="lg:hidden flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-[#5E3122] border border-[#F9D2BA] transition hover:bg-[#F9D2BA]/30 cursor-pointer shadow-2xs"
                                 aria-label="Cari Artikel"
                             >
                                 {mobileSearchOpen ? (
@@ -310,11 +312,11 @@ export default function MainLayout({
                                 )}
                             </button>
 
-                            {/* Tombol Dashboard / Login Admin (Desktop & Mobile) */}
+                            {/* Tombol Dashboard / Login Admin */}
                             {auth?.user ? (
                                 <Link
                                     href="/admin/dashboard"
-                                    className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] shadow-2xs"
+                                    className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] shadow-2xs whitespace-nowrap"
                                 >
                                     <LayoutDashboard size={13} />
                                     <span>Dashboard</span>
@@ -332,7 +334,7 @@ export default function MainLayout({
                         </div>
                     </div>
 
-                    {/* ================= PENCARIAN MOBILE DRAWER ================= */}
+                    {/* ================= PENCARIAN MOBILE & TABLET DRAWER ================= */}
                     <AnimatePresence>
                         {mobileSearchOpen && (
                             <motion.div
@@ -341,7 +343,7 @@ export default function MainLayout({
                                 exit={{ opacity: 0, height: 0 }}
                                 transition={{ duration: 0.2 }}
                                 ref={mobileSearchRef}
-                                className="md:hidden pb-3 pt-1 border-t border-[#E8D9CE] overflow-hidden"
+                                className="lg:hidden pb-3 pt-1 border-t border-[#E8D9CE] overflow-hidden"
                             >
                                 <form
                                     onSubmit={handleSearchSubmit}
@@ -368,7 +370,7 @@ export default function MainLayout({
                                                 setSearchQuery("");
                                                 setSearchResults([]);
                                             }}
-                                            className="absolute right-3 text-[#5E3122]/40"
+                                            className="absolute right-3 text-[#5E3122]/40 cursor-pointer"
                                         >
                                             <X size={14} />
                                         </button>
@@ -442,49 +444,48 @@ export default function MainLayout({
             </header>
 
             {/* ================= MAIN KONTEN ================= */}
-            <main className="relative z-10 mx-auto w-full max-w-[1140px] px-4 sm:px-6 lg:px-0 py-6 sm:py-10 flex-grow">
+            <main className="relative z-10 mx-auto w-full max-w-[1140px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10 flex-grow">
                 {children}
             </main>
 
             {/* ================= FOOTER ================= */}
             <footer className="relative z-10 bg-[#F7EAE0] text-[#3A1C12] pt-12 sm:pt-16 pb-12 border-t border-[#DFC9BC] mt-12 sm:mt-16">
-                <div className="mx-auto max-w-[1140px] px-5 sm:px-6 lg:px-0">
-                    {/* GRID UTAMA (Mobile: Stack 1 Kolom Rata Garis, Desktop: 12-Kolom Seimbang) */}
-                    <div className="grid gap-10 md:gap-12 md:grid-cols-12 pb-10 sm:pb-12 border-b border-[#DFC9BC]">
+                <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
+                    {/* GRID UTAMA (Mobile: Stack 1 Kolom, Desktop: 12-Kolom Seimbang) */}
+                    <div className="grid gap-10 md:gap-8 lg:gap-12 md:grid-cols-12 pb-10 sm:pb-12 border-b border-[#DFC9BC]">
                         {/* ================= 1. BRAND INFO ================= */}
-                        <div className="md:col-span-5 flex flex-col justify-start">
-                            {/* Header Logo + Nama */}
-                            <div className="flex items-center gap-3.5 mb-3.5">
-                                <img
-                                    src="/LOGO.png"
-                                    alt="Abu Haidar"
-                                    style={{
-                                        filter: "brightness(0) saturate(100%) invert(18%) sepia(45%) saturate(1800%) hue-rotate(345deg) brightness(85%) contrast(100%)",
-                                    }}
-                                    className="h-11 sm:h-12 w-auto object-contain drop-shadow-2xs shrink-0"
-                                />
+                        <div className="md:col-span-5 flex items-start gap-3.5">
+                            {/* Logo */}
+                            <img
+                                src="/LOGO.png"
+                                alt="Abu Haidar"
+                                style={{
+                                    filter: "brightness(0) saturate(100%) invert(18%) sepia(45%) saturate(1800%) hue-rotate(345deg) brightness(85%) contrast(100%)",
+                                }}
+                                className="h-11 sm:h-12 w-auto object-contain drop-shadow-2xs shrink-0 mt-0.5"
+                            />
 
-                                {/* Garis Pembatas Vertikal */}
-                                <div className="h-8 w-[2px] bg-[#143325]/40 shrink-0"></div>
+                            {/* Garis Pembatas Vertikal */}
+                            <div className="h-8 w-[2px] bg-[#143325]/40 shrink-0 mt-1"></div>
 
-                                {/* Teks Nama Brand */}
-                                <div>
-                                    <div className="font-brand text-[19px] sm:text-[21px] font-extrabold text-[#143325] leading-none tracking-tight">
-                                        Abu Haidar
-                                    </div>
-                                    <div className="mt-1 text-[8.5px] sm:text-[9.5px] font-bold tracking-[0.18em] text-[#6E3E26] uppercase">
-                                        Artikel Islam & Dakwah
-                                    </div>
+                            {/* Kontainer Teks: Judul + Deskripsi (Lurus Sejajar) */}
+                            <div className="flex flex-col">
+                                <div className="font-brand text-[19px] sm:text-[21px] font-extrabold text-[#143325] leading-none tracking-tight">
+                                    Abu Haidar
                                 </div>
-                            </div>
+                                <div className="mt-1 text-[8.5px] sm:text-[9.5px] font-bold tracking-[0.18em] text-[#6E3E26] uppercase">
+                                    Artikel Islam & Dakwah
+                                </div>
 
-                            {/* Deskripsi Brand: Rata garis di Mobile, Normal di Desktop */}
-                            <p className="pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0 text-[13px] sm:text-[13.5px] text-[#3A1C12] font-medium leading-relaxed max-w-sm">
-                                Media dakwah dan risalah Islam terpercaya yang
-                                menyajikan pembahasan seputar Al-Qur'an, hadis
-                                shahih, akidah, fiqih ibadah, dan panduan amalan
-                                harian seorang muslim.
-                            </p>
+                                {/* Deskripsi: Otomatis presisi lurus dengan judul di semua layar */}
+                                <p className="mt-3.5 text-[13px] sm:text-[13.5px] text-[#3A1C12] font-medium leading-relaxed max-w-sm">
+                                    Media dakwah dan risalah Islam terpercaya
+                                    yang menyajikan pembahasan seputar
+                                    Al-Qur'an, hadis shahih, akidah, fiqih
+                                    ibadah, dan panduan amalan harian seorang
+                                    muslim.
+                                </p>
+                            </div>
                         </div>
 
                         {/* ================= 2. TAUTAN CEPAT ================= */}
@@ -576,7 +577,7 @@ export default function MainLayout({
                     </div>
 
                     {/* ================= 4. COPYRIGHT ================= */}
-                    <div className="mt-6 sm:mt-8 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0 flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11.5px] sm:text-[12px] text-[#4A2619] font-medium gap-2">
+                    <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11.5px] sm:text-[12px] text-[#4A2619] font-medium gap-2">
                         <p>© 2026 Abu Haidar. Hak Cipta Dilindungi.</p>
                         <p className="flex items-center gap-1.5">
                             Dibuat khusus untuk{" "}
@@ -588,9 +589,9 @@ export default function MainLayout({
                 </div>
             </footer>
 
-            {/* ================= BOTTOM BAR MOBILE (FLOATING IOS GLASS PILL) ================= */}
-            <div className="md:hidden fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
-                <nav className="pointer-events-auto w-full max-w-[340px] rounded-full border border-white/70 bg-white/65 px-3 py-2 shadow-[0_8px_32px_0_rgba(94,49,34,0.12)] backdrop-blur-xl transition-all duration-300">
+            {/* ================= BOTTOM BAR MOBILE & TABLET (< lg) ================= */}
+            <div className="lg:hidden fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+                <nav className="pointer-events-auto w-full max-w-[360px] rounded-full border border-white/70 bg-white/75 px-3 py-2 shadow-[0_8px_32px_0_rgba(94,49,34,0.12)] backdrop-blur-xl transition-all duration-300">
                     <div className="flex items-center justify-between">
                         {/* 1. BERANDA */}
                         <Link
@@ -652,6 +653,7 @@ export default function MainLayout({
                     </div>
                 </nav>
             </div>
+
             {/* MODAL LOGIN */}
             <LoginModal
                 isOpen={isLoginModalOpen}
