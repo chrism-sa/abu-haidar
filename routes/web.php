@@ -79,11 +79,31 @@ Route::get('/api/articles/search', function (Request $request) {
 
     $articles = Article::where('is_published', true)
         ->when($keyword, function ($query, $keyword) {
-            $query->where('title', 'like', '%' . $keyword . '%')
-                ->orWhere('description', 'like', '%' . $keyword . '%');
+            $query->where(function ($sub) use ($keyword) {
+                $sub->where('title', 'like', '%' . $keyword . '%')
+                    ->orWhere('description', 'like', '%' . $keyword . '%');
+            });
         })
+        ->latest()
         ->limit(5)
-        ->get(['id', 'title', 'slug', 'image', 'description', 'created_at']);
+        ->get(['id', 'title', 'slug', 'image', 'description', 'created_at'])
+        ->map(function ($article) {
+            $imageUrl = $article->image;
+
+            // Deteksi jika gambar sampul adalah URL YouTube
+            if ($imageUrl && preg_match('/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/', $imageUrl, $matches)) {
+                $imageUrl = "https://img.youtube.com/vi/{$matches[1]}/mqdefault.jpg";
+            }
+
+            return [
+                'id'          => $article->id,
+                'title'       => $article->title,
+                'slug'        => $article->slug,
+                'image'       => $imageUrl,
+                'description' => $article->description,
+                'created_at'  => $article->created_at,
+            ];
+        });
 
     return response()->json([
         'articles' => $articles

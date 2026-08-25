@@ -23,7 +23,7 @@ import "react-quill-new/dist/quill.snow.css";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/Utils/cropImage";
 
-// 1. Whitelist Quill
+// 1. Whitelist Font Quill
 const FontStyle = Quill.import("attributors/style/font") as any;
 FontStyle.whitelist = [
     "helvetica",
@@ -38,6 +38,7 @@ FontStyle.whitelist = [
 ];
 Quill.register(FontStyle, true);
 
+// 2. Whitelist Ukuran Font Quill (Pixel)
 const SizeStyle = Quill.import("attributors/style/size") as any;
 SizeStyle.whitelist = [
     "12px",
@@ -53,7 +54,26 @@ SizeStyle.whitelist = [
 ];
 Quill.register(SizeStyle, true);
 
-// 2. Mapping Pilihan Font Arab untuk Quote (Gunakan Class Helper)
+// 3. Daftarkan Attributor Line Height (Spasi Baris)
+const Parchment = Quill.import("parchment") as any;
+const LineHeightStyle = new Parchment.StyleAttributor(
+    "lineHeight",
+    "line-height",
+    {
+        scope: Parchment.Scope ? Parchment.Scope.BLOCK : 3,
+        whitelist: ["1.2", "1.5", "1.8", "2.0", "2.4", "2.8", "3.2"],
+    },
+);
+Quill.register(LineHeightStyle, true);
+
+// Daftarkan Direction Attributor untuk RTL & Align
+const DirectionStyle = Quill.import("attributors/style/direction") as any;
+Quill.register(DirectionStyle, true);
+
+const AlignStyle = Quill.import("attributors/style/align") as any;
+Quill.register(AlignStyle, true);
+
+// Pilihan Font Arab untuk Quote (Class Helper)
 const ARABIC_FONTS = [
     { label: "Adobe Naskh", value: "font-adobe-naskh" },
     { label: "Al Jazeera", value: "font-al-jazeera" },
@@ -63,13 +83,6 @@ const ARABIC_FONTS = [
     { label: "Tajawal", value: "font-tajawal" },
     { label: "Almarai", value: "font-almarai" },
 ];
-
-// Daftarkan Direction Attributor untuk RTL
-const DirectionStyle = Quill.import("attributors/style/direction") as any;
-Quill.register(DirectionStyle, true);
-
-const AlignStyle = Quill.import("attributors/style/align") as any;
-Quill.register(AlignStyle, true);
 
 // Helper Deteksi YouTube ID
 const getYouTubeId = (url: string | null | undefined) => {
@@ -139,7 +152,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    // Inertia Form State
+    // Form Inertia State
     const { data, setData, post, processing, transform, errors } = useForm({
         _method: "POST",
         title: article.title || "",
@@ -279,12 +292,25 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
     };
 
-    // Toolbar Quill Editor tanpa dropdown Heading
+    // Toolbar Quill Editor dengan Spasi (Line Height)
     const quillModules = useMemo(
         () => ({
             toolbar: [
                 [{ font: FontStyle.whitelist }],
                 [{ size: SizeStyle.whitelist }],
+                [
+                    {
+                        lineHeight: [
+                            "1.2",
+                            "1.5",
+                            "1.8",
+                            "2.0",
+                            "2.4",
+                            "2.8",
+                            "3.2",
+                        ],
+                    },
+                ],
                 ["bold", "italic", "underline", "strike"],
                 [{ color: [] }, { background: [] }],
                 [{ align: [] }, { direction: "rtl" }],

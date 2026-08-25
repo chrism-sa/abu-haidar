@@ -160,10 +160,8 @@
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="al-jazeera"]::before {
     content: "Al Jazeera" !important;
     font-family: "Al Jazeera", sans-serif !important;
-}
-
-/* =========================================
-   3. SETTING GLOBAL TEKS ARAB (RTL)
+} /* =========================================
+   1. SETTING GLOBAL TEKS ARAB (RTL)
 ========================================= */
 [dir="rtl"],
 [lang="ar"],
@@ -182,13 +180,9 @@ input[dir="rtl"],
 .font-al-jazeera {
     direction: rtl !important;
     text-align: right !important;
-
-    /* KUNCI UTAMA: Harus 'normal', jangan '0' agar browser bisa merangkai huruf */
     letter-spacing: normal !important;
     word-spacing: normal !important;
     font-variant-ligatures: normal !important;
-
-    /* HAPUS SEMUA font-feature-settings YANG BIKIN ERROR (Pakai default browser) */
     font-feature-settings: normal !important;
 }
 
@@ -199,7 +193,7 @@ input[dir="rtl"],
 }
 
 /* =========================================
-   6. ATURAN WEBSITE UMUM
+   2. ATURAN WEBSITE UMUM (Warm Paper Theme)
 ========================================= */
 html {
     scroll-behavior: smooth;
@@ -209,7 +203,8 @@ body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
-    background: #f2f7f4;
+    background: #f7eae0;
+    color: #5e3122;
 }
 
 button,
@@ -222,8 +217,14 @@ button {
 }
 
 /* =========================================
-   7. STYLING PROSE ARTIKEL
+   3. STYLING PROSE / ARTIKEL (Warm Cream Tone)
 ========================================= */
+.prose {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #4a2619;
+}
+
 .ql-editor em,
 .prose em {
     font-style: italic !important;
@@ -258,23 +259,15 @@ button {
 }
 
 .prose p {
-    margin-bottom: 1.25rem !important;
-    line-height: 1.8 !important;
+    margin-bottom: 1.25rem;
+    line-height: 1.8;
 }
 
 .prose blockquote {
-    border-left: 4px solid #063f2f !important;
-    padding-left: 1rem !important;
-    font-style: italic !important;
-    background: #faf8f5 !important;
+    border-left: 4px solid #1d4533 !important;
     padding: 1rem !important;
-}
-
-.ql-editor,
-.prose {
-    font-size: 16px !important;
-    line-height: 1.8 !important;
-    color: #333 !important;
+    font-style: italic !important;
+    background: #faf3eb !important;
 }
 
 .prose h2,
@@ -283,6 +276,7 @@ button {
     margin-top: 2rem !important;
     margin-bottom: 1rem !important;
     font-weight: bold !important;
+    color: #1d4533 !important;
     font-family: "Playfair Display", Georgia, serif !important;
 }
 
@@ -302,37 +296,84 @@ button {
     display: none;
 }
 
+/* =========================================
+   4. STYLING WRAPPER & EDITOR QUILL (Warm Tone)
+========================================= */
 .quill-wrapper .ql-toolbar.ql-snow {
     position: sticky;
     top: 73px;
     z-index: 20;
-    background-color: #f9fbf9 !important;
-    border: 1px solid #e0eae3 !important;
+    background-color: #faf2ea !important;
+    border: 1px solid #e8cebc !important;
     border-top-left-radius: 1rem;
     border-top-right-radius: 1rem;
-    padding: 10px 16px !important;
+    padding: 10px 14px !important;
     max-width: 800px;
     margin: 0 auto;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 4px 6px !important;
+}
+
+.quill-wrapper .ql-toolbar.ql-snow .ql-formats {
+    margin-right: 4px !important;
+    display: inline-flex !important;
+    align-items: center !important;
 }
 
 .quill-wrapper .ql-container.ql-snow {
     border: none !important;
     font-size: 16px !important;
+    background-color: #fdf9f5 !important;
 }
 
 .quill-wrapper .ql-editor {
     min-height: 480px;
     padding: 30px !important;
     line-height: 1.8;
-    color: #333;
+    color: #4a2619;
+    background-color: #fdf9f5;
 }
 
-/* Label mapping ukuran font Quill */
+/* =========================================
+   5. TOOLBAR DROPDOWN DIMENSIONS & LABELS
+========================================= */
+.ql-snow .ql-picker.ql-font {
+    width: 115px !important;
+}
+
+.ql-snow .ql-picker.ql-size {
+    width: 80px !important;
+}
+
+.ql-snow .ql-picker.ql-lineHeight {
+    width: 84px !important;
+}
+
+.ql-snow .ql-picker.ql-lineHeight .ql-picker-label {
+    padding-left: 8px !important;
+    padding-right: 18px !important;
+    font-size: 13px !important;
+    font-weight: 600;
+}
+
 .ql-snow .ql-picker.ql-size .ql-picker-label::before,
 .ql-snow .ql-picker.ql-size .ql-picker-item::before {
     content: attr(data-value) !important;
 }
+
 .ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before,
 .ql-snow .ql-picker.ql-size .ql-picker-item:not([data-value])::before {
     content: "Ukuran" !important;
+}
+
+.ql-snow .ql-picker.ql-lineHeight .ql-picker-label::before,
+.ql-snow .ql-picker.ql-lineHeight .ql-picker-item::before {
+    content: attr(data-value) "x" !important;
+}
+
+.ql-snow .ql-picker.ql-lineHeight .ql-picker-label:not([data-value])::before,
+.ql-snow .ql-picker.ql-lineHeight .ql-picker-item:not([data-value])::before {
+    content: "Spasi" !important;
 }

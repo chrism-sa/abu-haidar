@@ -4,6 +4,8 @@ import {
     ChevronRight,
     Link2,
     Download,
+    Calendar,
+    Share2,
 } from "lucide-react";
 import {
     FaFacebookF,
@@ -14,7 +16,7 @@ import {
 import { Link, Head } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import MainLayout from "../../Layouts/MainLayout";
-import Sidebar from "../../Components/Sidebar";
+import Sidebar, { EbookSidebarItem } from "../../Components/Sidebar";
 import { CategoryBadge } from "../../Components/ArticleComponents";
 import { Article, Category, Quote } from "../../types";
 
@@ -23,6 +25,7 @@ interface ShowProps {
     relatedArticles: Article[];
     popularArticles: Article[];
     categories: Category[];
+    ebooks?: EbookSidebarItem[];
     quote: Quote | null;
 }
 
@@ -62,11 +65,20 @@ const timeAgo = (dateString: string) => {
     return "Baru saja diperbarui";
 };
 
+const getYouTubeId = (url: string | null | undefined) => {
+    if (!url) return null;
+    const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+};
+
 export default function Show({
     article,
-    relatedArticles,
-    popularArticles,
-    categories,
+    relatedArticles = [],
+    popularArticles = [],
+    categories = [],
+    ebooks = [],
     quote,
 }: ShowProps) {
     const [copied, setCopied] = useState(false);
@@ -101,253 +113,282 @@ export default function Show({
         window.print();
     };
 
+    const ytId = getYouTubeId(article.image);
+
     return (
-        <MainLayout>
-            {/* Hanya memuat title tab tanpa Google Fonts tambahan */}
+        <MainLayout title={article.title}>
             <Head title={`${article.title} - Abu Haidar`} />
 
-            <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
-                <article className="min-w-0">
-                    <nav className="mb-6 flex items-center gap-2 text-[11px] text-[#777]">
-                        <Link href="/home" className="hover:text-[#126047]">
-                            Beranda
-                        </Link>
-                        <ChevronRight size={12} />
-                        <Link href="/artikel" className="hover:text-[#126047]">
-                            Artikel
-                        </Link>
-                        <ChevronRight size={12} />
-                        <span className="font-medium text-[#333]">
-                            {article.category.name}
-                        </span>
-                    </nav>
-
-                    <header className="mb-8">
-                        <CategoryBadge>{article.category.name}</CategoryBadge>
-                        <h1 className="mt-4 font-brand text-[28px] font-bold leading-tight text-[#10251d] sm:text-[36px] lg:text-[42px]">
-                            {article.title}
-                        </h1>
-
-                        <div className="mt-5 flex flex-wrap items-center gap-3 border-y border-[#e9e6df] py-4 text-[13px] font-medium text-[#555]">
-                            <span>
-                                Ditulis: {formatDate(article.created_at)}
+            <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+                <div className="grid gap-10 lg:gap-12 lg:grid-cols-[1fr_340px]">
+                    <article className="min-w-0">
+                        {/* Breadcrumbs */}
+                        <nav className="mb-5 flex flex-wrap items-center gap-2 text-[11.5px] font-semibold text-[#8C5E43]">
+                            <Link
+                                href="/home"
+                                className="hover:text-[#1D4533] transition-colors"
+                            >
+                                Beranda
+                            </Link>
+                            <ChevronRight
+                                size={12}
+                                className="text-[#E8CEBC]"
+                            />
+                            <Link
+                                href="/artikel"
+                                className="hover:text-[#1D4533] transition-colors"
+                            >
+                                Artikel
+                            </Link>
+                            <ChevronRight
+                                size={12}
+                                className="text-[#E8CEBC]"
+                            />
+                            <span className="text-[#1D4533] font-bold truncate max-w-xs">
+                                {article.category?.name || "Kajian"}
                             </span>
-                            <span className="h-1 w-1 rounded-full bg-[#ccc]"></span>
-                            <span className="italic text-[#888]">
-                                {timeAgo(article.updated_at)}
-                            </span>
-                        </div>
-                    </header>
+                        </nav>
 
-                    <div className="mb-10 aspect-[2/1] overflow-hidden rounded-2xl bg-[#f0eee9]">
-                        {/* FUNGSI DETEKSI YOUTUBE (Letakkan di dalam komponen Show, sebelum return) */}
-                        {(() => {
-                            const getYouTubeId = (url: string) => {
-                                if (!url) return null;
-                                const regExp =
-                                    /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-                                const match = url.match(regExp);
-                                return match && match[2].length === 11
-                                    ? match[2]
-                                    : null;
-                            };
-                            const ytId = getYouTubeId(article.image);
+                        {/* Article Header */}
+                        <header className="mb-7">
+                            {article.category && (
+                                <CategoryBadge>
+                                    {article.category.name}
+                                </CategoryBadge>
+                            )}
+                            <h1 className="mt-3.5 font-brand text-[24px] sm:text-[32px] md:text-[38px] font-bold leading-tight text-[#1D4533]">
+                                {article.title}
+                            </h1>
 
-                            return ytId ? (
-                                /* JIKA LINK YOUTUBE -> TAMPILKAN PLAYER VIDEO */
-                                <div className="mb-10 aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
+                            <div className="mt-4 flex flex-wrap items-center gap-3 border-y border-[#E8CEBC] py-3.5 text-[12px] sm:text-[12.5px] font-semibold text-[#5E3122]/75">
+                                <span className="flex items-center gap-1.5">
+                                    <Calendar
+                                        size={13}
+                                        className="text-[#8C5E43]"
+                                    />
+                                    Ditulis: {formatDate(article.created_at)}
+                                </span>
+                                <span className="h-1 w-1 rounded-full bg-[#E8CEBC]"></span>
+                                <span className="italic text-[#8C5E43]">
+                                    {timeAgo(article.updated_at)}
+                                </span>
+                            </div>
+                        </header>
+
+                        {/* Media Sampul: YouTube Player / Image */}
+                        <div className="mb-8 overflow-hidden rounded-2xl border border-[#E8CEBC] bg-[#FDF9F5] shadow-xs">
+                            {ytId ? (
+                                <div className="aspect-video w-full bg-black">
                                     <iframe
                                         src={`https://www.youtube.com/embed/${ytId}`}
                                         title={article.title}
                                         className="h-full w-full border-0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
-                                    ></iframe>
+                                    />
                                 </div>
-                            ) : (
-                                /* JIKA GAMBAR BIASA -> TAMPILKAN GAMBAR */
-                                <div className="mb-10 aspect-[2/1] overflow-hidden rounded-2xl bg-[#f0eee9] shadow-sm">
+                            ) : article.image ? (
+                                <div className="aspect-[2/1] w-full bg-[#F2E2D5] overflow-hidden">
                                     <img
                                         src={article.image}
                                         alt={article.title}
                                         className="h-full w-full object-cover"
                                     />
                                 </div>
-                            );
-                        })()}
-                    </div>
+                            ) : null}
+                        </div>
 
-                    <div
-                        id="article-content-body"
-                        className="rounded-2xl border border-[#e8e4da] bg-white p-6 shadow-sm sm:p-12"
-                    >
-                        {/* Karena "app.css" sudah diatur, seluruh font Arab yang dikirim dari Editor (Quill) otomatis mengenali gaya Adobe Naskh dan Al Jazeera di sini */}
+                        {/* Naskah Artikel (Warm Paper Tone) */}
                         <div
-                            className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#333] prose-headings:text-[#17251f] prose-li:list-decimal prose-li:pl-2 prose-p:leading-relaxed prose-p:text-justify md:prose-p:text-left [hyphens:none] [overflow-wrap:normal] [word-break:normal]"
-                            dangerouslySetInnerHTML={{
-                                __html: article.content,
-                            }}
-                        />
-                    </div>
+                            id="article-content-body"
+                            className="rounded-3xl border border-[#E8CEBC] bg-[#FDF9F5] p-6 sm:p-10 md:p-12 shadow-xs"
+                        >
+                            <div
+                                className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#4A2619] prose-headings:text-[#1D4533] prose-p:leading-relaxed [hyphens:none] [overflow-wrap:break-word] [word-break:normal]"
+                                dangerouslySetInnerHTML={{
+                                    __html: article.content,
+                                }}
+                            />
+                        </div>
 
-                    <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-[#e9e6df] pt-6">
-                        <div className="flex items-center gap-4">
-                            <span className="text-[12px] font-bold text-[#17251f]">
-                                Bagikan Artikel:
-                            </span>
-                            <div className="relative flex gap-2">
-                                <a
-                                    href={shareLinks.facebook}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#1877F2] hover:text-white"
-                                    aria-label="Share to Facebook"
-                                >
-                                    <FaFacebookF size={13} />
-                                </a>
-
-                                <a
-                                    href={shareLinks.twitter}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#1DA1F2] hover:text-white"
-                                    aria-label="Share to Twitter"
-                                >
-                                    <FaTwitter size={13} />
-                                </a>
-
-                                <a
-                                    href={shareLinks.whatsapp}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#25D366] hover:text-white"
-                                    aria-label="Share to WhatsApp"
-                                >
-                                    <FaWhatsapp size={14} />
-                                </a>
-
-                                <a
-                                    href={shareLinks.telegram}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#0088cc] hover:text-white"
-                                    aria-label="Share to Telegram"
-                                >
-                                    <FaTelegramPlane size={14} />
-                                </a>
-
-                                <div className="relative flex items-center">
-                                    <button
-                                        onClick={copyLinkToClipboard}
-                                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f1eb] text-[#555] transition hover:bg-[#126047] hover:text-white"
-                                        aria-label="Copy Link"
+                        {/* Share & Download Toolbar */}
+                        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[#E8CEBC] pt-6">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <span className="text-[12px] font-bold text-[#1D4533] flex items-center gap-1.5">
+                                    <Share2 size={14} />
+                                    Bagikan:
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    <a
+                                        href={shareLinks.whatsapp}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#25D366] hover:text-white hover:border-[#25D366]"
+                                        aria-label="Share to WhatsApp"
                                     >
-                                        <Link2 size={14} />
-                                    </button>
-
-                                    {copied && (
-                                        <span className="animate-fade-in absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#17251f] px-2.5 py-1 text-[10px] font-medium text-white shadow-sm">
-                                            Tautan disalin!
-                                        </span>
-                                    )}
+                                        <FaWhatsapp size={14} />
+                                    </a>
+                                    <a
+                                        href={shareLinks.telegram}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#0088cc] hover:text-white hover:border-[#0088cc]"
+                                        aria-label="Share to Telegram"
+                                    >
+                                        <FaTelegramPlane size={14} />
+                                    </a>
+                                    <a
+                                        href={shareLinks.facebook}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2]"
+                                        aria-label="Share to Facebook"
+                                    >
+                                        <FaFacebookF size={13} />
+                                    </a>
+                                    <a
+                                        href={shareLinks.twitter}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1DA1F2] hover:text-white hover:border-[#1DA1F2]"
+                                        aria-label="Share to Twitter"
+                                    >
+                                        <FaTwitter size={13} />
+                                    </a>
+                                    <div className="relative flex items-center">
+                                        <button
+                                            type="button"
+                                            onClick={copyLinkToClipboard}
+                                            className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1D4533] hover:text-[#F7EAE0] cursor-pointer"
+                                            aria-label="Salin Tautan"
+                                            title="Salin Tautan"
+                                        >
+                                            <Link2 size={14} />
+                                        </button>
+                                        {copied && (
+                                            <span className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#1D4533] px-2.5 py-1 text-[10px] font-bold text-[#F7EAE0] shadow-sm">
+                                                Tautan disalin!
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
+
+                            <button
+                                type="button"
+                                onClick={handleDownloadPDF}
+                                className="inline-flex items-center gap-2 rounded-xl bg-[#1D4533] px-4 py-2 text-[12px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] shadow-2xs cursor-pointer"
+                            >
+                                <Download size={14} /> Cetak / Simpan PDF
+                            </button>
                         </div>
 
-                        <button
-                            onClick={handleDownloadPDF}
-                            className="inline-flex items-center gap-2 rounded-lg bg-[#063f2f] px-4 py-2 text-[12px] font-bold text-white transition hover:bg-[#07513c]"
-                        >
-                            <Download size={14} /> PDF
-                        </button>
-                    </div>
-
-                    <section className="mt-14">
-                        <h2 className="mb-6 border-b border-[#e9e6df] pb-3 font-brand text-[20px] font-bold text-[#17251f]">
-                            Artikel Terkait
-                        </h2>
-                        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
-                            {relatedArticles.map((relArticle) => (
-                                <Link
-                                    href={`/artikel/${relArticle.slug}`}
-                                    key={relArticle.id}
-                                    className="group flex flex-col justify-between"
-                                >
-                                    <div>
-                                        {/* Thumbnail Gambar */}
-                                        <div className="mb-3 aspect-[1.5/1] overflow-hidden rounded-xl bg-[#f0eee9]">
-                                            <img
-                                                src={relArticle.image}
-                                                alt={relArticle.title}
-                                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                                            />
-                                        </div>
-
-                                        {/* Judul Artikel */}
-                                        <h3 className="line-clamp-2 font-brand text-[13px] font-bold leading-snug text-[#14251e] transition-colors group-hover:text-[#126047]">
-                                            {relArticle.title}
-                                        </h3>
-
-                                        {/* Deskripsi Singkat */}
-                                        {relArticle.description && (
-                                            <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-[#6C857A]">
-                                                {relArticle.description}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Waktu Pembuatan & Pembaruan */}
-                                    <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 text-[10px] text-[#8CA397]">
-                                        <span>
-                                            {formatDate(relArticle.created_at)}
-                                        </span>
-                                        {relArticle.updated_at && (
-                                            <>
-                                                <span className="h-1 w-1 rounded-full bg-[#A5B9AD]" />
-                                                <span className="italic">
-                                                    {timeAgo(
-                                                        relArticle.updated_at,
+                        {/* Artikel Terkait */}
+                        {relatedArticles.length > 0 && (
+                            <section className="mt-12 sm:mt-14">
+                                <h2 className="mb-5 border-b border-[#E8CEBC] pb-3 font-brand text-[20px] font-bold text-[#1D4533]">
+                                    Artikel Terkait
+                                </h2>
+                                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                                    {relatedArticles.map((relArticle) => (
+                                        <Link
+                                            href={`/artikel/${relArticle.slug}`}
+                                            key={relArticle.id}
+                                            className="group flex flex-col justify-between rounded-2xl border border-[#E8CEBC] bg-[#FDF9F5] p-3.5 transition-all hover:border-[#1D4533]/40 hover:shadow-md"
+                                        >
+                                            <div>
+                                                <div className="mb-2.5 aspect-[16/10] overflow-hidden rounded-xl bg-[#F2E2D5]">
+                                                    {relArticle.image ? (
+                                                        <img
+                                                            src={
+                                                                getYouTubeId(
+                                                                    relArticle.image,
+                                                                )
+                                                                    ? `https://img.youtube.com/vi/${getYouTubeId(relArticle.image)}/mqdefault.jpg`
+                                                                    : relArticle.image
+                                                            }
+                                                            alt={
+                                                                relArticle.title
+                                                            }
+                                                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-[8px] font-bold text-[#5E3122]/40">
+                                                            NO IMG
+                                                        </div>
                                                     )}
+                                                </div>
+
+                                                <h3 className="line-clamp-2 font-brand text-[13px] font-bold leading-snug text-[#1D4533] transition-colors group-hover:text-[#5E3122]">
+                                                    {relArticle.title}
+                                                </h3>
+
+                                                {relArticle.description && (
+                                                    <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#5E3122]/70">
+                                                        {relArticle.description}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="mt-3 pt-2 border-t border-[#E8CEBC]/60 text-[10px] font-semibold text-[#8C5E43]">
+                                                {formatDate(
+                                                    relArticle.created_at,
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+                    </article>
+
+                    {/* Sidebar Kanan (Kutipan + E-Book + Kategori + Artikel Populer) */}
+                    <aside className="space-y-6">
+                        <Sidebar
+                            categories={categories}
+                            quote={quote}
+                            ebooks={ebooks}
+                        />
+
+                        {/* Artikel Populer Card */}
+                        {popularArticles.length > 0 && (
+                            <section className="rounded-2xl border border-[#E8CEBC] bg-[#FDF9F5] p-5 shadow-sm">
+                                <h3 className="mb-4 border-b border-[#E8CEBC] pb-3 font-brand text-[15px] font-bold text-[#1D4533] flex items-center gap-2">
+                                    <BookOpen
+                                        size={16}
+                                        className="text-[#1D4533]"
+                                    />
+                                    Artikel Populer
+                                </h3>
+                                <div className="space-y-4">
+                                    {popularArticles.map(
+                                        (popArticle, index) => (
+                                            <Link
+                                                href={`/artikel/${popArticle.slug}`}
+                                                key={popArticle.id}
+                                                className="group flex items-start gap-3"
+                                            >
+                                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#FAF3EB] border border-[#E8CEBC] text-[10px] font-bold text-[#1D4533] transition-colors group-hover:bg-[#1D4533] group-hover:text-[#F7EAE0]">
+                                                    {index + 1}
                                                 </span>
-                                            </>
-                                        )}
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-                </article>
-
-                <aside className="space-y-8">
-                    <Sidebar categories={categories} quote={quote} />
-
-                    <section className="rounded-xl border border-[#e8e4da] bg-white p-6">
-                        <h3 className="mb-4 border-b border-[#f0eee9] pb-3 font-brand text-[15px] font-bold text-[#17251f]">
-                            Artikel Populer
-                        </h3>
-                        <div className="space-y-5">
-                            {popularArticles.map((popArticle, index) => (
-                                <Link
-                                    href={`/artikel/${popArticle.slug}`}
-                                    key={popArticle.id}
-                                    className="group flex items-start gap-3"
-                                >
-                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f3f1eb] text-[10px] font-bold text-[#126047] transition-colors group-hover:bg-[#063f2f] group-hover:text-white">
-                                        {index + 1}
-                                    </span>
-                                    <div>
-                                        <h4 className="line-clamp-2 text-[12px] font-medium leading-relaxed text-[#333] transition-colors group-hover:text-[#126047]">
-                                            {popArticle.title}
-                                        </h4>
-                                        <p className="mt-1 text-[10px] text-[#888]">
-                                            {formatDate(popArticle.created_at)}
-                                        </p>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-                </aside>
+                                                <div className="min-w-0">
+                                                    <h4 className="line-clamp-2 text-[12px] font-bold leading-snug text-[#1D4533] transition-colors group-hover:text-[#5E3122]">
+                                                        {popArticle.title}
+                                                    </h4>
+                                                    <p className="mt-0.5 text-[10px] font-semibold text-[#8C5E43]">
+                                                        {formatDate(
+                                                            popArticle.created_at,
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        ),
+                                    )}
+                                </div>
+                            </section>
+                        )}
+                    </aside>
+                </div>
             </div>
         </MainLayout>
     );

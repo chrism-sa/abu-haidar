@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Quote;
+use App\Models\Ebook;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -54,12 +55,16 @@ class ArticleController extends Controller
             $query->where('is_published', true);
         }])->orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get();
 
+        // Mengambil data ebook terbit untuk sidebar
+        $ebooks = Ebook::where('is_published', true)->latest()->take(3)->get();
+
         return Inertia::render('Article/Show', [
-            'article' => $article,
+            'article'         => $article,
             'relatedArticles' => $relatedArticles,
             'popularArticles' => $popularArticles,
-            'categories' => $categories,
-            'quote' => $quote,
+            'categories'      => $categories,
+            'ebooks'          => $ebooks,
+            'quote'           => $quote,
         ]);
     }
 
@@ -74,20 +79,20 @@ class ArticleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable|string',
-            'content' => 'required|string',
-            'image_file' => 'nullable|image|max:2048',
-            'image_url' => 'nullable|url',
-            'quote_type' => 'nullable|string|in:text,image,youtube',
-            'quote_arabic' => 'nullable|string',
+            'title'             => 'required|string|max:255',
+            'category_id'       => 'required|exists:categories,id',
+            'description'       => 'nullable|string',
+            'content'           => 'required|string',
+            'image_file'        => 'nullable|image|max:2048',
+            'image_url'         => 'nullable|url',
+            'quote_type'        => 'nullable|string|in:text,image,youtube',
+            'quote_arabic'      => 'nullable|string',
             'quote_translation' => 'nullable|string',
-            'quote_reference' => 'nullable|string',
-            'quote_font' => 'nullable|string',
-            'quote_font_size' => 'nullable|numeric',
-            'quote_color' => 'nullable|string',
-            'quote_image' => 'nullable|image|max:2048',
+            'quote_reference'   => 'nullable|string',
+            'quote_font'        => 'nullable|string',
+            'quote_font_size'   => 'nullable|numeric',
+            'quote_color'       => 'nullable|string',
+            'quote_image'       => 'nullable|image|max:2048',
             'quote_youtube_url' => 'nullable|url',
         ]);
 
@@ -104,12 +109,12 @@ class ArticleController extends Controller
 
         // 1. Simpan Data Artikel
         $article = Article::create([
-            'category_id' => $request->category_id,
-            'title' => $request->title,
-            'slug' => Str::slug($request->title) . '-' . time(),
-            'image' => $imagePath,
-            'description' => $cleanDescription,
-            'content' => $cleanContent,
+            'category_id'  => $request->category_id,
+            'title'        => $request->title,
+            'slug'         => Str::slug($request->title) . '-' . time(),
+            'image'        => $imagePath,
+            'description'  => $cleanDescription,
+            'content'      => $cleanContent,
             'is_published' => true,
         ]);
 
@@ -119,12 +124,12 @@ class ArticleController extends Controller
         if ($quoteType === 'text' && $request->filled('quote_arabic')) {
             Quote::create([
                 'article_id'  => $article->id,
-                'arabic'       => $request->quote_arabic,
-                'translation'  => $request->quote_translation,
-                'reference'    => $request->quote_reference,
-                'font'         => $request->input('quote_font', 'font-adobe-naskh'),
-                'font_size'    => $request->input('quote_font_size', 36),
-                'color'        => $request->input('quote_color', '#1D4533'),
+                'arabic'      => $request->quote_arabic,
+                'translation' => $request->quote_translation,
+                'reference'   => $request->quote_reference,
+                'font'        => $request->input('quote_font', 'font-adobe-naskh'),
+                'font_size'   => $request->input('quote_font_size', 36),
+                'color'       => $request->input('quote_color', '#1D4533'),
             ]);
         } elseif ($quoteType === 'image' && $request->hasFile('quote_image')) {
             $quoteImagePath = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
@@ -160,20 +165,20 @@ class ArticleController extends Controller
         $article = Article::findOrFail($id);
 
         $request->validate([
-            'title' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable|string',
-            'content' => 'required|string',
-            'image_file' => 'nullable|image|max:2048',
-            'image_url' => 'nullable|url',
-            'quote_type' => 'nullable|string|in:text,image,youtube',
-            'quote_arabic' => 'nullable|string',
+            'title'             => 'required|string|max:255',
+            'category_id'       => 'required|exists:categories,id',
+            'description'       => 'nullable|string',
+            'content'           => 'required|string',
+            'image_file'        => 'nullable|image|max:2048',
+            'image_url'         => 'nullable|url',
+            'quote_type'        => 'nullable|string|in:text,image,youtube',
+            'quote_arabic'      => 'nullable|string',
             'quote_translation' => 'nullable|string',
-            'quote_reference' => 'nullable|string',
-            'quote_font' => 'nullable|string',
-            'quote_font_size' => 'nullable|numeric',
-            'quote_color' => 'nullable|string',
-            'quote_image' => 'nullable|image|max:2048',
+            'quote_reference'   => 'nullable|string',
+            'quote_font'        => 'nullable|string',
+            'quote_font_size'   => 'nullable|numeric',
+            'quote_color'       => 'nullable|string',
+            'quote_image'       => 'nullable|image|max:2048',
             'quote_youtube_url' => 'nullable|url',
         ]);
 

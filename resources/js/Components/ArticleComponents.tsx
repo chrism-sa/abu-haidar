@@ -35,7 +35,6 @@ const timeAgo = (dateString: string) => {
     return "Baru saja diperbarui";
 };
 
-// HELPER MENDETEKSI LINK YOUTUBE
 const getYouTubeId = (url: string | null | undefined) => {
     if (!url) return null;
     const regExp =
@@ -46,7 +45,7 @@ const getYouTubeId = (url: string | null | undefined) => {
 
 export function CategoryBadge({ children }: { children: React.ReactNode }) {
     return (
-        <span className="inline-flex w-fit rounded-sm bg-[#0F4C3A] px-2 py-1 text-[8px] font-bold tracking-wider text-white uppercase">
+        <span className="inline-flex w-fit rounded-md bg-[#1D4533] px-2.5 py-0.5 text-[9px] font-bold tracking-wider text-[#F7EAE0] uppercase shadow-2xs">
             {children}
         </span>
     );
@@ -60,12 +59,12 @@ export function ArticleMeta({
     updatedAt?: string;
 }) {
     return (
-        <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#6C857A]">
+        <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] font-semibold text-[#5E3122]/70">
             <span>{formatDate(createdAt)}</span>
             {updatedAt && (
                 <>
-                    <span className="h-[3px] w-[3px] rounded-full bg-[#A5B9AD]" />
-                    <span className="italic text-[#8CA397]">
+                    <span className="h-[3px] w-[3px] rounded-full bg-[#E8CEBC]" />
+                    <span className="italic text-[#8C5E43]">
                         {timeAgo(updatedAt)}
                     </span>
                 </>
@@ -83,9 +82,9 @@ export function ArticleCard({ article }: { article: Article }) {
     return (
         <Link
             href={`/artikel/${article.slug}`}
-            className="group flex flex-col overflow-hidden rounded-xl bg-white border border-[#E0EAE3] transition-all hover:shadow-md block"
+            className="group flex flex-col overflow-hidden rounded-2xl bg-[#FDF9F5] border border-[#E8CEBC] shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:border-[#1D4533]/40 hover:shadow-md block"
         >
-            <div className="relative aspect-[1.5/1] overflow-hidden bg-[#EBF1ED]">
+            <div className="relative aspect-[16/10] overflow-hidden bg-[#F2E2D5]">
                 {imageUrl ? (
                     <img
                         src={imageUrl}
@@ -93,33 +92,32 @@ export function ArticleCard({ article }: { article: Article }) {
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-[#8CA397]">
-                        NO IMG
+                    <div className="flex h-full w-full items-center justify-center text-[10px] font-bold tracking-wider text-[#5E3122]/50">
+                        GAMBAR ARTIKEL
                     </div>
                 )}
 
-                {/* Overlay Logo Play Jika Video YouTube */}
                 {ytId && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:bg-red-600/90">
-                            <FaYoutube size={24} />
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 backdrop-blur-xs text-[#FDF9F5] shadow-md transition-all duration-300 group-hover:scale-110 group-hover:bg-red-600">
+                            <FaYoutube size={20} />
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="flex flex-1 flex-col p-4">
+            <div className="flex flex-1 flex-col p-4 sm:p-5 bg-[#FDF9F5]">
                 <CategoryBadge>{article.category.name}</CategoryBadge>
 
-                {/* Judul menggunakan font-brand */}
-                <h3 className="mt-3 font-brand text-[15px] font-bold leading-snug tracking-tight text-[#162B22] line-clamp-2 transition-colors group-hover:text-[#0F4C3A]">
+                <h3 className="mt-3 font-brand text-[15px] sm:text-[16px] font-bold leading-snug tracking-tight text-[#1D4533] line-clamp-2 transition-colors group-hover:text-[#5E3122]">
                     {article.title}
                 </h3>
 
-                <p className="mt-2 text-[11px] leading-relaxed text-[#6C857A] line-clamp-2 flex-1">
+                <p className="mt-2 text-[12px] leading-relaxed text-[#5E3122]/75 line-clamp-2 flex-1">
                     {article.description}
                 </p>
-                <div className="mt-4 pt-4 border-t border-[#E0EAE3]">
+
+                <div className="mt-4 pt-3.5 border-t border-[#E8CEBC]/60">
                     <ArticleMeta
                         createdAt={article.created_at}
                         updatedAt={article.updated_at}
@@ -139,9 +137,9 @@ export function CompactArticle({ article }: { article: Article }) {
     return (
         <Link
             href={`/artikel/${article.slug}`}
-            className="group flex gap-4 border-b border-[#E0EAE3] py-4 first:pt-0 last:border-0 last:pb-0 block"
+            className="group flex gap-3.5 border-b border-[#E8CEBC]/60 py-3.5 first:pt-0 last:border-0 last:pb-0 block transition-all"
         >
-            <div className="relative h-[80px] w-[110px] shrink-0 overflow-hidden rounded-lg bg-[#EBF1ED]">
+            <div className="relative h-[72px] w-[100px] shrink-0 overflow-hidden rounded-xl border border-[#E8CEBC] bg-[#F2E2D5]">
                 {imageUrl ? (
                     <img
                         src={imageUrl}
@@ -149,15 +147,14 @@ export function CompactArticle({ article }: { article: Article }) {
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[9px] font-bold text-[#8CA397]">
+                    <div className="flex h-full w-full items-center justify-center text-[8px] font-bold tracking-wider text-[#5E3122]/50">
                         NO IMG
                     </div>
                 )}
 
-                {/* Overlay Logo Play Kecil */}
                 {ytId && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white transition-transform duration-500 group-hover:bg-red-600/90">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/50 backdrop-blur-2xs text-[#FDF9F5] transition-transform duration-300 group-hover:bg-red-600">
                             <FaYoutube size={12} />
                         </div>
                     </div>
@@ -167,12 +164,11 @@ export function CompactArticle({ article }: { article: Article }) {
             <div className="flex min-w-0 flex-col justify-center">
                 <CategoryBadge>{article.category.name}</CategoryBadge>
 
-                {/* Judul menggunakan font-brand */}
-                <h4 className="mt-2 font-brand text-[14px] font-bold leading-snug tracking-tight text-[#162B22] line-clamp-2 transition-colors group-hover:text-[#0F4C3A]">
+                <h4 className="mt-1.5 font-brand text-[13.5px] font-bold leading-snug tracking-tight text-[#1D4533] line-clamp-2 transition-colors group-hover:text-[#5E3122]">
                     {article.title}
                 </h4>
 
-                <div className="mt-2">
+                <div className="mt-1.5">
                     <ArticleMeta
                         createdAt={article.created_at}
                         updatedAt={article.updated_at}

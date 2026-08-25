@@ -150,7 +150,7 @@ export default function MainLayout({
                     <div className="flex h-[64px] sm:h-[76px] items-center justify-between gap-3">
                         {/* 1. BRAND LOGO + KAPSUL */}
                         <Link
-                            href="/home"
+                            href="/"
                             className="flex shrink-0 items-center gap-2 sm:gap-3 rounded-full border border-[#F9D2BA] bg-white px-2.5 sm:px-3.5 py-1.5 shadow-2xs transition-all duration-300 hover:border-[#1D4533]/40"
                         >
                             <img
@@ -207,7 +207,7 @@ export default function MainLayout({
                                 }`}
                             >
                                 <FileText size={15} />
-                                <span>EBook</span>
+                                <span>E-Book PDF</span>
                             </Link>
                         </nav>
 
@@ -575,11 +575,10 @@ export default function MainLayout({
                             </div>
                         </div>
                     </div>
-
-                    {/* ================= 4. COPYRIGHT ================= */}
-                    <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11.5px] sm:text-[12px] text-[#4A2619] font-medium gap-2">
+                    {/* ================= 4. COPYRIGHT (Center di Mobile, Left-Right di Desktop) ================= */}
+                    <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left text-[11.5px] sm:text-[12px] text-[#4A2619] font-medium gap-2">
                         <p>© 2026 Abu Haidar. Hak Cipta Dilindungi.</p>
-                        <p className="flex items-center gap-1.5">
+                        <p className="flex items-center justify-center gap-1.5">
                             Dibuat khusus untuk{" "}
                             <span className="font-extrabold text-[#143325]">
                                 Abu Haidar Official

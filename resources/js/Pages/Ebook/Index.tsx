@@ -75,7 +75,7 @@ export default function EbookIndex({ ebooks = [] }: IndexProps) {
                         <span>Pustaka Digital Sunnah</span>
                     </div>
                     <h1 className="font-brand text-[28px] sm:text-[36px] font-bold leading-tight text-white">
-                        E-Book & Risalah Ilmiah
+                        E-Book PDF
                     </h1>
                     <p className="mt-3 text-[14px] leading-relaxed text-[#F7EAE0]/80">
                         Unduh naskah kajian, buku saku fiqih, tafsir, dan materi
