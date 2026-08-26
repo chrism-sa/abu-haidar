@@ -63,7 +63,7 @@ export function ArticleMeta({
             <span>{formatDate(createdAt)}</span>
             {updatedAt && (
                 <>
-                    <span className="h-[3px] w-[3px] rounded-full bg-[#E8CEBC]" />
+                    <span className="h-[3px] w-[3px] rounded-full bg-[#E6CEBC]" />
                     <span className="italic text-[#8C5E43]">
                         {timeAgo(updatedAt)}
                     </span>
@@ -82,9 +82,9 @@ export function ArticleCard({ article }: { article: Article }) {
     return (
         <Link
             href={`/artikel/${article.slug}`}
-            className="group flex flex-col overflow-hidden rounded-2xl bg-[#FDF9F5] border border-[#E8CEBC] shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:border-[#1D4533]/40 hover:shadow-md block"
+            className="group flex flex-col overflow-hidden rounded-2xl bg-[#FAF1E8] border border-[#E6CEBC] shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:border-[#1D4533]/40 hover:shadow-md block"
         >
-            <div className="relative aspect-[16/10] overflow-hidden bg-[#F2E2D5]">
+            <div className="relative aspect-[16/10] overflow-hidden bg-[#F2E0D2]">
                 {imageUrl ? (
                     <img
                         src={imageUrl}
@@ -99,14 +99,14 @@ export function ArticleCard({ article }: { article: Article }) {
 
                 {ytId && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 backdrop-blur-xs text-[#FDF9F5] shadow-md transition-all duration-300 group-hover:scale-110 group-hover:bg-red-600">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 backdrop-blur-xs text-[#FAF1E8] shadow-md transition-all duration-300 group-hover:scale-110 group-hover:bg-red-600">
                             <FaYoutube size={20} />
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="flex flex-1 flex-col p-4 sm:p-5 bg-[#FDF9F5]">
+            <div className="flex flex-1 flex-col p-4 sm:p-5 bg-[#FAF1E8]">
                 <CategoryBadge>{article.category.name}</CategoryBadge>
 
                 <h3 className="mt-3 font-brand text-[15px] sm:text-[16px] font-bold leading-snug tracking-tight text-[#1D4533] line-clamp-2 transition-colors group-hover:text-[#5E3122]">
@@ -117,7 +117,7 @@ export function ArticleCard({ article }: { article: Article }) {
                     {article.description}
                 </p>
 
-                <div className="mt-4 pt-3.5 border-t border-[#E8CEBC]/60">
+                <div className="mt-4 pt-3.5 border-t border-[#E6CEBC]/60">
                     <ArticleMeta
                         createdAt={article.created_at}
                         updatedAt={article.updated_at}
@@ -137,9 +137,9 @@ export function CompactArticle({ article }: { article: Article }) {
     return (
         <Link
             href={`/artikel/${article.slug}`}
-            className="group flex gap-3.5 border-b border-[#E8CEBC]/60 py-3.5 first:pt-0 last:border-0 last:pb-0 block transition-all"
+            className="group flex gap-3.5 border-b border-[#E6CEBC]/60 py-3.5 first:pt-0 last:border-0 last:pb-0 block transition-all"
         >
-            <div className="relative h-[72px] w-[100px] shrink-0 overflow-hidden rounded-xl border border-[#E8CEBC] bg-[#F2E2D5]">
+            <div className="relative h-[72px] w-[100px] shrink-0 overflow-hidden rounded-xl border border-[#E6CEBC] bg-[#F2E0D2]">
                 {imageUrl ? (
                     <img
                         src={imageUrl}
@@ -154,7 +154,7 @@ export function CompactArticle({ article }: { article: Article }) {
 
                 {ytId && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/50 backdrop-blur-2xs text-[#FDF9F5] transition-transform duration-300 group-hover:bg-red-600">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/50 backdrop-blur-2xs text-[#FAF1E8] transition-transform duration-300 group-hover:bg-red-600">
                             <FaYoutube size={12} />
                         </div>
                     </div>

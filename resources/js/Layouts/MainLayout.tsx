@@ -451,7 +451,7 @@ export default function MainLayout({
             {/* ================= FOOTER ================= */}
             <footer className="relative z-10 bg-[#F7EAE0] text-[#3A1C12] pt-12 sm:pt-16 pb-12 border-t border-[#DFC9BC] mt-12 sm:mt-16">
                 <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
-                    {/* GRID UTAMA (Mobile: Stack 1 Kolom, Desktop: 12-Kolom Seimbang) */}
+                    {/* GRID UTAMA */}
                     <div className="grid gap-10 md:gap-8 lg:gap-12 md:grid-cols-12 pb-10 sm:pb-12 border-b border-[#DFC9BC]">
                         {/* ================= 1. BRAND INFO ================= */}
                         <div className="md:col-span-5 flex items-start gap-3.5">
@@ -468,8 +468,8 @@ export default function MainLayout({
                             {/* Garis Pembatas Vertikal */}
                             <div className="h-8 w-[2px] bg-[#143325]/40 shrink-0 mt-1"></div>
 
-                            {/* Kontainer Teks: Judul + Deskripsi (Lurus Sejajar) */}
-                            <div className="flex flex-col">
+                            {/* Kontainer Teks: Judul + Deskripsi */}
+                            <div className="flex flex-col min-w-0">
                                 <div className="font-brand text-[19px] sm:text-[21px] font-extrabold text-[#143325] leading-none tracking-tight">
                                     Abu Haidar
                                 </div>
@@ -477,7 +477,7 @@ export default function MainLayout({
                                     Artikel Islam & Dakwah
                                 </div>
 
-                                {/* Deskripsi: Otomatis presisi lurus dengan judul di semua layar */}
+                                {/* Deskripsi */}
                                 <p className="mt-3.5 text-[13px] sm:text-[13.5px] text-[#3A1C12] font-medium leading-relaxed max-w-sm">
                                     Media dakwah dan risalah Islam terpercaya
                                     yang menyajikan pembahasan seputar
@@ -489,7 +489,6 @@ export default function MainLayout({
                         </div>
 
                         {/* ================= 2. TAUTAN CEPAT ================= */}
-                        {/* pl hanya aktif di mobile agar sejajar lurus, di desktop md:pl-0 */}
                         <div className="md:col-span-3 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0">
                             <h4 className="text-[13px] sm:text-[13.5px] font-extrabold tracking-[0.16em] uppercase text-[#143325] mb-3.5 flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#143325]"></span>
@@ -533,7 +532,6 @@ export default function MainLayout({
                         </div>
 
                         {/* ================= 3. SALURAN MEDIA DAKWAH ================= */}
-                        {/* pl hanya aktif di mobile agar sejajar lurus, di desktop md:pl-0 */}
                         <div className="md:col-span-4 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0">
                             <h4 className="text-[13px] sm:text-[13.5px] font-extrabold tracking-[0.16em] uppercase text-[#143325] mb-3.5 flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#143325]"></span>
@@ -549,7 +547,7 @@ export default function MainLayout({
                                     href="https://youtube.com/SHOLATTV"
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#FF0000] hover:text-white hover:border-[#FF0000] hover:-translate-y-0.5 hover:shadow-md"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#FF0000] hover:text-white hover:border-[#FF0000] hover:-translate-y-0.5 hover:shadow-md"
                                     aria-label="YouTube"
                                 >
                                     <FaYoutube size={17} />
@@ -558,7 +556,7 @@ export default function MainLayout({
                                     href="https://instagram.com/sholat.tv"
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#E4405F] hover:text-white hover:border-[#E4405F] hover:-translate-y-0.5 hover:shadow-md"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#E4405F] hover:text-white hover:border-[#E4405F] hover:-translate-y-0.5 hover:shadow-md"
                                     aria-label="Instagram"
                                 >
                                     <FaInstagram size={17} />
@@ -567,7 +565,7 @@ export default function MainLayout({
                                     href="https://facebook.com/sholattv"
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] hover:-translate-y-0.5 hover:shadow-md"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#DFC9BC] text-[#143325] shadow-xs transition-all duration-300 hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] hover:-translate-y-0.5 hover:shadow-md"
                                     aria-label="Facebook"
                                 >
                                     <FaFacebookF size={16} />
@@ -575,15 +573,35 @@ export default function MainLayout({
                             </div>
                         </div>
                     </div>
-                    {/* ================= 4. COPYRIGHT (Center di Mobile, Left-Right di Desktop) ================= */}
-                    <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left text-[11.5px] sm:text-[12px] text-[#4A2619] font-medium gap-2">
-                        <p>© 2026 Abu Haidar. Hak Cipta Dilindungi.</p>
-                        <p className="flex items-center justify-center gap-1.5">
-                            Dibuat khusus untuk{" "}
+
+                    {/* ================= 4. COPYRIGHT & ATTRIBUTION ================= */}
+                    <div className="mt-6 sm:mt-8 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left text-[11px] sm:text-[11.5px] text-[#4A2619] font-medium">
+                        {/* Sisi Kiri: Hak Cipta */}
+                        <p className="sm:pl-[calc(2.75rem+0.875rem+2px)] md:pl-[calc(3rem+0.875rem+2px)] transition-all">
+                            © 2026{" "}
+                            <span className="font-bold text-[#143325]">
+                                Abu Haidar
+                            </span>
+                            . Hak Cipta Dilindungi.
+                        </p>
+
+                        {/* Sisi Kanan: Keterangan Klien & Pengembang */}
+                        <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5">
+                            <span>Media Resmi</span>
                             <span className="font-extrabold text-[#143325]">
                                 Abu Haidar Official
                             </span>
-                        </p>
+                            <span className="text-[#DFC9BC]">•</span>
+                            <span>Dikembangkan oleh</span>
+                            <a
+                                href="https://cv-charismaulanasa.web.id/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-extrabold text-[#143325] underline decoration-[#DFC9BC] underline-offset-4 transition-colors hover:text-[#5E3122] hover:decoration-[#143325]"
+                            >
+                                Charismaulanasa
+                            </a>
+                        </div>
                     </div>
                 </div>
             </footer>

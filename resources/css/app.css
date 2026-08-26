@@ -377,3 +377,28 @@ button {
 .ql-snow .ql-picker.ql-lineHeight .ql-picker-item:not([data-value])::before {
     content: "Spasi" !important;
 }
+
+/* Hilangkan margin berlebih pada paragraf editor & prose saat font besar */
+.ql-editor p,
+.prose p {
+    margin-top: 0;
+    margin-bottom: 0.5rem; /* Margin default lebih rapat */
+}
+
+/* Jika diberi line-height rapat (seperti 1.2x), kurangi juga jarak bawahnya */
+.ql-editor p[style*="line-height: 1.2"],
+.prose p[style*="line-height: 1.2"] {
+    margin-bottom: 0.25rem;
+}
+
+/* Pastikan heading di dalam editor tidak membawa margin bawaan yang terlalu renggang */
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.prose h1,
+.prose h2,
+.prose h3 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.25;
+}

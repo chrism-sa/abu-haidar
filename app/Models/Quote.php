@@ -14,10 +14,11 @@ class Quote extends Model
         'arabic',
         'translation',
         'reference',
-        'image',
         'font',
         'font_size',
+        'line_height', 
         'color',
+        'image',
     ];
 
     public function article()

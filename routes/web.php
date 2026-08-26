@@ -96,12 +96,12 @@ Route::get('/api/articles/search', function (Request $request) {
             }
 
             return [
-                'id'          => $article->id,
-                'title'       => $article->title,
-                'slug'        => $article->slug,
-                'image'       => $imageUrl,
+                'id' => $article->id,
+                'title' => $article->title,
+                'slug' => $article->slug,
+                'image' => $imageUrl,
                 'description' => $article->description,
-                'created_at'  => $article->created_at,
+                'created_at' => $article->created_at,
             ];
         });
 
@@ -227,6 +227,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     })->name('admin.articles.create');
 
     // ================= STORE ARTIKEL =================
+    // ================= SIMPAN ARTIKEL BARU =================
     Route::post('/articles', function (Request $request) {
         $rawContent = $request->content ?? '';
         $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $rawContent);
@@ -254,6 +255,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'quote_reference' => 'nullable|string',
             'quote_font' => 'nullable|string',
             'quote_font_size' => 'nullable|numeric',
+            'quote_line_height' => 'nullable|numeric', // <-- Validasi Spasi Baris
             'quote_color' => 'nullable|string',
         ], [
             'title.required' => 'Judul artikel wajib diisi.',
@@ -295,14 +297,15 @@ Route::middleware('auth')->prefix('admin')->group(function () {
 
         if ($quoteImage || $request->filled('quote_arabic') || $request->filled('quote_reference')) {
             Quote::create([
-                'article_id'  => $article->id,
-                'arabic'       => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
-                'translation'  => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
-                'reference'    => $request->quote_reference ?? '',
-                'font'         => $request->input('quote_font', 'font-adobe-naskh'),
-                'font_size'    => $request->input('quote_font_size', 36),
-                'color'        => $request->input('quote_color', '#1D4533'),
-                'image'        => $quoteImage,
+                'article_id' => $article->id,
+                'arabic' => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
+                'translation' => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
+                'reference' => $request->quote_reference ?? '',
+                'font' => $request->input('quote_font', 'font-adobe-naskh'),
+                'font_size' => $request->input('quote_font_size', 36),
+                'line_height' => $request->input('quote_line_height', 2.4), // <-- Simpan Line Height
+                'color' => $request->input('quote_color', '#1D4533'),
+                'image' => $quoteImage,
             ]);
         }
 
@@ -328,6 +331,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'quote_reference' => 'nullable|string',
             'quote_font' => 'nullable|string',
             'quote_font_size' => 'nullable|numeric',
+            'quote_line_height' => 'nullable|numeric', // <-- Validasi Spasi Baris
             'quote_color' => 'nullable|string',
         ]);
 
@@ -399,13 +403,14 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             Quote::updateOrCreate(
                 ['article_id' => $article->id],
                 [
-                    'arabic'      => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
+                    'arabic' => $quoteType === 'text' ? ($request->quote_arabic ?? '') : '',
                     'translation' => $quoteType === 'text' ? ($request->quote_translation ?? '') : '',
-                    'reference'   => $request->quote_reference ?? '',
-                    'font'        => $request->input('quote_font', 'font-adobe-naskh'),
-                    'font_size'   => $request->input('quote_font_size', 36),
-                    'color'       => $request->input('quote_color', '#1D4533'),
-                    'image'       => $quoteImage,
+                    'reference' => $request->quote_reference ?? '',
+                    'font' => $request->input('quote_font', 'font-adobe-naskh'),
+                    'font_size' => $request->input('quote_font_size', 36),
+                    'line_height' => $request->input('quote_line_height', 2.4), // <-- Update Line Height
+                    'color' => $request->input('quote_color', '#1D4533'),
+                    'image' => $quoteImage,
                 ]
             );
         } else {
@@ -415,6 +420,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil diperbarui!');
     })->name('admin.articles.update');
 
+    // ================= EDIT VIEW =================
     Route::get('/articles/{id}/edit', function ($id) {
         $article = Article::with('quotes')->findOrFail($id);
 
@@ -425,6 +431,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         ]);
     })->name('admin.articles.edit');
 
+    // ================= HAPUS ARTIKEL =================
     Route::delete('/articles/{id}', function ($id) {
         $article = Article::findOrFail($id);
         $article->delete();
@@ -468,7 +475,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         return response()->json(['success' => true, 'is_featured' => $status]);
     })->name('admin.articles.toggleFeatured');
 
-    // 4. KELOLA KATEGORI
+    // ================= KELOLA KATEGORI =================
     Route::get('/categories', function () {
         $categories = Category::withCount('articles')
             ->orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')
@@ -478,7 +485,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'categories' => $categories
         ]);
     })->name('admin.categories.index');
-
+    
     Route::post('/categories', function (Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:categories,name',

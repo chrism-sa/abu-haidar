@@ -15,6 +15,7 @@ import {
     Type,
     ImagePlus,
     Palette,
+    AlignVerticalSpaceAround,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { Category } from "@/types";
@@ -137,6 +138,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         quote_reference: "",
         quote_font: "font-adobe-naskh",
         quote_font_size: 36,
+        quote_line_height: 2.4, // Pengaturan default spasi baris quote
         quote_color: "#1D4533",
         quote_image: null as File | null,
         quote_youtube_url: "",
@@ -180,6 +182,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         quote_type: quoteType,
         quote_font: data.quote_font,
         quote_font_size: Number(data.quote_font_size),
+        quote_line_height: Number(data.quote_line_height),
         quote_color: data.quote_color,
     }));
 
@@ -660,8 +663,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 {/* 1. OPSI TEKS */}
                                 {quoteType === "text" && (
                                     <>
-                                        {/* Kustomisasi Font, Warna, & Ukuran */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-[#F9D2BA] bg-white p-3">
+                                        {/* Kustomisasi Font, Warna, Ukuran & Spasi Baris */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-[#F9D2BA] bg-white p-3.5 shadow-2xs">
                                             {/* Pilihan Font Arab */}
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
@@ -751,6 +754,42 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                     className="w-full h-1.5 mt-2 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
                                                 />
                                             </div>
+
+                                            {/* Slider Spasi Baris (Line Height) */}
+                                            <div>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122] flex items-center gap-1">
+                                                        <AlignVerticalSpaceAround
+                                                            size={12}
+                                                        />{" "}
+                                                        Spasi Baris
+                                                    </label>
+                                                    <span className="text-[11px] font-bold text-[#1D4533]">
+                                                        {Number(
+                                                            data.quote_line_height,
+                                                        ).toFixed(1)}
+                                                        x
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={1.4}
+                                                    max={3.4}
+                                                    step={0.1}
+                                                    value={
+                                                        data.quote_line_height
+                                                    }
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            "quote_line_height",
+                                                            Number(
+                                                                e.target.value,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="w-full h-1.5 mt-2 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
+                                                />
+                                            </div>
                                         </div>
 
                                         {/* Textarea Input Ayat Arab */}
@@ -767,7 +806,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             style={{
                                                 fontSize: `${data.quote_font_size}px`,
                                                 color: data.quote_color,
-                                                lineHeight: 2.6,
+                                                lineHeight:
+                                                    data.quote_line_height,
                                             }}
                                             placeholder="إِنَّ أَكْرَمَكُمْ عِندَ اللَّهِ أَتْقَاكُمْ"
                                             className={`${data.quote_font} w-full rounded-xl border border-[#F9D2BA] bg-white px-5 py-4 focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal`}
@@ -986,11 +1026,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     data.quote_arabic && (
                                         <div className="mb-8 rounded-xl border-l-4 border-[#1D4533] bg-[#F9D2BA]/20 p-6 text-center">
                                             <p
-                                                className={`${data.quote_font} mb-3 leading-loose`}
+                                                className={`${data.quote_font} mb-3`}
                                                 style={{
                                                     fontSize: `${data.quote_font_size}px`,
                                                     color: data.quote_color,
-                                                    lineHeight: 2.5,
+                                                    lineHeight:
+                                                        data.quote_line_height,
                                                 }}
                                                 dir="rtl"
                                             >

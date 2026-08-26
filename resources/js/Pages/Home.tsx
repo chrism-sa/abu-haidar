@@ -41,11 +41,11 @@ export default function Home({
     quote,
 }: HomeProps) {
     const fadeUp = {
-        hidden: { opacity: 0, y: 25 },
+        hidden: { opacity: 0, y: 20 },
         visible: {
             opacity: 1,
             y: 0,
-            transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+            transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
         },
     };
 
@@ -53,7 +53,7 @@ export default function Home({
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: { staggerChildren: 0.12 },
+            transition: { staggerChildren: 0.1 },
         },
     };
 
@@ -76,16 +76,16 @@ export default function Home({
     return (
         <MainLayout title="Beranda">
             <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-                {/* HERO SECTION (ARTIKEL UTAMA) */}
+                {/* HERO SECTION (KREM MATANG #FAF1E8) */}
                 {heroArticle ? (
                     <motion.section
                         initial="hidden"
                         animate="visible"
                         variants={fadeUp}
-                        className="group mb-10 sm:mb-14 overflow-hidden rounded-3xl bg-white border border-[#F9D2BA] shadow-xs transition-all duration-300 hover:shadow-md hover:border-[#1D4533]/40"
+                        className="group mb-10 sm:mb-14 overflow-hidden rounded-3xl bg-[#FAF1E8] border border-[#E6CEBC] shadow-xs transition-all duration-300 hover:shadow-md hover:border-[#1D4533]/40"
                     >
                         <div className="grid lg:grid-cols-[1.15fr_1fr] items-stretch">
-                            <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12 order-2 lg:order-1">
+                            <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12 order-2 lg:order-1 bg-[#FAF1E8]">
                                 {heroArticle.category && (
                                     <div>
                                         <CategoryBadge>
@@ -101,7 +101,7 @@ export default function Home({
                                 <p className="mt-3.5 text-[13.5px] sm:text-[14.5px] leading-relaxed text-[#5E3122]/80 line-clamp-3">
                                     {heroArticle.description}
                                 </p>
-                                <div className="mt-7 flex items-center gap-4">
+                                <div className="mt-7 flex flex-wrap items-center gap-4">
                                     <Link
                                         href={`/artikel/${heroArticle.slug}`}
                                         className="inline-flex w-fit items-center gap-2.5 rounded-full bg-[#1D4533] px-6 py-3 text-[12.5px] sm:text-[13px] font-bold tracking-wide text-[#F7EAE0] transition-all hover:bg-[#143325] hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#1D4533]/20"
@@ -117,7 +117,7 @@ export default function Home({
                             </div>
                             <Link
                                 href={`/artikel/${heroArticle.slug}`}
-                                className="relative min-h-[240px] sm:min-h-[300px] lg:min-h-full w-full overflow-hidden block bg-[#F7EAE0] order-1 lg:order-2 border-b lg:border-b-0 lg:border-l border-[#F9D2BA]"
+                                className="relative min-h-[240px] sm:min-h-[300px] lg:min-h-full w-full overflow-hidden block bg-[#F2E0D2] order-1 lg:order-2 border-b lg:border-b-0 lg:border-l border-[#E6CEBC]"
                             >
                                 {heroImageUrl ? (
                                     <img
@@ -143,15 +143,14 @@ export default function Home({
                         </div>
                     </motion.section>
                 ) : (
-                    /* HERO EMPTY STATE */
                     <motion.section
                         initial="hidden"
                         animate="visible"
                         variants={fadeUp}
-                        className="mb-10 sm:mb-14 overflow-hidden rounded-3xl bg-gradient-to-br from-[#1D4533] via-[#1A4130] to-[#143325] p-7 sm:p-10 lg:p-12 text-[#F7EAE0] shadow-md relative border border-[#F9D2BA]/30"
+                        className="mb-10 sm:mb-14 overflow-hidden rounded-3xl bg-gradient-to-br from-[#1D4533] via-[#1A4130] to-[#143325] p-7 sm:p-10 lg:p-12 text-[#F7EAE0] shadow-md relative border border-[#E6CEBC]/30"
                     >
                         <div className="max-w-2xl relative z-10">
-                            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-[11px] font-bold tracking-wide uppercase text-[#F9D2BA] backdrop-blur-xs mb-3">
+                            <div className="inline-flex items-center gap-2 rounded-full bg-[#FAF1E8]/10 px-3.5 py-1 text-[11px] font-bold tracking-wide uppercase text-[#F7EAE0] backdrop-blur-xs mb-3">
                                 <Sparkles size={13} />
                                 <span>Portal Dakwah & Kajian Sunnah</span>
                             </div>
@@ -168,7 +167,7 @@ export default function Home({
                     </motion.section>
                 )}
 
-                {/* CONTENT GRID: KONTEN KIRI & SIDEBAR KANAN */}
+                {/* CONTENT GRID */}
                 <div className="grid gap-10 lg:gap-12 lg:grid-cols-[1fr_340px]">
                     {/* LEFT CONTENT */}
                     <div className="min-w-0">
@@ -179,7 +178,7 @@ export default function Home({
                             viewport={{ once: true, margin: "-50px" }}
                             variants={fadeUp}
                         >
-                            <div className="mb-6 flex items-center justify-between border-b border-[#F9D2BA] pb-3.5">
+                            <div className="mb-6 flex items-center justify-between border-b border-[#E6CEBC] pb-3.5">
                                 <h2 className="font-brand text-[20px] sm:text-[22px] font-bold text-[#1D4533] flex items-center gap-2">
                                     Terbitan Terbaru
                                 </h2>
@@ -212,8 +211,8 @@ export default function Home({
                                     ))}
                                 </motion.div>
                             ) : (
-                                <div className="rounded-2xl border border-dashed border-[#F9D2BA] bg-white/60 p-8 text-center">
-                                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F7EAE0] text-[#1D4533] mb-3">
+                                <div className="rounded-2xl border border-dashed border-[#E6CEBC] bg-[#FAF1E8] p-8 text-center">
+                                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F2E0D2] text-[#1D4533] mb-3">
                                         <BookOpen size={22} />
                                     </div>
                                     <h3 className="font-brand text-[16px] font-bold text-[#1D4533]">
@@ -227,7 +226,7 @@ export default function Home({
                             )}
                         </motion.section>
 
-                        {/* 2. PILIHAN REDAKSI */}
+                        {/* 2. PILIHAN REDAKSI (KREM MATANG #FAF1E8) */}
                         {selectedArticles.length > 0 && (
                             <motion.section
                                 initial="hidden"
@@ -236,7 +235,7 @@ export default function Home({
                                 variants={fadeUp}
                                 className="mt-12 sm:mt-14"
                             >
-                                <div className="mb-6 flex items-center justify-between border-b border-[#F9D2BA] pb-3.5">
+                                <div className="mb-6 flex items-center justify-between border-b border-[#E6CEBC] pb-3.5">
                                     <h2 className="font-brand text-[20px] sm:text-[22px] font-bold text-[#1D4533] flex items-center gap-2">
                                         <Star
                                             size={18}
@@ -265,13 +264,13 @@ export default function Home({
                                             <motion.article
                                                 key={article.id}
                                                 variants={fadeUp}
-                                                className="group relative overflow-hidden rounded-2xl border border-[#F9D2BA] bg-white p-4 sm:p-5 shadow-2xs transition-all duration-300 hover:shadow-md hover:border-[#1D4533]/40"
+                                                className="group relative overflow-hidden rounded-2xl border border-[#E6CEBC] bg-[#FAF1E8] p-4 sm:p-5 shadow-2xs transition-all duration-300 hover:shadow-md hover:border-[#1D4533]/40"
                                             >
                                                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-start sm:items-center">
                                                     {/* Thumbnail Sampul */}
                                                     <Link
                                                         href={`/artikel/${article.slug}`}
-                                                        className="relative h-40 sm:h-28 w-full sm:w-40 shrink-0 overflow-hidden rounded-xl bg-[#F7EAE0] border border-[#F9D2BA]/80 block"
+                                                        className="relative h-40 sm:h-28 w-full sm:w-40 shrink-0 overflow-hidden rounded-xl bg-[#F2E0D2] border border-[#E6CEBC] block"
                                                     >
                                                         {coverUrl ? (
                                                             <img
@@ -326,7 +325,6 @@ export default function Home({
                                                             </h3>
                                                         </Link>
 
-                                                        {/* Deskripsi */}
                                                         <p className="mt-1.5 text-[12px] leading-relaxed text-[#5E3122]/75 line-clamp-2">
                                                             {article.description ||
                                                                 "Simak kajian mendalam dan faidah ilmiah pembahasan tema ini..."}

@@ -33,11 +33,11 @@ export default function EbookIndex({ ebooks = [] }: IndexProps) {
     const [search, setSearch] = useState("");
 
     const fadeUp = {
-        hidden: { opacity: 0, y: 25 },
+        hidden: { opacity: 0, y: 20 },
         visible: {
             opacity: 1,
             y: 0,
-            transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+            transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
         },
     };
 
@@ -67,23 +67,23 @@ export default function EbookIndex({ ebooks = [] }: IndexProps) {
                 initial="hidden"
                 animate="visible"
                 variants={fadeUp}
-                className="mb-10 rounded-2xl border border-[#F9D2BA] bg-gradient-to-br from-[#1D4533] to-[#143325] p-8 lg:p-12 text-[#F7EAE0] shadow-sm relative overflow-hidden"
+                className="mb-10 rounded-3xl border border-[#E6CEBC]/40 bg-gradient-to-br from-[#1D4533] via-[#1A4130] to-[#143325] p-7 sm:p-10 lg:p-12 text-[#F7EAE0] shadow-md relative overflow-hidden"
             >
                 <div className="relative z-10 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-[11px] font-bold tracking-wider uppercase text-[#F9D2BA] backdrop-blur-sm mb-4">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-[#FAF1E8]/10 px-3.5 py-1 text-[11px] font-bold tracking-wider uppercase text-[#F7EAE0] backdrop-blur-xs mb-3">
                         <Sparkles size={13} />
                         <span>Pustaka Digital Sunnah</span>
                     </div>
-                    <h1 className="font-brand text-[28px] sm:text-[36px] font-bold leading-tight text-white">
-                        E-Book PDF
+                    <h1 className="font-brand text-[26px] sm:text-[34px] md:text-[38px] font-bold leading-tight text-white">
+                        E-Book & Risalah PDF
                     </h1>
-                    <p className="mt-3 text-[14px] leading-relaxed text-[#F7EAE0]/80">
+                    <p className="mt-3 text-[13.5px] sm:text-[14px] leading-relaxed text-[#F7EAE0]/90">
                         Unduh naskah kajian, buku saku fiqih, tafsir, dan materi
                         dakwah ringkas berformat PDF untuk dibaca secara online
                         maupun offline.
                     </p>
 
-                    {/* BAR PENCARIAN EBOOK */}
+                    {/* BAR PENCARIAN EBOOK (KREM MATANG #FAF1E8) */}
                     <div className="mt-6 relative max-w-md">
                         <Search
                             size={16}
@@ -94,29 +94,29 @@ export default function EbookIndex({ ebooks = [] }: IndexProps) {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Cari judul risalah atau pembahasan kitab..."
-                            className="w-full rounded-full border border-[#F9D2BA] bg-white py-2.5 pl-11 pr-4 text-[13px] text-[#5E3122] outline-none focus:ring-2 focus:ring-[#F9D2BA]"
+                            className="w-full rounded-full border border-[#E6CEBC] bg-[#FAF1E8] py-2.5 pl-11 pr-4 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:ring-1 focus:ring-[#1D4533]/20"
                         />
                     </div>
                 </div>
             </motion.div>
 
-            {/* GRID DAFTAR E-BOOK */}
+            {/* GRID DAFTAR E-BOOK (KREM MATANG #FAF1E8) */}
             {filteredEbooks.length > 0 ? (
                 <motion.div
                     initial="hidden"
                     animate="visible"
                     variants={staggerContainer}
-                    className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                    className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
                 >
                     {filteredEbooks.map((ebook) => (
                         <motion.div
                             key={ebook.id}
                             variants={fadeUp}
-                            className="flex flex-col justify-between rounded-2xl border border-[#F9D2BA] bg-white p-5 shadow-xs transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+                            className="flex flex-col justify-between rounded-2xl border border-[#E6CEBC] bg-[#FAF1E8] p-5 shadow-2xs transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-[#1D4533]/40"
                         >
                             <div>
                                 {/* Cover Gambar / Placeholder */}
-                                <div className="mb-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-[#F7EAE0]/50 border border-[#F9D2BA]/60 flex items-center justify-center">
+                                <div className="mb-4 aspect-[4/3] w-full overflow-hidden rounded-xl bg-[#F2E0D2] border border-[#E6CEBC] flex items-center justify-center">
                                     {ebook.cover_image ? (
                                         <img
                                             src={ebook.cover_image}
@@ -124,25 +124,25 @@ export default function EbookIndex({ ebooks = [] }: IndexProps) {
                                             className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                                         />
                                     ) : (
-                                        <div className="flex flex-col items-center gap-2 text-[#1D4533]/40">
-                                            <FileText size={40} />
-                                            <span className="text-[10px] font-bold uppercase tracking-wider">
+                                        <div className="flex flex-col items-center gap-1.5 text-[#1D4533]/40">
+                                            <FileText size={38} />
+                                            <span className="text-[9.5px] font-bold uppercase tracking-wider">
                                                 DOKUMEN PDF
                                             </span>
                                         </div>
                                     )}
                                 </div>
 
-                                <h3 className="font-brand text-[16px] font-bold leading-snug text-[#1D4533] line-clamp-2">
+                                <h3 className="font-brand text-[15px] sm:text-[16px] font-bold leading-snug text-[#1D4533] line-clamp-2">
                                     {ebook.title}
                                 </h3>
 
-                                <p className="mt-2 text-[12px] leading-relaxed text-[#5E3122]/70 line-clamp-2">
+                                <p className="mt-2 text-[12px] leading-relaxed text-[#5E3122]/75 line-clamp-2">
                                     {ebook.description ||
                                         "Naskah ilmiah dan risalah dakwah ringkas untuk dibaca dan disebarkan."}
                                 </p>
 
-                                <div className="mt-3 flex items-center gap-3 text-[11px] font-semibold text-[#5E3122]/60">
+                                <div className="mt-3 flex items-center gap-2.5 text-[11px] font-semibold text-[#8C5E43]">
                                     <span>
                                         PDF{" "}
                                         {ebook.file_size
@@ -161,19 +161,19 @@ export default function EbookIndex({ ebooks = [] }: IndexProps) {
                             </div>
 
                             {/* Tombol Aksi */}
-                            <div className="mt-5 grid grid-cols-2 gap-2.5 pt-4 border-t border-[#F9D2BA]/40">
+                            <div className="mt-5 grid grid-cols-2 gap-2.5 pt-3.5 border-t border-[#E6CEBC]/60">
                                 <Link
                                     href={`/ebook/${ebook.slug}`}
-                                    className="flex items-center justify-center gap-1.5 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] py-2 text-[12px] font-bold text-[#1D4533] hover:bg-[#F9D2BA]/30 transition"
+                                    className="flex items-center justify-center gap-1.5 rounded-xl border border-[#E6CEBC] bg-[#FAF1E8] py-2 text-[11.5px] font-bold text-[#1D4533] hover:bg-[#F2E0D2] transition shadow-2xs"
                                 >
-                                    <Eye size={14} /> Baca
+                                    <Eye size={13} /> Baca
                                 </Link>
                                 <a
                                     href={ebook.file_path}
                                     download
-                                    className="flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] py-2 text-[12px] font-bold text-[#F7EAE0] hover:bg-[#143325] transition"
+                                    className="flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] py-2 text-[11.5px] font-bold text-[#F7EAE0] hover:bg-[#143325] transition shadow-2xs"
                                 >
-                                    <Download size={14} /> Unduh
+                                    <Download size={13} /> Unduh
                                 </a>
                             </div>
                         </motion.div>
@@ -184,15 +184,15 @@ export default function EbookIndex({ ebooks = [] }: IndexProps) {
                     initial="hidden"
                     animate="visible"
                     variants={fadeUp}
-                    className="rounded-2xl border border-dashed border-[#F9D2BA] bg-white/70 backdrop-blur-xs p-12 text-center"
+                    className="rounded-3xl border border-dashed border-[#E6CEBC] bg-[#FAF1E8] p-10 sm:p-14 text-center"
                 >
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F7EAE0] text-[#1D4533] mb-4 border border-[#F9D2BA]">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F2E0D2] text-[#1D4533] mb-3.5 border border-[#E6CEBC]">
                         <BookOpen size={24} />
                     </div>
                     <h3 className="font-brand text-[17px] font-bold text-[#1D4533]">
                         Belum Ada Risalah / E-Book
                     </h3>
-                    <p className="mt-1 text-[13px] text-[#5E3122]/70">
+                    <p className="mt-1 text-[12.5px] text-[#5E3122]/70">
                         File risalah PDF yang dicari tidak ditemukan atau belum
                         dipublikasikan.
                     </p>
