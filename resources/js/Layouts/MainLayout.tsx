@@ -575,7 +575,7 @@ export default function MainLayout({
                     </div>
 
                     {/* ================= 4. COPYRIGHT & ATTRIBUTION ================= */}
-                    <div className="mt-6 sm:mt-8 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left text-[11px] sm:text-[11.5px] text-[#4A2619] font-medium">
+                    <div className="mt-6 sm:mt-8 flex flex-col md:flex-row items-center justify-between gap-3.5 text-center md:text-left text-[11px] sm:text-[11.5px] text-[#4A2619] font-medium">
                         {/* Sisi Kiri: Hak Cipta */}
                         <p className="sm:pl-[calc(2.75rem+0.875rem+2px)] md:pl-[calc(3rem+0.875rem+2px)] transition-all">
                             © 2026{" "}
@@ -585,21 +585,27 @@ export default function MainLayout({
                             . Hak Cipta Dilindungi.
                         </p>
 
-                        {/* Sisi Kanan: Keterangan Klien & Pengembang */}
-                        <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5">
+                        {/* Sisi Kanan: Keterangan Klien & Badge Inisial CM */}
+                        <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-[11px] sm:text-[11.5px]">
                             <span>Media Resmi</span>
                             <span className="font-extrabold text-[#143325]">
                                 Abu Haidar Official
                             </span>
                             <span className="text-[#DFC9BC]">•</span>
                             <span>Dikembangkan oleh</span>
+
+                            {/* Monogram Badge CM + Nama Pengembang */}
                             <a
                                 href="https://cv-charismaulanasa.web.id/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-extrabold text-[#143325] underline decoration-[#DFC9BC] underline-offset-4 transition-colors hover:text-[#5E3122] hover:decoration-[#143325]"
+                                className="group inline-flex items-center gap-1.5px-2 py-0.5 font-bold text-[#143325] shadow-2xs transition-all hover:border-[#143325] hover:bg-[#F2E2D5] hover:shadow-xs"
+                                title="Kunjungi Profil Pengembang"
                             >
-                                Charismaulanasa
+                                {/* Logo Monogram CM */}
+                                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-[#143325] font-brand text-[8.5px] font-extrabold tracking-tighter text-[#F7EAE0] transition-colors group-hover:bg-[#5E3122]">
+                                    CM
+                                </span>
                             </a>
                         </div>
                     </div>
