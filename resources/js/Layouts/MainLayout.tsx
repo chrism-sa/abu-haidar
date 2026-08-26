@@ -169,7 +169,7 @@ export default function MainLayout({
                                     Abu Haidar
                                 </div>
                                 <div className="mt-0.5 sm:mt-1 text-[7.5px] sm:text-[8px] font-bold tracking-[0.14em] text-[#8C5E43] uppercase whitespace-nowrap">
-                                    Artikel Islam & Dakwah
+                                    Media Islam & Dakwah
                                 </div>
                             </div>
                         </Link>
@@ -312,21 +312,29 @@ export default function MainLayout({
                                 )}
                             </button>
 
-                            {/* Tombol Dashboard / Login Admin */}
+                            {/* Tombol Dashboard / Akun Jamaah / Login */}
                             {auth?.user ? (
                                 <Link
-                                    href="/admin/dashboard"
+                                    href={
+                                        auth.user.role === "admin"
+                                            ? "/admin/dashboard"
+                                            : "/user/dashboard"
+                                    }
                                     className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] shadow-2xs whitespace-nowrap"
                                 >
                                     <LayoutDashboard size={13} />
-                                    <span>Dashboard</span>
+                                    <span>
+                                        {auth.user.role === "admin"
+                                            ? "Dashboard Admin"
+                                            : "Akun Saya"}
+                                    </span>
                                 </Link>
                             ) : (
                                 <button
                                     type="button"
                                     onClick={() => setIsLoginModalOpen(true)}
                                     className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-[#F9D2BA] bg-white text-[#5E3122] hover:border-[#1D4533] hover:bg-[#1D4533] hover:text-[#F7EAE0] transition-all shadow-2xs cursor-pointer"
-                                    title="Login Admin"
+                                    title="Masuk Akun"
                                 >
                                     <UserRound size={15} />
                                 </button>
@@ -474,7 +482,7 @@ export default function MainLayout({
                                     Abu Haidar
                                 </div>
                                 <div className="mt-1 text-[8.5px] sm:text-[9.5px] font-bold tracking-[0.18em] text-[#6E3E26] uppercase">
-                                    Artikel Islam & Dakwah
+                                    Media Islam & Dakwah
                                 </div>
 
                                 {/* Deskripsi */}
@@ -525,7 +533,7 @@ export default function MainLayout({
                                         <span className="text-[#6E3E26] font-bold text-xs">
                                             ›
                                         </span>
-                                        E-Book & Risalah PDF
+                                        E-Book PDF
                                     </Link>
                                 </li>
                             </ul>

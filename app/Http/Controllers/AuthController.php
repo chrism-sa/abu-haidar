@@ -10,7 +10,6 @@ class AuthController extends Controller
 {
     public function showLoginForm()
     {
-        // Akan memanggil file resources/js/Pages/Auth/Login.tsx
         return Inertia::render('Auth/Login');
     }
 
@@ -19,31 +18,40 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
+        ], [
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Kata sandi wajib diisi.',
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        $remember = $request->boolean('remember');
+
+        if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            // Arahkan langsung ke dashboard admin
-            return redirect()->intended(route('admin.dashboard'));
+            $user = Auth::user();
+
+            // Arahkan sesuai role akun:
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard');
+            }
+
+            // Jika user biasa / jamaah, arahkan ke dashboard user (atau /home)
+            return redirect()->route('user.dashboard');
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ]);
+            'email' => 'Alamat email atau kata sandi yang Anda masukkan salah.',
+        ])->onlyInput('email');
     }
 
     public function logout(Request $request)
     {
         Auth::logout();
 
-        // Menghapus isi session dan invalidate sesi aktif
         $request->session()->invalidate();
-
-        // Regenerasi token CSRF baru agar form login berikutnya tidak expired
         $request->session()->regenerateToken();
 
-        // Menggunakan redirect biasa yang dipaksa reload penuh oleh browser
-        return redirect('/home')->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        return redirect()->route('home');
     }
 }

@@ -132,7 +132,7 @@ export default function Show({
                             </Link>
                             <ChevronRight
                                 size={12}
-                                className="text-[#E8CEBC]"
+                                className="text-[#1D4533]"
                             />
                             <Link
                                 href="/artikel"
@@ -142,7 +142,7 @@ export default function Show({
                             </Link>
                             <ChevronRight
                                 size={12}
-                                className="text-[#E8CEBC]"
+                                className="text-[#1D4533]"
                             />
                             <span className="text-[#1D4533] font-bold truncate max-w-xs">
                                 {article.category?.name || "Kajian"}

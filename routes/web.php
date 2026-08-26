@@ -14,10 +14,11 @@ use App\Models\Category;
 use App\Models\Quote;
 use App\Models\User;
 use App\Models\Ebook;
+use App\Models\Setting;
 
 /*
 |--------------------------------------------------------------------------
-| RUTE PUBLIK
+| 1. RUTE PUBLIK (Dapat Diakses Siapa Saja)
 |--------------------------------------------------------------------------
 */
 
@@ -28,6 +29,7 @@ Route::get('/', function () {
 // Beranda Utama Website
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
+// Katalog & Pencarian Artikel
 Route::get('/artikel', function (Request $request) {
     $search = $request->query('search');
 
@@ -52,6 +54,7 @@ Route::get('/artikel', function (Request $request) {
 
 Route::get('/artikel/{slug}', [ArticleController::class, 'show'])->name('artikel.show');
 
+// Kategori Publik
 Route::get('/kategori/{slug}', function ($slug) {
     $category = Category::where('slug', $slug)->firstOrFail();
 
@@ -69,11 +72,21 @@ Route::get('/kategori/{slug}', function ($slug) {
     ]);
 })->name('kategori.show');
 
-/*
-|--------------------------------------------------------------------------
-| API PENCARIAN REAL-TIME
-|--------------------------------------------------------------------------
-*/
+// E-Book Publik
+Route::get('/ebook', function () {
+    return Inertia::render('Ebook/Index', [
+        'ebooks' => Ebook::where('is_published', true)->latest()->get()
+    ]);
+})->name('ebook.index');
+
+Route::get('/ebook/{slug}', function ($slug) {
+    $ebook = Ebook::where('slug', $slug)->where('is_published', true)->firstOrFail();
+    return Inertia::render('Ebook/Show', [
+        'ebook' => $ebook
+    ]);
+})->name('ebook.show');
+
+// API Pencarian Real-Time
 Route::get('/api/articles/search', function (Request $request) {
     $keyword = $request->query('q');
 
@@ -90,7 +103,6 @@ Route::get('/api/articles/search', function (Request $request) {
         ->map(function ($article) {
             $imageUrl = $article->image;
 
-            // Deteksi jika gambar sampul adalah URL YouTube
             if ($imageUrl && preg_match('/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/', $imageUrl, $matches)) {
                 $imageUrl = "https://img.youtube.com/vi/{$matches[1]}/mqdefault.jpg";
             }
@@ -112,7 +124,7 @@ Route::get('/api/articles/search', function (Request $request) {
 
 /*
 |--------------------------------------------------------------------------
-| RUTE AUTENTIKASI
+| 2. RUTE AUTENTIKASI
 |--------------------------------------------------------------------------
 */
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
@@ -121,14 +133,13 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
-| PINTU GERBANG SETELAH LOGIN
+| 3. GERBANG REDIREKSI DASHBOARD
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->get('/dashboard', function () {
     $user = auth()->user();
-    $adminEmail = 'admin@abuhaidararema.com';
 
-    if ($user->email === $adminEmail) {
+    if ($user->isAdmin()) {
         return redirect()->route('admin.dashboard');
     }
 
@@ -137,25 +148,25 @@ Route::middleware('auth')->get('/dashboard', function () {
 
 /*
 |--------------------------------------------------------------------------
-| RUTE KHUSUS USER (JAMAAH)
+| 4. RUTE USER BIASA / JAMAAH
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->prefix('user')->group(function () {
+Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('User/Dashboard', [
             'auth' => [
                 'user' => auth()->user()
             ]
         ]);
-    })->name('user.dashboard');
+    })->name('dashboard');
 });
 
 /*
 |--------------------------------------------------------------------------
-| RUTE ADMIN (Dashboard, Kelola Artikel, User & Kategori)
+| 5. RUTE KHUSUS ADMINISTRATOR (Diproteksi Auth & Role Admin)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->prefix('admin')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // 1. DASHBOARD UTAMA
     Route::get('/dashboard', function () {
@@ -173,20 +184,21 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             ],
             'db_status' => $dbConnected
         ]);
-    })->name('admin.dashboard');
+    })->name('dashboard');
 
-    // 2. KELOLA PENGGUNA
+    // 2. KELOLA PENGGUNA (USERS)
     Route::get('/users', function () {
         return Inertia::render('Admin/Users/Index', [
             'users' => User::latest()->get()
         ]);
-    })->name('admin.users.index');
+    })->name('users.index');
 
     Route::post('/users', function (Request $request) {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'role' => 'nullable|in:admin,user',
         ], [
             'email.unique' => 'Mohon maaf, alamat email ini sudah terdaftar.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
@@ -197,37 +209,36 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
+            'role' => $request->input('role', 'user'),
         ]);
 
-        return redirect()->back();
-    })->name('admin.users.store');
+        return redirect()->back()->with('success', 'Pengguna baru berhasil ditambahkan!');
+    })->name('users.store');
 
     Route::delete('/users/{id}', function ($id) {
         $user = User::findOrFail($id);
 
-        if ($user->email === 'admin@abuhaidararema.com') {
-            return redirect()->back()->with('error', 'Admin utama tidak bisa dihapus!');
+        if ($user->id === auth()->id()) {
+            return redirect()->back()->with('error', 'Anda tidak bisa menghapus akun Anda sendiri yang sedang aktif!');
         }
 
         $user->delete();
-        return redirect()->back();
-    })->name('admin.users.destroy');
+        return redirect()->back()->with('success', 'Pengguna berhasil dihapus!');
+    })->name('users.destroy');
 
     // 3. KELOLA ARTIKEL
     Route::get('/articles', function () {
         return Inertia::render('Admin/Articles/Index', [
             'articles' => Article::with('category')->latest()->get()
         ]);
-    })->name('admin.articles.index');
+    })->name('articles.index');
 
     Route::get('/articles/create', function () {
         return Inertia::render('Admin/Articles/Create', [
             'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get()
         ]);
-    })->name('admin.articles.create');
+    })->name('articles.create');
 
-    // ================= STORE ARTIKEL =================
-    // ================= SIMPAN ARTIKEL BARU =================
     Route::post('/articles', function (Request $request) {
         $rawContent = $request->content ?? '';
         $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $rawContent);
@@ -255,7 +266,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'quote_reference' => 'nullable|string',
             'quote_font' => 'nullable|string',
             'quote_font_size' => 'nullable|numeric',
-            'quote_line_height' => 'nullable|numeric', // <-- Validasi Spasi Baris
+            'quote_line_height' => 'nullable|numeric',
             'quote_color' => 'nullable|string',
         ], [
             'title.required' => 'Judul artikel wajib diisi.',
@@ -303,16 +314,25 @@ Route::middleware('auth')->prefix('admin')->group(function () {
                 'reference' => $request->quote_reference ?? '',
                 'font' => $request->input('quote_font', 'font-adobe-naskh'),
                 'font_size' => $request->input('quote_font_size', 36),
-                'line_height' => $request->input('quote_line_height', 2.4), // <-- Simpan Line Height
+                'line_height' => $request->input('quote_line_height', 2.4),
                 'color' => $request->input('quote_color', '#1D4533'),
                 'image' => $quoteImage,
             ]);
         }
 
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil dipublikasikan!');
-    })->name('admin.articles.store');
+    })->name('articles.store');
 
-    // ================= UPDATE ARTIKEL =================
+    Route::get('/articles/{id}/edit', function ($id) {
+        $article = Article::with('quotes')->findOrFail($id);
+
+        return Inertia::render('Admin/Articles/Edit', [
+            'article' => $article,
+            'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
+            'quote' => $article->quotes->first()
+        ]);
+    })->name('articles.edit');
+
     Route::post('/articles/{id}', function (Request $request, $id) {
         $article = Article::with('quotes')->findOrFail($id);
 
@@ -331,7 +351,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             'quote_reference' => 'nullable|string',
             'quote_font' => 'nullable|string',
             'quote_font_size' => 'nullable|numeric',
-            'quote_line_height' => 'nullable|numeric', // <-- Validasi Spasi Baris
+            'quote_line_height' => 'nullable|numeric',
             'quote_color' => 'nullable|string',
         ]);
 
@@ -408,7 +428,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
                     'reference' => $request->quote_reference ?? '',
                     'font' => $request->input('quote_font', 'font-adobe-naskh'),
                     'font_size' => $request->input('quote_font_size', 36),
-                    'line_height' => $request->input('quote_line_height', 2.4), // <-- Update Line Height
+                    'line_height' => $request->input('quote_line_height', 2.4),
                     'color' => $request->input('quote_color', '#1D4533'),
                     'image' => $quoteImage,
                 ]
@@ -418,33 +438,20 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         }
 
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil diperbarui!');
-    })->name('admin.articles.update');
+    })->name('articles.update');
 
-    // ================= EDIT VIEW =================
-    Route::get('/articles/{id}/edit', function ($id) {
-        $article = Article::with('quotes')->findOrFail($id);
-
-        return Inertia::render('Admin/Articles/Edit', [
-            'article' => $article,
-            'categories' => Category::orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get(),
-            'quote' => $article->quotes->first()
-        ]);
-    })->name('admin.articles.edit');
-
-    // ================= HAPUS ARTIKEL =================
     Route::delete('/articles/{id}', function ($id) {
         $article = Article::findOrFail($id);
         $article->delete();
 
         return redirect()->back()->with('success', 'Artikel beserta seluruh aset gambar berhasil dihapus bersih!');
-    })->name('admin.articles.destroy');
+    })->name('articles.destroy');
 
-    // ================= TOGGLE ARTIKEL =================
     Route::post('/articles/{id}/toggle-publish', function ($id) {
         $article = Article::findOrFail($id);
         $article->update(['is_published' => !$article->is_published]);
         return response()->json(['success' => true, 'is_published' => $article->is_published]);
-    })->name('admin.articles.togglePublish');
+    })->name('articles.togglePublish');
 
     Route::post('/articles/{id}/toggle-hero', function ($id) {
         $article = Article::findOrFail($id);
@@ -457,7 +464,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             $status = false;
         }
         return response()->json(['success' => true, 'is_hero' => $status]);
-    })->name('admin.articles.toggleHero');
+    })->name('articles.toggleHero');
 
     Route::post('/articles/{id}/toggle-featured', function ($id) {
         $article = Article::findOrFail($id);
@@ -473,9 +480,9 @@ Route::middleware('auth')->prefix('admin')->group(function () {
             $status = false;
         }
         return response()->json(['success' => true, 'is_featured' => $status]);
-    })->name('admin.articles.toggleFeatured');
+    })->name('articles.toggleFeatured');
 
-    // ================= KELOLA KATEGORI =================
+    // 4. KELOLA KATEGORI
     Route::get('/categories', function () {
         $categories = Category::withCount('articles')
             ->orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')
@@ -484,8 +491,8 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         return Inertia::render('Admin/Categories/Index', [
             'categories' => $categories
         ]);
-    })->name('admin.categories.index');
-    
+    })->name('categories.index');
+
     Route::post('/categories', function (Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:categories,name',
@@ -497,7 +504,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         ]);
 
         return redirect()->back()->with('success', 'Kategori berhasil ditambahkan!');
-    })->name('admin.categories.store');
+    })->name('categories.store');
 
     Route::put('/categories/{id}', function (Request $request, $id) {
         $category = Category::findOrFail($id);
@@ -512,7 +519,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         ]);
 
         return redirect()->back()->with('success', 'Kategori berhasil diperbarui!');
-    })->name('admin.categories.update');
+    })->name('categories.update');
 
     Route::delete('/categories/{id}', function ($id) {
         $category = Category::withCount('articles')->findOrFail($id);
@@ -524,33 +531,9 @@ Route::middleware('auth')->prefix('admin')->group(function () {
         $category->delete();
 
         return redirect()->back()->with('success', 'Kategori berhasil dihapus!');
-    })->name('admin.categories.destroy');
-});
+    })->name('categories.destroy');
 
-/*
-|--------------------------------------------------------------------------
-| RUTE EBOOK PUBLIK
-|--------------------------------------------------------------------------
-*/
-Route::get('/ebook', function () {
-    return Inertia::render('Ebook/Index', [
-        'ebooks' => Ebook::where('is_published', true)->latest()->get()
-    ]);
-})->name('ebook.index');
-
-Route::get('/ebook/{slug}', function ($slug) {
-    $ebook = Ebook::where('slug', $slug)->where('is_published', true)->firstOrFail();
-    return Inertia::render('Ebook/Show', [
-        'ebook' => $ebook
-    ]);
-})->name('ebook.show');
-
-/*
-|--------------------------------------------------------------------------
-| RUTE ADMIN EBOOK
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    // 5. KELOLA E-BOOK
     Route::get('/ebooks', function () {
         return Inertia::render('Admin/Ebooks/Index', [
             'ebooks' => Ebook::latest()->get()
@@ -598,7 +581,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             'is_published' => $request->boolean('is_published', true),
         ]);
 
-        return redirect()->back()->with('success', 'E-Book PDF berhasil diunggah dengan nama file asli!');
+        return redirect()->back()->with('success', 'E-Book PDF berhasil diunggah!');
     })->name('ebooks.store');
 
     Route::post('/ebooks/{id}', function (Request $request, $id) {
@@ -659,9 +642,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         $ebook->update($updateData);
 
         return redirect()->back()->with('success', 'E-Book berhasil diperbarui!');
-    })->name('admin.ebooks.update');
+    })->name('ebooks.update');
 
-    // ================= TOGGLE E-BOOK =================
     Route::post('/ebooks/{id}/toggle-status', function ($id) {
         $ebook = Ebook::findOrFail($id);
         $ebook->update(['is_published' => !$ebook->is_published]);
@@ -674,4 +656,19 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
         return redirect()->back()->with('success', 'E-Book beserta seluruh file dokumen berhasil dihapus!');
     })->name('ebooks.destroy');
+
+    // 6. SIMPAN PENGATURAN TAMPILAN GLOBAL KE DATABASE
+    Route::post('/settings/save', function (Request $request) {
+        $request->validate([
+            'key' => 'required|string',
+            'value' => 'required|array',
+        ]);
+
+        Setting::updateOrCreate(
+            ['key' => $request->key],
+            ['value' => json_encode($request->value)]
+        );
+
+        return back()->with('success', 'Pengaturan tampilan berhasil disimpan untuk semua pengunjung!');
+    })->name('settings.save');
 });

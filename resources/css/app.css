@@ -160,24 +160,18 @@
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="al-jazeera"]::before {
     content: "Al Jazeera" !important;
     font-family: "Al Jazeera", sans-serif !important;
-} /* =========================================
+}
+/* =========================================
    1. SETTING GLOBAL TEKS ARAB (RTL)
 ========================================= */
-[dir="rtl"],
-[lang="ar"],
+/* Kecualikan kartu quote dari text-align: right */
+[dir="rtl"]:not(.quote-card-arabic):not(.quote-card-arabic *),
 textarea[dir="rtl"],
 input[dir="rtl"],
 .prose [dir="rtl"],
 .prose [dir="rtl"] *,
 .ql-editor [dir="rtl"],
-.ql-editor [dir="rtl"] *,
-.font-amiri,
-.font-tajawal,
-.font-cairo,
-.font-almarai,
-.font-scheherazade,
-.font-adobe-naskh,
-.font-al-jazeera {
+.ql-editor [dir="rtl"] * {
     direction: rtl !important;
     text-align: right !important;
     letter-spacing: normal !important;
@@ -186,12 +180,32 @@ input[dir="rtl"],
     font-feature-settings: normal !important;
 }
 
-.quote-card-arabic {
-    text-align: center !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+/* Font helpers umum (HAPUS text-align: right agar tidak menimpa layout yang center) */
+.font-amiri,
+.font-tajawal,
+.font-cairo,
+.font-almarai,
+.font-scheherazade,
+.font-adobe-naskh,
+.font-al-jazeera {
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
 }
 
+/* =========================================
+   2. KHUSUS KARTU AYAT (KUNCI MUTLAK RATA TENGAH)
+========================================= */
+.quote-card-arabic,
+.quote-card-arabic *,
+[data-quote-arabic] {
+    direction: rtl !important;
+    text-align: center !important;
+    text-align-last: center !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+}
 /* =========================================
    2. ATURAN WEBSITE UMUM (Warm Paper Theme)
 ========================================= */
