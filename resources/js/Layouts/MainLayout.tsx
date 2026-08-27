@@ -7,6 +7,7 @@ import {
     FileText,
     Home as HomeIcon,
     LayoutDashboard,
+    Info,
 } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,7 +37,7 @@ export default function MainLayout({
 
     const { url } = usePage();
     const { auth } = usePage().props as {
-        auth?: { user?: { name: string; email: string } };
+        auth?: { user?: { name: string; email: string; role?: string } };
         categories?: Category[];
     };
 
@@ -109,9 +110,7 @@ export default function MainLayout({
 
     return (
         <div className="relative min-h-screen bg-[#F7EAE0] text-[#5E3122] flex flex-col justify-between selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-24 lg:pb-0">
-            {/* ======================================================== */}
-            {/* BACKGROUND: FLUID GLOWING ORBS */}
-            {/* ======================================================== */}
+            {/* ================= BACKGROUND: FLUID GLOWING ORBS ================= */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
                 <motion.div
                     animate={{
@@ -148,7 +147,7 @@ export default function MainLayout({
             <header className="sticky top-0 z-40 border-b border-[#E8D9CE] bg-[#F7EAE0]/90 backdrop-blur-md shadow-2xs">
                 <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
                     <div className="flex h-[64px] sm:h-[76px] items-center justify-between gap-3">
-                        {/* 1. BRAND LOGO + KAPSUL */}
+                        {/* 1. BRAND LOGO */}
                         <Link
                             href="/"
                             className="flex shrink-0 items-center gap-2 sm:gap-3 rounded-full border border-[#F9D2BA] bg-white px-2.5 sm:px-3.5 py-1.5 shadow-2xs transition-all duration-300 hover:border-[#1D4533]/40"
@@ -174,7 +173,7 @@ export default function MainLayout({
                             </div>
                         </Link>
 
-                        {/* 2. MENU NAVIGASI DESKTOP (Tampil di layar >= lg: 1024px) */}
+                        {/* 2. MENU NAVIGASI DESKTOP */}
                         <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-[13.5px] font-bold text-[#1D4533]">
                             <Link
                                 href="/home"
@@ -209,13 +208,25 @@ export default function MainLayout({
                                 <FileText size={15} />
                                 <span>E-Book PDF</span>
                             </Link>
+                            <Link
+                                href="/about"
+                                className={`flex items-center gap-1.5 whitespace-nowrap transition ${
+                                    url.startsWith("/about") ||
+                                    url.startsWith("/tentang")
+                                        ? "text-[#1D4533]"
+                                        : "text-[#5E3122]/75 hover:text-[#1D4533]"
+                                }`}
+                            >
+                                <Info size={15} />
+                                <span>Tentang</span>
+                            </Link>
                         </nav>
 
                         {/* 3. PENCARIAN & TOMBOL AKUN */}
                         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                            {/* Input Pencarian Desktop (Tampil di >= lg) */}
+                            {/* Input Pencarian Desktop */}
                             <div
-                                className="relative hidden lg:block w-48 xl:w-60"
+                                className="relative hidden lg:block w-44 xl:w-56"
                                 ref={desktopSearchRef}
                             >
                                 <form
@@ -296,7 +307,7 @@ export default function MainLayout({
                                 )}
                             </div>
 
-                            {/* Tombol Toggle Pencarian Mobile & Tablet (< lg) */}
+                            {/* Tombol Toggle Pencarian Mobile */}
                             <button
                                 type="button"
                                 onClick={() =>
@@ -312,7 +323,7 @@ export default function MainLayout({
                                 )}
                             </button>
 
-                            {/* Tombol Dashboard / Akun Jamaah / Login */}
+                            {/* Tombol Dashboard / Login */}
                             {auth?.user ? (
                                 <Link
                                     href={
@@ -342,7 +353,7 @@ export default function MainLayout({
                         </div>
                     </div>
 
-                    {/* ================= PENCARIAN MOBILE & TABLET DRAWER ================= */}
+                    {/* Drawer Pencarian Mobile */}
                     <AnimatePresence>
                         {mobileSearchOpen && (
                             <motion.div
@@ -385,7 +396,6 @@ export default function MainLayout({
                                     )}
                                 </form>
 
-                                {/* Hasil Pencarian Mobile */}
                                 {searchQuery.trim().length > 1 && (
                                     <div className="mt-2 rounded-xl bg-white shadow-lg border border-[#F9D2BA] overflow-hidden max-h-[250px] overflow-y-auto">
                                         {isSearching ? (
@@ -459,11 +469,9 @@ export default function MainLayout({
             {/* ================= FOOTER ================= */}
             <footer className="relative z-10 bg-[#F7EAE0] text-[#3A1C12] pt-12 sm:pt-16 pb-12 border-t border-[#DFC9BC] mt-12 sm:mt-16">
                 <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8">
-                    {/* GRID UTAMA */}
                     <div className="grid gap-10 md:gap-8 lg:gap-12 md:grid-cols-12 pb-10 sm:pb-12 border-b border-[#DFC9BC]">
-                        {/* ================= 1. BRAND INFO ================= */}
+                        {/* 1. BRAND INFO */}
                         <div className="md:col-span-5 flex items-start gap-3.5">
-                            {/* Logo */}
                             <img
                                 src="/LOGO.png"
                                 alt="Abu Haidar"
@@ -473,10 +481,8 @@ export default function MainLayout({
                                 className="h-11 sm:h-12 w-auto object-contain drop-shadow-2xs shrink-0 mt-0.5"
                             />
 
-                            {/* Garis Pembatas Vertikal */}
                             <div className="h-8 w-[2px] bg-[#143325]/40 shrink-0 mt-1"></div>
 
-                            {/* Kontainer Teks: Judul + Deskripsi */}
                             <div className="flex flex-col min-w-0">
                                 <div className="font-brand text-[19px] sm:text-[21px] font-extrabold text-[#143325] leading-none tracking-tight">
                                     Abu Haidar
@@ -485,7 +491,6 @@ export default function MainLayout({
                                     Media Islam & Dakwah
                                 </div>
 
-                                {/* Deskripsi */}
                                 <p className="mt-3.5 text-[13px] sm:text-[13.5px] text-[#3A1C12] font-medium leading-relaxed max-w-sm">
                                     Media dakwah dan risalah Islam terpercaya
                                     yang menyajikan pembahasan seputar
@@ -496,7 +501,7 @@ export default function MainLayout({
                             </div>
                         </div>
 
-                        {/* ================= 2. TAUTAN CEPAT ================= */}
+                        {/* 2. TAUTAN CEPAT */}
                         <div className="md:col-span-3 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0">
                             <h4 className="text-[13px] sm:text-[13.5px] font-extrabold tracking-[0.16em] uppercase text-[#143325] mb-3.5 flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#143325]"></span>
@@ -536,10 +541,21 @@ export default function MainLayout({
                                         E-Book PDF
                                     </Link>
                                 </li>
+                                <li>
+                                    <Link
+                                        href="/about"
+                                        className="text-[#3A1C12] hover:text-[#143325] hover:translate-x-1 font-semibold transition-all inline-flex items-center gap-1.5"
+                                    >
+                                        <span className="text-[#6E3E26] font-bold text-xs">
+                                            ›
+                                        </span>
+                                        Tentang Kami
+                                    </Link>
+                                </li>
                             </ul>
                         </div>
 
-                        {/* ================= 3. SALURAN MEDIA DAKWAH ================= */}
+                        {/* 3. SALURAN MEDIA DAKWAH */}
                         <div className="md:col-span-4 pl-[calc(2.75rem+3.5px+2px+0.875rem)] md:pl-0">
                             <h4 className="text-[13px] sm:text-[13.5px] font-extrabold tracking-[0.16em] uppercase text-[#143325] mb-3.5 flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#143325]"></span>
@@ -582,9 +598,8 @@ export default function MainLayout({
                         </div>
                     </div>
 
-                    {/* ================= 4. COPYRIGHT & ATTRIBUTION ================= */}
+                    {/* 4. COPYRIGHT */}
                     <div className="mt-6 sm:mt-8 flex flex-col md:flex-row items-center justify-between gap-3.5 text-center md:text-left text-[11px] sm:text-[11.5px] text-[#4A2619] font-medium">
-                        {/* Sisi Kiri: Hak Cipta */}
                         <p className="sm:pl-[calc(2.75rem+0.875rem+2px)] md:pl-[calc(3rem+0.875rem+2px)] transition-all">
                             © 2026{" "}
                             <span className="font-bold text-[#143325]">
@@ -593,7 +608,6 @@ export default function MainLayout({
                             . Hak Cipta Dilindungi.
                         </p>
 
-                        {/* Sisi Kanan: Keterangan Klien & Badge Inisial CM */}
                         <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-[11px] sm:text-[11.5px]">
                             <span>Media Resmi</span>
                             <span className="font-extrabold text-[#143325]">
@@ -620,26 +634,21 @@ export default function MainLayout({
                 </div>
             </footer>
 
-            {/* ================= BOTTOM BAR MOBILE & TABLET (< lg) ================= */}
+            {/* ================= BOTTOM BAR MOBILE (4 MENU LENGKAP) ================= */}
             <div className="lg:hidden fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
-                <nav className="pointer-events-auto w-full max-w-[360px] rounded-full border border-white/70 bg-white/75 px-3 py-2 shadow-[0_8px_32px_0_rgba(94,49,34,0.12)] backdrop-blur-xl transition-all duration-300">
+                <nav className="pointer-events-auto w-full max-w-[380px] rounded-full border border-white/70 bg-white/80 px-2.5 py-1.5 shadow-[0_8px_32px_0_rgba(94,49,34,0.14)] backdrop-blur-xl transition-all duration-300">
                     <div className="flex items-center justify-between">
                         {/* 1. BERANDA */}
                         <Link
                             href="/home"
-                            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-1.5 transition-all duration-300 ${
+                            className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-full py-1.5 transition-all duration-300 ${
                                 url === "/home" || url === "/"
                                     ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
                                     : "text-[#5E3122]/70 hover:text-[#1D4533] active:scale-95"
                             }`}
                         >
-                            <HomeIcon
-                                size={17}
-                                strokeWidth={
-                                    url === "/home" || url === "/" ? 2.5 : 2
-                                }
-                            />
-                            <span className="text-[10px] font-semibold leading-none tracking-tight">
+                            <HomeIcon size={16} />
+                            <span className="text-[9.5px] font-semibold leading-none">
                                 Beranda
                             </span>
                         </Link>
@@ -647,19 +656,14 @@ export default function MainLayout({
                         {/* 2. ARTIKEL */}
                         <Link
                             href="/artikel"
-                            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-1.5 transition-all duration-300 ${
+                            className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-full py-1.5 transition-all duration-300 ${
                                 url.startsWith("/artikel")
                                     ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
                                     : "text-[#5E3122]/70 hover:text-[#1D4533] active:scale-95"
                             }`}
                         >
-                            <BookOpen
-                                size={17}
-                                strokeWidth={
-                                    url.startsWith("/artikel") ? 2.5 : 2
-                                }
-                            />
-                            <span className="text-[10px] font-semibold leading-none tracking-tight">
+                            <BookOpen size={16} />
+                            <span className="text-[9.5px] font-semibold leading-none">
                                 Artikel
                             </span>
                         </Link>
@@ -667,18 +671,31 @@ export default function MainLayout({
                         {/* 3. E-BOOK */}
                         <Link
                             href="/ebook"
-                            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-1.5 transition-all duration-300 ${
+                            className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-full py-1.5 transition-all duration-300 ${
                                 url.startsWith("/ebook")
                                     ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
                                     : "text-[#5E3122]/70 hover:text-[#1D4533] active:scale-95"
                             }`}
                         >
-                            <FileText
-                                size={17}
-                                strokeWidth={url.startsWith("/ebook") ? 2.5 : 2}
-                            />
-                            <span className="text-[10px] font-semibold leading-none tracking-tight">
+                            <FileText size={16} />
+                            <span className="text-[9.5px] font-semibold leading-none">
                                 E-Book
+                            </span>
+                        </Link>
+
+                        {/* 4. TENTANG */}
+                        <Link
+                            href="/about"
+                            className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-full py-1.5 transition-all duration-300 ${
+                                url.startsWith("/about") ||
+                                url.startsWith("/tentang")
+                                    ? "bg-[#1D4533] text-[#F7EAE0] shadow-xs"
+                                    : "text-[#5E3122]/70 hover:text-[#1D4533] active:scale-95"
+                            }`}
+                        >
+                            <Info size={16} />
+                            <span className="text-[9.5px] font-semibold leading-none">
+                                Tentang
                             </span>
                         </Link>
                     </div>

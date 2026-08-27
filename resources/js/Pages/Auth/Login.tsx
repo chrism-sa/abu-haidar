@@ -32,12 +32,12 @@ export default function Login() {
         <div className="flex min-h-screen bg-[#F7EAE0] text-[#5E3122] selection:bg-[#1D4533] selection:text-[#F7EAE0]">
             <Head title="Masuk Akun - Abu Haidar" />
 
-            {/* SISI KIRI: Branding Panel (Warm Dark Green) */}
-            <div className="hidden w-full max-w-[480px] flex-col justify-between bg-[#1D4533] p-10 lg:p-12 text-[#F7EAE0] lg:flex relative overflow-hidden">
+            {/* SISI KIRI: Branding Panel (Deep Emerald Green) */}
+            <div className="hidden w-full max-w-[480px] flex-col justify-between bg-[#1D4533] p-10 lg:p-12 text-[#F7EAE0] lg:flex relative overflow-hidden shrink-0">
                 <div className="relative z-10">
                     <Link
                         href="/home"
-                        className="inline-flex items-center gap-2 rounded-full bg-[#FAF1E8]/10 border border-[#FAF1E8]/20 px-3.5 py-1.5 text-xs font-bold text-[#FAF1E8] hover:bg-[#FAF1E8]/20 transition"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#FAF1E8]/10 border border-[#FAF1E8]/20 px-4 py-2 text-xs font-bold text-[#FAF1E8] hover:bg-[#FAF1E8]/20 transition-all duration-200"
                     >
                         <ArrowLeft size={14} />
                         <span>Ke Beranda</span>
@@ -45,7 +45,7 @@ export default function Login() {
                 </div>
 
                 <div className="relative z-10 my-auto flex flex-col items-center text-center">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[#FAF1E8] border border-[#E6CEBC] shadow-md mb-5">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[#FAF1E8] border border-[#E6CEBC] shadow-lg mb-6">
                         <img
                             src="/LOGO.png"
                             alt="Logo Abu Haidar"
@@ -56,12 +56,13 @@ export default function Login() {
                     <h1 className="font-brand text-3xl font-bold tracking-tight text-[#FAF1E8]">
                         Abu Haidar
                     </h1>
-                    <p className="mt-1 text-[11px] font-bold tracking-[0.25em] text-[#DFC9BC] uppercase">
+                    <p className="mt-1.5 text-[11px] font-bold tracking-[0.25em] text-[#DFC9BC] uppercase">
                         Risalah & Literatur Keislaman
                     </p>
-                    <p className="mt-6 max-w-[300px] text-[13px] leading-relaxed text-[#DFC9BC]/85 font-medium">
+                    <div className="h-[2px] w-12 bg-[#8C5E43] my-6 rounded-full opacity-60"></div>
+                    <p className="max-w-[300px] text-[13px] leading-relaxed text-[#DFC9BC]/85 font-medium">
                         Portal artikel, catatan kajian ilmiah, dan risalah
-                        dakwah salafush shalih.
+                        dakwah bermanhaj salafush shalih.
                     </p>
                 </div>
 
@@ -72,25 +73,31 @@ export default function Login() {
 
             {/* SISI KANAN: Form Login Modern */}
             <div className="flex w-full flex-1 flex-col items-center justify-center p-4 sm:p-8 relative">
-                <div className="w-full max-w-[420px] rounded-3xl bg-[#FDF9F5] p-6 sm:p-10 shadow-lg border border-[#E8CEBC] relative z-10">
-                    {/* Header Mobile */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="w-full max-w-[430px] rounded-3xl bg-[#FDF9F5] p-6 sm:p-10 shadow-xl border border-[#E8CEBC] relative z-10"
+                >
+                    {/* Header Mobile Only */}
                     <div className="mb-6 text-center lg:hidden flex flex-col items-center">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#FAF1E8] border border-[#E8CEBC] shadow-2xs mb-3">
+                        <div className="flex h-18 w-18 items-center justify-center rounded-2xl bg-[#FAF1E8] border border-[#E8CEBC] shadow-2xs mb-3">
                             <img
                                 src="/LOGO.png"
                                 alt="Logo"
                                 style={{ filter: solidBrownLogoFilter }}
-                                className="h-12 w-auto object-contain"
+                                className="h-11 w-auto object-contain"
                             />
                         </div>
                         <h1 className="font-brand text-2xl font-bold text-[#1D4533]">
                             Abu Haidar
                         </h1>
-                        <p className="text-[10.5px] tracking-widest text-[#8C5E43] uppercase font-bold">
+                        <p className="text-[10px] tracking-widest text-[#8C5E43] uppercase font-bold mt-0.5">
                             Portal Masuk
                         </p>
                     </div>
 
+                    {/* Header Desktop */}
                     <div className="mb-6 hidden lg:block">
                         <h2 className="font-brand text-2xl font-bold text-[#1D4533]">
                             Selamat Datang,
@@ -118,10 +125,10 @@ export default function Login() {
                                         setData("email", e.target.value)
                                     }
                                     placeholder="nama@email.com"
-                                    className={`w-full rounded-xl border bg-[#FAF1E8] py-3 pl-10 pr-4 text-[13px] text-[#5E3122] outline-none transition focus:bg-white focus:ring-3 ${
+                                    className={`w-full rounded-xl border bg-[#FAF1E8] py-2.5 pl-10 pr-4 text-[13px] text-[#5E3122] outline-none transition focus:bg-white focus:ring-2 ${
                                         errors.email
                                             ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-                                            : "border-[#E8CEBC] focus:border-[#1D4533] focus:ring-[#1D4533]/10"
+                                            : "border-[#E8CEBC] focus:border-[#1D4533] focus:ring-[#1D4533]/15"
                                     }`}
                                     required
                                 />
@@ -150,10 +157,10 @@ export default function Login() {
                                         setData("password", e.target.value)
                                     }
                                     placeholder="••••••••"
-                                    className={`w-full rounded-xl border bg-[#FAF1E8] py-3 pl-10 pr-11 text-[13px] text-[#5E3122] outline-none transition focus:bg-white focus:ring-3 ${
+                                    className={`w-full rounded-xl border bg-[#FAF1E8] py-2.5 pl-10 pr-11 text-[13px] text-[#5E3122] outline-none transition focus:bg-white focus:ring-2 ${
                                         errors.password
                                             ? "border-red-400 focus:border-red-400 focus:ring-red-100"
-                                            : "border-[#E8CEBC] focus:border-[#1D4533] focus:ring-[#1D4533]/10"
+                                            : "border-[#E8CEBC] focus:border-[#1D4533] focus:ring-[#1D4533]/15"
                                     }`}
                                     required
                                 />
@@ -201,7 +208,7 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1D4533] py-3 text-[13px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] disabled:opacity-70 cursor-pointer shadow-xs"
+                            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1D4533] py-3 text-[13px] font-bold text-[#F7EAE0] transition-all hover:bg-[#143325] disabled:opacity-70 cursor-pointer shadow-md active:scale-95"
                         >
                             {processing ? (
                                 <>
@@ -228,7 +235,7 @@ export default function Login() {
                             ← Kembali ke Beranda
                         </Link>
                     </div>
-                </div>
+                </motion.div>
             </div>
         </div>
     );

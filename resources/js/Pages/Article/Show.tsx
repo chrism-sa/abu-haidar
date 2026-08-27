@@ -176,7 +176,7 @@ export default function Show({
                         </header>
 
                         {/* Media Sampul: YouTube Player / Image */}
-                        <div className="mb-8 overflow-hidden rounded-2xl border border-[#E8CEBC] bg-[#FDF9F5] shadow-xs">
+                        <div className="mb-8 overflow-hidden rounded-2xl border border-[#E8CEBC] bg-[#FAF1E8] shadow-xs">
                             {ytId ? (
                                 <div className="aspect-video w-full bg-black">
                                     <iframe
@@ -188,7 +188,7 @@ export default function Show({
                                     />
                                 </div>
                             ) : article.image ? (
-                                <div className="aspect-[2/1] w-full bg-[#F2E2D5] overflow-hidden">
+                                <div className="aspect-[2/1] w-full bg-[#FAF1E8] overflow-hidden">
                                     <img
                                         src={article.image}
                                         alt={article.title}
@@ -198,13 +198,13 @@ export default function Show({
                             ) : null}
                         </div>
 
-                        {/* Naskah Artikel (Warm Paper Tone) */}
+                        {/* Naskah Artikel (Selaras dengan Tone Warm Paper Sidebar & Hero) */}
                         <div
                             id="article-content-body"
-                            className="rounded-3xl border border-[#E8CEBC] bg-[#FDF9F5] p-6 sm:p-10 md:p-12 shadow-xs"
+                            className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-10 md:p-12 shadow-xs"
                         >
                             <div
-                                className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#4A2619] prose-headings:text-[#1D4533] prose-p:leading-relaxed [hyphens:none] [overflow-wrap:break-word] [word-break:normal]"
+                                className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#4A2619] prose-headings:text-[#1D4533] prose-p:leading-relaxed prose-strong:text-[#1D4533] prose-blockquote:border-[#8C5E43] prose-blockquote:text-[#5E3122] prose-a:text-[#1D4533] [hyphens:none] [overflow-wrap:break-word] [word-break:normal]"
                                 dangerouslySetInnerHTML={{
                                     __html: article.content,
                                 }}
@@ -223,7 +223,7 @@ export default function Show({
                                         href={shareLinks.whatsapp}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#25D366] hover:text-white hover:border-[#25D366]"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#25D366] hover:text-white hover:border-[#25D366]"
                                         aria-label="Share to WhatsApp"
                                     >
                                         <FaWhatsapp size={14} />
@@ -232,7 +232,7 @@ export default function Show({
                                         href={shareLinks.telegram}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#0088cc] hover:text-white hover:border-[#0088cc]"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#0088cc] hover:text-white hover:border-[#0088cc]"
                                         aria-label="Share to Telegram"
                                     >
                                         <FaTelegramPlane size={14} />
@@ -241,7 +241,7 @@ export default function Show({
                                         href={shareLinks.facebook}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2]"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2]"
                                         aria-label="Share to Facebook"
                                     >
                                         <FaFacebookF size={13} />
@@ -250,7 +250,7 @@ export default function Show({
                                         href={shareLinks.twitter}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1DA1F2] hover:text-white hover:border-[#1DA1F2]"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1DA1F2] hover:text-white hover:border-[#1DA1F2]"
                                         aria-label="Share to Twitter"
                                     >
                                         <FaTwitter size={13} />
@@ -259,7 +259,7 @@ export default function Show({
                                         <button
                                             type="button"
                                             onClick={copyLinkToClipboard}
-                                            className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1D4533] hover:text-[#F7EAE0] cursor-pointer"
+                                            className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1D4533] hover:text-[#F7EAE0] cursor-pointer"
                                             aria-label="Salin Tautan"
                                             title="Salin Tautan"
                                         >
@@ -294,10 +294,10 @@ export default function Show({
                                         <Link
                                             href={`/artikel/${relArticle.slug}`}
                                             key={relArticle.id}
-                                            className="group flex flex-col justify-between rounded-2xl border border-[#E8CEBC] bg-[#FDF9F5] p-3.5 transition-all hover:border-[#1D4533]/40 hover:shadow-md"
+                                            className="group flex flex-col justify-between rounded-2xl border border-[#E8CEBC] bg-[#FAF1E8] p-3.5 transition-all hover:border-[#1D4533]/40 hover:shadow-md"
                                         >
                                             <div>
-                                                <div className="mb-2.5 aspect-[16/10] overflow-hidden rounded-xl bg-[#F2E2D5]">
+                                                <div className="mb-2.5 aspect-[16/10] overflow-hidden rounded-xl bg-[#FAF3EB] border border-[#E8CEBC]/50">
                                                     {relArticle.image ? (
                                                         <img
                                                             src={
@@ -352,7 +352,7 @@ export default function Show({
 
                         {/* Artikel Populer Card */}
                         {popularArticles.length > 0 && (
-                            <section className="rounded-2xl border border-[#E8CEBC] bg-[#FDF9F5] p-5 shadow-sm">
+                            <section className="rounded-2xl border border-[#E8CEBC] bg-[#FAF1E8] p-5 shadow-sm">
                                 <h3 className="mb-4 border-b border-[#E8CEBC] pb-3 font-brand text-[15px] font-bold text-[#1D4533] flex items-center gap-2">
                                     <BookOpen
                                         size={16}

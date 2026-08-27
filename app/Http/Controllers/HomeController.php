@@ -32,11 +32,11 @@ class HomeController extends Controller
             ->where('is_published', true)
             ->where('is_featured', true)
             ->latest()
-            ->take(3)
+            ->take(5)
             ->get();
 
         // 3. Terbitan Terbaru:
-        // Ambil 4 artikel terbaru terbitan terakhir berdasarkan tanggal dibuat (latest).
+        // Ambil 2 artikel terbaru terbitan terakhir berdasarkan tanggal dibuat (latest).
         // Hanya kecualikan ID hero agar layout atas tidak menduplikasi kartu persis di sampingnya.
         $heroId = $heroArticle ? $heroArticle->id : null;
 

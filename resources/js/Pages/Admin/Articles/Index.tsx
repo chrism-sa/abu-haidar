@@ -12,8 +12,10 @@ import {
     Search,
     FileText,
     Sparkles,
+    Loader2,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
+import toast from "react-hot-toast";
 import { Article } from "@/types";
 
 interface ExtendedArticle extends Article {
@@ -35,6 +37,7 @@ const getYouTubeId = (url: string | null | undefined) => {
 
 export default function ArticleIndex({ articles = [] }: IndexProps) {
     const [search, setSearch] = useState("");
+    const [activeLoadingId, setActiveLoadingId] = useState<number | null>(null);
 
     const handleDelete = (id: number, title: string) => {
         if (
@@ -42,104 +45,93 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                 `Apakah Anda yakin ingin menghapus artikel "${title}"? Seluruh foto dan quote di storage akan ikut terhapus.`,
             )
         ) {
-            router.delete(`/admin/articles/${id}`);
-        }
-    };
-
-    const handleTogglePublish = async (id: number) => {
-        try {
-            const csrfToken = (
-                document.querySelector(
-                    'meta[name="csrf-token"]',
-                ) as HTMLMetaElement
-            )?.content;
-            const response = await fetch(
-                `/admin/articles/${id}/toggle-publish`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        "X-CSRF-TOKEN": csrfToken || "",
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                    body: JSON.stringify({ _action: "toggle" }),
-                },
-            );
-
-            if (response.ok) {
-                router.reload({ only: ["articles"] });
-            }
-        } catch (e) {
-            router.reload({ only: ["articles"] });
-        }
-    };
-
-    const handleToggleHero = async (id: number) => {
-        try {
-            const csrfToken = (
-                document.querySelector(
-                    'meta[name="csrf-token"]',
-                ) as HTMLMetaElement
-            )?.content;
-            const response = await fetch(`/admin/articles/${id}/toggle-hero`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN": csrfToken || "",
-                    "X-Requested-With": "XMLHttpRequest",
-                },
-                body: JSON.stringify({ _action: "toggle" }),
+            router.delete(`/admin/articles/${id}`, {
+                preserveScroll: true,
+                onSuccess: () =>
+                    toast.success("Artikel berhasil dihapus bersih!"),
+                onError: () => toast.error("Gagal menghapus artikel."),
             });
-
-            if (response.ok) {
-                router.reload({ only: ["articles"] });
-            }
-        } catch (e) {
-            router.reload({ only: ["articles"] });
         }
     };
 
-    const handleToggleFeatured = async (id: number) => {
-        try {
-            const csrfToken = (
-                document.querySelector(
-                    'meta[name="csrf-token"]',
-                ) as HTMLMetaElement
-            )?.content;
-            const response = await fetch(
-                `/admin/articles/${id}/toggle-featured`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        "X-CSRF-TOKEN": csrfToken || "",
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                    body: JSON.stringify({ _action: "toggle" }),
-                },
-            );
+    const handleTogglePublish = (id: number) => {
+        if (activeLoadingId) return;
+        setActiveLoadingId(id);
+        router.post(
+            `/admin/articles/${id}/toggle-publish`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => toast.success("Status publikasi diperbarui!"),
+                onError: () => toast.error("Gagal mengubah status publikasi."),
+                onFinish: () => setActiveLoadingId(null),
+            },
+        );
+    };
 
-            if (response.ok) {
-                router.reload({ only: ["articles"] });
-            } else {
-                const data = await response.json();
-                alert(data.message || "Gagal mengubah pilihan redaksi");
-            }
-        } catch (e) {
-            router.reload({ only: ["articles"] });
+    const handleToggleHero = (id: number) => {
+        if (activeLoadingId) return;
+        setActiveLoadingId(id);
+        router.post(
+            `/admin/articles/${id}/toggle-hero`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => toast.success("Hero Utama diperbarui!"),
+                onError: () => toast.error("Gagal mengubah status Hero."),
+                onFinish: () => setActiveLoadingId(null),
+            },
+        );
+    };
+
+    const handleToggleFeatured = (id: number) => {
+        if (activeLoadingId) return;
+
+        const targetArticle = articles.find((a) => a.id === id);
+
+        // Proteksi sisi klien: batas maksimal 5
+        if (targetArticle && !targetArticle.is_featured && featuredCount >= 5) {
+            toast.error("Maksimal 5 artikel pilihan redaksi!");
+            return;
         }
+
+        setActiveLoadingId(id);
+        router.post(
+            `/admin/articles/${id}/toggle-featured`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    const flash = (page.props as any)?.flash;
+                    if (flash?.error) {
+                        toast.error(flash.error);
+                    } else {
+                        toast.success(
+                            targetArticle?.is_featured
+                                ? "Dihapus dari Pilihan Redaksi."
+                                : "Ditambahkan ke Pilihan Redaksi!"
+                        );
+                    }
+                },
+                onError: (errors: any) => {
+                    const msg =
+                        errors?.message ||
+                        errors?.error ||
+                        "Maksimal 5 artikel pilihan redaksi!";
+                    toast.error(msg);
+                },
+                onFinish: () => setActiveLoadingId(null),
+            }
+        );
     };
 
     const formatDate = (dateString: string) => {
         if (!dateString) return "-";
-        return new Date(dateString).toLocaleDateString("id-ID", {
+        return new Intl.DateTimeFormat("id-ID", {
             day: "numeric",
             month: "short",
             year: "numeric",
-        });
+        }).format(new Date(dateString));
     };
 
     const filteredArticles = useMemo(() => {
@@ -157,23 +149,24 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
         <AdminLayout title="Kelola Artikel">
             {/* HEADER SUB SECTION */}
             <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E8CEBC] pb-5">
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 min-w-0">
                     <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FAF3EB] border border-[#E8CEBC] text-[#1D4533] shadow-2xs">
                         <FileText size={22} />
                     </div>
-                    <div>
-                        <h1 className="font-brand text-[20px] sm:text-[24px] font-bold text-[#1D4533] leading-tight">
+                    <div className="min-w-0">
+                        <h1 className="font-brand text-[20px] sm:text-[24px] font-bold text-[#1D4533] leading-tight truncate">
                             Kelola Artikel Kajian
                         </h1>
-                        <p className="mt-0.5 text-[11px] sm:text-[12px] uppercase tracking-wider text-[#8C5E43] font-bold">
-                            Total: {articles.length} Materi • Utama: {heroCount} • Pilihan Redaksi: {featuredCount}/3
+                        <p className="mt-0.5 text-[11px] sm:text-[12px] uppercase tracking-wider text-[#8C5E43] font-bold truncate">
+                            Total: {articles.length} Materi • Utama: {heroCount}{" "}
+                            • Redaksi: {featuredCount}/5
                         </p>
                     </div>
                 </div>
 
                 <Link
                     href="/admin/articles/create"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#1D4533] px-5 py-2.5 text-[12.5px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-2xs transition hover:bg-[#143325] cursor-pointer w-fit"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#1D4533] px-5 py-2.5 text-[12.5px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-2xs transition hover:bg-[#143325] cursor-pointer w-full sm:w-fit shrink-0 active:scale-95"
                 >
                     <Plus size={16} />
                     <span>Tulis Artikel Baru</span>
@@ -202,7 +195,7 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                                     : ""
                             }
                         />
-                        Pilihan Redaksi: {featuredCount} / 3
+                        Pilihan Redaksi: {featuredCount} / 5
                     </span>
                 </div>
 
@@ -216,7 +209,7 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari judul artikel..."
-                        className="w-full rounded-xl border border-[#E8CEBC] bg-[#FDF9F5] pl-9 pr-3.5 py-1.5 text-[12px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
+                        className="w-full rounded-xl border border-[#E8CEBC] bg-[#FDF9F5] pl-9 pr-3.5 py-2 text-[12.5px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
                     />
                 </div>
             </div>
@@ -253,6 +246,8 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                                     const coverUrl = ytId
                                         ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
                                         : article.image;
+                                    const isLoading =
+                                        activeLoadingId === article.id;
 
                                     return (
                                         <tr
@@ -306,22 +301,30 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                                                 </span>
                                             </td>
 
-                                            {/* Posisi Beranda: Hero & Redaksi */}
+                                            {/* Posisi Beranda */}
                                             <td className="p-4 text-center whitespace-nowrap space-x-1.5">
                                                 <button
                                                     type="button"
+                                                    disabled={isLoading}
                                                     onClick={() =>
                                                         handleToggleHero(
                                                             article.id,
                                                         )
                                                     }
-                                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold transition cursor-pointer ${
+                                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold transition cursor-pointer active:scale-95 disabled:opacity-60 ${
                                                         article.is_hero
                                                             ? "bg-[#1D4533] text-[#F7EAE0] ring-2 ring-[#1D4533]/40"
                                                             : "bg-[#FAF3EB] border border-[#E8CEBC] text-[#5E3122]/70 hover:bg-[#F2E2D5]"
                                                     }`}
                                                 >
-                                                    <Sparkles size={11} />
+                                                    {isLoading ? (
+                                                        <Loader2
+                                                            size={11}
+                                                            className="animate-spin"
+                                                        />
+                                                    ) : (
+                                                        <Sparkles size={11} />
+                                                    )}
                                                     <span>
                                                         {article.is_hero
                                                             ? "Utama (Hero)"
@@ -331,12 +334,13 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
 
                                                 <button
                                                     type="button"
+                                                    disabled={isLoading}
                                                     onClick={() =>
                                                         handleToggleFeatured(
                                                             article.id,
                                                         )
                                                     }
-                                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold transition cursor-pointer ${
+                                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold transition cursor-pointer active:scale-95 disabled:opacity-60 ${
                                                         article.is_featured
                                                             ? "bg-amber-600 text-white ring-2 ring-amber-500/40"
                                                             : "bg-[#FAF3EB] border border-[#E8CEBC] text-[#5E3122]/70 hover:bg-[#F2E2D5]"
@@ -362,12 +366,13 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                                             <td className="p-4 text-center">
                                                 <button
                                                     type="button"
+                                                    disabled={isLoading}
                                                     onClick={() =>
                                                         handleTogglePublish(
                                                             article.id,
                                                         )
                                                     }
-                                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase transition cursor-pointer ${
+                                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase transition cursor-pointer active:scale-95 disabled:opacity-60 ${
                                                         article.is_published
                                                             ? "bg-emerald-100/80 text-emerald-800 border border-emerald-300"
                                                             : "bg-[#F2E2D5] text-[#5E3122]/60 border border-[#E8CEBC]"
@@ -450,6 +455,7 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                         const coverUrl = ytId
                             ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
                             : article.image;
+                        const isLoading = activeLoadingId === article.id;
 
                         return (
                             <div
@@ -498,10 +504,11 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                                     <div className="flex items-center gap-1">
                                         <button
                                             type="button"
+                                            disabled={isLoading}
                                             onClick={() =>
                                                 handleToggleHero(article.id)
                                             }
-                                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold border ${
+                                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold border disabled:opacity-60 ${
                                                 article.is_hero
                                                     ? "bg-[#1D4533] text-white border-[#1D4533]"
                                                     : "bg-[#FAF3EB] border-[#E8CEBC] text-[#5E3122]"
@@ -511,10 +518,11 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                                         </button>
                                         <button
                                             type="button"
+                                            disabled={isLoading}
                                             onClick={() =>
                                                 handleToggleFeatured(article.id)
                                             }
-                                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold border ${
+                                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold border disabled:opacity-60 ${
                                                 article.is_featured
                                                     ? "bg-amber-600 text-white border-amber-600"
                                                     : "bg-[#FAF3EB] border-[#E8CEBC] text-[#5E3122]"
@@ -524,10 +532,11 @@ export default function ArticleIndex({ articles = [] }: IndexProps) {
                                         </button>
                                         <button
                                             type="button"
+                                            disabled={isLoading}
                                             onClick={() =>
                                                 handleTogglePublish(article.id)
                                             }
-                                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold border ${
+                                            className={`rounded-lg px-2.5 py-1 text-[10px] font-bold border disabled:opacity-60 ${
                                                 article.is_published
                                                     ? "bg-emerald-100/80 text-emerald-800 border-emerald-300"
                                                     : "bg-[#F2E2D5] text-[#5E3122]/60 border-[#E8CEBC]"

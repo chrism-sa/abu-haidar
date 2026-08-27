@@ -416,3 +416,13 @@ button {
     margin-bottom: 0.5rem;
     line-height: 1.25;
 }
+
+/* Hilangkan warna background biru muda bawaan autofill browser */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #FAF3EB inset !important;
+    -webkit-text-fill-color: #5E3122 !important;
+    transition: background-color 5000s ease-in-out 0s;
+}

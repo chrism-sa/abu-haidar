@@ -1,11 +1,15 @@
 import React from "react";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, usePage, router } from "@inertiajs/react";
 import { Home, LogOut, ArrowLeft } from "lucide-react";
+import { Toaster } from "react-hot-toast";
 
 interface AdminLayoutProps {
     title?: string;
     children: React.ReactNode;
 }
+
+const solidBrownLogoFilter =
+    "brightness(0) saturate(100%) invert(20%) sepia(35%) saturate(1500%) hue-rotate(345deg) brightness(90%) contrast(95%)";
 
 export default function AdminLayout({
     title = "Dashboard Admin",
@@ -14,13 +18,62 @@ export default function AdminLayout({
     const { url } = usePage();
     const currentYear = new Date().getFullYear();
 
-    // Mengecek apakah sedang di halaman utama dashboard
     const isDashboardRoot =
         url === "/admin/dashboard" || url === "/admin/dashboard/";
+
+    const handleLogout = () => {
+        router.post("/logout");
+    };
 
     return (
         <div className="relative min-h-screen bg-[#F7EAE0] text-[#5E3122] flex flex-col justify-between selection:bg-[#1D4533] selection:text-[#F7EAE0]">
             <Head title={`${title} - Portal Abu Haidar`} />
+
+            {/* NOTIFIKASI GLOBAL POJOK KANAN BAWAH (ANTI TERPOTONG) */}
+            <Toaster
+                position="bottom-right"
+                gutter={10}
+                containerStyle={{
+                    bottom: 24,
+                    right: 24,
+                    zIndex: 9999999,
+                }}
+                toastOptions={{
+                    duration: 4000,
+                    style: {
+                        background: "#FDF9F5",
+                        color: "#5E3122",
+                        border: "1px solid #E8CEBC",
+                        borderRadius: "16px",
+                        padding: "12px 18px",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        boxShadow: "0 12px 30px -8px rgba(94, 49, 34, 0.2)",
+                    },
+                    success: {
+                        iconTheme: {
+                            primary: "#1D4533",
+                            secondary: "#FDF9F5",
+                        },
+                        style: {
+                            background: "#FDF9F5",
+                            border: "1px solid #1D4533/30",
+                            color: "#1D4533",
+                        },
+                    },
+                    error: {
+                        iconTheme: {
+                            primary: "#DC2626",
+                            secondary: "#FDF9F5",
+                        },
+                        style: {
+                            background: "#FDF9F5",
+                            border: "1px solid #FECACA",
+                            color: "#991B1B",
+                        },
+                    },
+                }}
+            />
 
             {/* BACKGROUND: FLUID GLOWING ORBS */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
@@ -36,13 +89,12 @@ export default function AdminLayout({
                             {/* SISI KIRI HEADER */}
                             <div className="flex items-center gap-2.5 sm:gap-3">
                                 {isDashboardRoot ? (
-                                    /* TAMPILAN DI HALAMAN UTAMA DASHBOARD */
                                     <div className="flex shrink-0 items-center gap-2 sm:gap-3 rounded-full border border-[#E8CEBC] bg-[#FDF9F5] px-2.5 sm:px-3.5 py-1.5 shadow-2xs">
                                         <img
                                             src="/LOGO.png"
                                             alt="Abu Haidar"
                                             style={{
-                                                filter: "brightness(0) saturate(100%) invert(20%) sepia(35%) saturate(1600%) hue-rotate(345deg) brightness(90%) contrast(92%)",
+                                                filter: solidBrownLogoFilter,
                                             }}
                                             className="h-8 sm:h-9 w-auto object-contain drop-shadow-2xs shrink-0"
                                         />
@@ -59,7 +111,6 @@ export default function AdminLayout({
                                         </div>
                                     </div>
                                 ) : (
-                                    /* TAMPILAN SAAT BERADA DI MENU KELOLA (HANYA TOMBOL KEMBALI) */
                                     <Link
                                         href="/admin/dashboard"
                                         className="flex items-center gap-2 rounded-full border border-[#E8CEBC] bg-[#FDF9F5] px-3.5 py-1.5 sm:py-2 text-[12px] sm:text-[13px] font-bold text-[#1D4533] shadow-2xs transition-all duration-200 hover:bg-[#F2E2D5] hover:border-[#1D4533]/40"
@@ -86,20 +137,16 @@ export default function AdminLayout({
                                     </span>
                                 </Link>
 
-                                <Link
-                                    href="/logout"
-                                    method="post"
-                                    as="button"
-                                    onSuccess={() => {
-                                        window.location.href = "/home";
-                                    }}
-                                    className="flex items-center gap-1.5 rounded-full bg-red-100/70 border border-red-200/80 px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-[12px] font-bold text-red-700 transition hover:bg-red-200 shadow-2xs cursor-pointer whitespace-nowrap"
+                                <button
+                                    type="button"
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-1.5 rounded-full bg-red-100/70 border border-red-200/80 px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-[12px] font-bold text-red-700 transition hover:bg-red-200 shadow-2xs cursor-pointer whitespace-nowrap active:scale-95"
                                 >
                                     <LogOut size={13} />
                                     <span className="hidden sm:inline">
                                         Keluar
                                     </span>
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -114,12 +161,12 @@ export default function AdminLayout({
             {/* ================= FOOTER ADMIN ================= */}
             <footer className="relative z-10 mt-auto border-t border-[#E8CEBC] bg-[#FAF2EA]/90 py-5 sm:py-6 text-[11.5px] text-[#5E3122]/70">
                 <div className="mx-auto flex max-w-[1140px] flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 text-center lg:text-left">
-                    {/* Sisi Kiri: Logo + Copyright */}
                     <div className="flex items-center justify-center gap-2">
                         <img
                             src="/LOGO.png"
                             alt="Abu Haidar"
-                            className="h-4 sm:h-5 w-auto opacity-70 grayscale transition hover:grayscale-0 shrink-0"
+                            style={{ filter: solidBrownLogoFilter }}
+                            className="h-4 sm:h-5 w-auto opacity-70 transition hover:opacity-100 shrink-0"
                         />
                         <p className="whitespace-nowrap">
                             © {currentYear}{" "}
@@ -128,7 +175,6 @@ export default function AdminLayout({
                         </p>
                     </div>
 
-                    {/* Sisi Kanan: Tautan Navigasi + Badge Versi */}
                     <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[11px] font-semibold text-[#5E3122]/80">
                         <Link
                             href="/home"

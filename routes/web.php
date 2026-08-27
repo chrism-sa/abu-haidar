@@ -29,6 +29,33 @@ Route::get('/', function () {
 // Beranda Utama Website
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
+/*
+|--------------------------------------------------------------------------
+| 1. RUTE PUBLIK
+|--------------------------------------------------------------------------
+*/
+
+// Halaman Tentang (Publik)
+Route::get('/about', function () {
+    $setting = Setting::where('key', 'about_page')->first();
+    $aboutData = $setting ? json_decode($setting->value, true) : [
+        'title' => 'Tentang Portal Abu Haidar',
+        'subtitle' => 'Pusat Risalah, Catatan Kajian Ilmiah, & Literasi Dakwah Islam',
+        'content' => '<p>Portal Abu Haidar adalah media dokumentasi dan publikasi naskah ilmiah, risalah kajian Islam, artikel tafsir Al-Qur\'an, dan literasi dakwah bermanhaj Salafush Shalih yang diasuh oleh Ustadz Abu Haidar As-Sundawy hafizhahullah.</p>',
+        'vision' => 'Menjadi rujukan terpercaya dalam penyebaran ilmu syar\'i yang shahih berlandaskan Al-Qur\'an dan As-Sunnah sesuai pemahaman Salafush Shalih.',
+        'mission' => 'Menyediakan literatur naskah kajian dan modul dakwah digital yang mudah diakses, dipelajari, dan disebarkan oleh seluruh kaum muslimin.',
+    ];
+
+    return Inertia::render('About/Index', [
+        'about' => $aboutData
+    ]);
+})->name('about.index');
+
+// Alias route /tentang diarahkan ke /about
+Route::get('/tentang', function () {
+    return redirect()->route('about.index');
+});
+
 // Katalog & Pencarian Artikel
 Route::get('/artikel', function (Request $request) {
     $search = $request->query('search');
@@ -240,24 +267,27 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     })->name('articles.create');
 
     Route::post('/articles', function (Request $request) {
+        // 1. Pembersihan karakter spasi tak kasat mata
         $rawContent = $request->content ?? '';
         $cleanContent = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $rawContent);
         $cleanDescription = str_replace(['&nbsp;', '&#160;', '&#xA0;', "\xc2\xa0", "\u{00A0}"], ' ', $request->description ?? '');
 
-        $plainText = trim(strip_tags($cleanContent));
-        if (empty($plainText)) {
-            $request->merge(['content' => null]);
-        } else {
-            $request->merge(['content' => $cleanContent]);
-        }
+        // 2. Validasi konten teks polos (Cegah hanya tag HTML kosong seperti <p><br></p>)
+        $plainTextContent = trim(strip_tags($cleanContent));
+        $request->merge(['content' => empty($plainTextContent) ? null : $cleanContent]);
 
+        // 3. Validasi deskripsi polos
+        $plainTextDesc = trim(strip_tags($cleanDescription));
+        $request->merge(['description' => empty($plainTextDesc) ? null : $cleanDescription]);
+
+        // 4. Validasi Wajib (Title, Category, Description, Content = REQUIRED)
         $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
+            'description' => 'required|string|min:10',
+            'content' => 'required|string|min:20',
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'image_url' => 'nullable|string',
-            'description' => 'nullable|string',
-            'content' => 'required|string',
             'quote_type' => 'nullable|in:text,image,youtube',
             'quote_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'quote_youtube_url' => 'nullable|string',
@@ -269,9 +299,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             'quote_line_height' => 'nullable|numeric',
             'quote_color' => 'nullable|string',
         ], [
-            'title.required' => 'Judul artikel wajib diisi.',
-            'category_id.required' => 'Silakan pilih salah satu kategori.',
-            'content.required' => 'Konten atau isi naskah artikel tidak boleh kosong!',
+            'title.required' => 'Judul artikel wajib diisi!',
+            'category_id.required' => 'Silakan pilih salah satu kategori!',
+            'description.required' => 'Ringkasan / deskripsi artikel wajib diisi!',
+            'description.min' => 'Ringkasan artikel minimal 10 karakter.',
+            'content.required' => 'Isi naskah artikel kajian wajib diisi dan tidak boleh kosong!',
+            'content.min' => 'Isi naskah artikel terlalu pendek.',
             'image_file.max' => 'Ukuran file gambar sampul maksimal 2 MB.',
             'quote_image.max' => 'Ukuran file gambar quote maksimal 2 MB.',
         ]);
@@ -290,8 +323,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             'title' => $request->title,
             'slug' => Str::slug($request->title) . '-' . time(),
             'image' => $imagePath,
-            'description' => $cleanDescription ?? '',
-            'content' => $cleanContent ?? '',
+            'description' => $cleanDescription,
+            'content' => $cleanContent,
             'is_published' => true,
             'is_hero' => false,
             'is_featured' => false,
@@ -446,40 +479,40 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
         return redirect()->back()->with('success', 'Artikel beserta seluruh aset gambar berhasil dihapus bersih!');
     })->name('articles.destroy');
-
+    // 1. TOGGLE PUBLISH (WAJIB RETURN BACK UNTUK INERTIA)
     Route::post('/articles/{id}/toggle-publish', function ($id) {
         $article = Article::findOrFail($id);
         $article->update(['is_published' => !$article->is_published]);
-        return response()->json(['success' => true, 'is_published' => $article->is_published]);
+        return back()->with('success', 'Status publikasi berhasil diperbarui!');
     })->name('articles.togglePublish');
 
+    // 2. TOGGLE HERO
     Route::post('/articles/{id}/toggle-hero', function ($id) {
         $article = Article::findOrFail($id);
         if (!$article->is_hero) {
             Article::query()->update(['is_hero' => false]);
             $article->update(['is_hero' => true]);
-            $status = true;
         } else {
             $article->update(['is_hero' => false]);
-            $status = false;
         }
-        return response()->json(['success' => true, 'is_hero' => $status]);
+        return back()->with('success', 'Hero Utama berhasil diperbarui!');
     })->name('articles.toggleHero');
 
+    // TOGGLE FEATURED
     Route::post('/articles/{id}/toggle-featured', function ($id) {
         $article = Article::findOrFail($id);
+
         if (!$article->is_featured) {
             $currentFeaturedCount = Article::where('is_featured', true)->count();
-            if ($currentFeaturedCount >= 3) {
-                return response()->json(['success' => false, 'message' => 'Maksimal 3 artikel pilihan redaksi!'], 422);
+            if ($currentFeaturedCount >= 5) {
+                return back()->with('error', 'Maksimal 5 artikel pilihan redaksi!');
             }
             $article->update(['is_featured' => true]);
-            $status = true;
+            return back()->with('success', 'Artikel berhasil ditambahkan ke Pilihan Redaksi!');
         } else {
             $article->update(['is_featured' => false]);
-            $status = false;
+            return back()->with('success', 'Artikel dihapus dari Pilihan Redaksi.');
         }
-        return response()->json(['success' => true, 'is_featured' => $status]);
     })->name('articles.toggleFeatured');
 
     // 4. KELOLA KATEGORI
@@ -671,4 +704,140 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
         return back()->with('success', 'Pengaturan tampilan berhasil disimpan untuk semua pengunjung!');
     })->name('settings.save');
+    // BACKUP DATABASE (.SQL FULL DUMP METODE 1)
+    Route::get('/database/backup', function () {
+        $tables = DB::select('SHOW TABLES');
+        $dbName = DB::getDatabaseName();
+        $key = 'Tables_in_' . $dbName;
+
+        $sqlDump = "-- Database Backup: " . $dbName . "\n";
+        $sqlDump .= "-- Generated on: " . now()->toDateTimeString() . "\n\n";
+        $sqlDump .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+        foreach ($tables as $table) {
+            $tableName = $table->$key;
+
+            // 1. DROP TABEL LAMA
+            $sqlDump .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
+
+            // 2. CREATE STRUKTUR TABEL BARU
+            $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
+            $sqlDump .= $createTable[0]->{'Create Table'} . ";\n\n";
+
+            // 3. INSERT DATA
+            $rows = DB::table($tableName)->get();
+            if ($rows->count() > 0) {
+                foreach ($rows as $row) {
+                    $rowArray = (array) $row;
+                    $escapedValues = array_map(function ($value) {
+                        if (is_null($value))
+                            return 'NULL';
+                        return "'" . addslashes($value) . "'";
+                    }, array_values($rowArray));
+
+                    $columns = array_map(fn($col) => "`{$col}`", array_keys($rowArray));
+                    $sqlDump .= "INSERT INTO `{$tableName}` (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $escapedValues) . ");\n";
+                }
+                $sqlDump .= "\n";
+            }
+        }
+
+        $sqlDump .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+        $filename = 'backup-' . $dbName . '-' . date('Y-m-d-His') . '.sql';
+
+        return response($sqlDump, 200, [
+            'Content-Type' => 'application/sql',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    })->name('database.backup');
+
+    // IMPORT / RESTORE DATABASE
+    Route::post('/database/import', function (Request $request) {
+        $request->validate([
+            'sql_file' => 'required|file',
+        ], [
+            'sql_file.required' => 'File .sql cadangan wajib dipilih!',
+        ]);
+
+        $file = $request->file('sql_file');
+        if ($file->getClientOriginalExtension() !== 'sql') {
+            return back()->with('error', 'Format file harus berekstensi .sql!');
+        }
+
+        $sql = file_get_contents($file->getRealPath());
+
+        try {
+            DB::unprepared("SET FOREIGN_KEY_CHECKS=0; " . $sql . " SET FOREIGN_KEY_CHECKS=1;");
+            return back()->with('success', 'Database berhasil dipulihkan secara bersih!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal impor database: ' . $e->getMessage());
+        }
+    })->name('database.import');
+
+    // ================= RUTE PUBLIK: TENTANG =================
+    Route::get('/tentang', function () {
+        $setting = Setting::where('key', 'about_page')->first();
+        $aboutData = $setting ? json_decode($setting->value, true) : [
+            'title' => 'Tentang Portal Abu Haidar',
+            'subtitle' => 'Pusat Risalah, Artikel Ilmiah, & Literasi Dakwah Islam',
+            'content' => '<p>Portal Abu Haidar adalah media publikasi naskah ilmiah, risalah kajian Islam, artikel tafsir Al-Qur\'an, dan literasi dakwah bermanhaj Salafush Shalih.</p>',
+            'vision' => 'Menjadi rujukan terpercaya dalam penyebaran ilmu syar\'i yang shahih.',
+            'mission' => 'Menyediakan literatur dan artikel kajian yang mudah diakses oleh seluruh kaum muslimin.',
+        ];
+
+        return Inertia::render('About/Index', [
+            'about' => $aboutData
+        ]);
+    })->name('about.index');
+    // SIMPAN PERUBAHAN HALAMAN TENTANG + FOTO
+    Route::post('/about', function (Request $request) {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'content' => 'required|string',
+            'vision' => 'nullable|string',
+            'mission' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
+        ]);
+
+        $setting = Setting::where('key', 'about_page')->first();
+        $currentData = $setting ? json_decode($setting->value, true) : [];
+
+        $imagePath = $currentData['image_url'] ?? null;
+
+        if ($request->hasFile('image')) {
+            // Hapus foto lama jika ada
+            if ($imagePath && str_starts_with($imagePath, '/storage/')) {
+                $oldFile = str_replace('/storage/', '', $imagePath);
+                if (Storage::disk('public')->exists($oldFile)) {
+                    Storage::disk('public')->delete($oldFile);
+                }
+            }
+            $stored = $request->file('image')->store('about', 'public');
+            $imagePath = '/storage/' . $stored;
+        }
+
+        $payload = [
+            'title' => $request->title,
+            'subtitle' => $request->subtitle ?? '',
+            'content' => $request->content,
+            'vision' => $request->vision ?? '',
+            'mission' => $request->mission ?? '',
+            'image_url' => $imagePath,
+        ];
+
+        Setting::updateOrCreate(
+            ['key' => 'about_page'],
+            ['value' => json_encode($payload)]
+        );
+
+        return back()->with('success', 'Halaman Tentang beserta foto berhasil diperbarui!');
+    })->name('about.update');
+
+    // BERSIHKAN CACHE APLIKASI
+    Route::post('/clear-cache', function () {
+        Artisan::call('optimize:clear');
+        return back()->with('success', 'Cache sistem berhasil dibersihkan bersih!');
+    })->name('cache.clear');
 });

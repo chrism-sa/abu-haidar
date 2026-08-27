@@ -16,6 +16,7 @@ import {
     ImagePlus,
     Palette,
     AlignVerticalSpaceAround,
+    AlertCircle,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { Category } from "@/types";
@@ -23,6 +24,7 @@ import ReactQuill, { Quill } from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/Utils/cropImage";
+import toast, { Toaster } from "react-hot-toast";
 
 // 1. Whitelist Font Quill
 const FontStyle = Quill.import("attributors/style/font") as any;
@@ -74,7 +76,6 @@ Quill.register(DirectionStyle, true);
 const AlignStyle = Quill.import("attributors/style/align") as any;
 Quill.register(AlignStyle, true);
 
-// Pilihan Font Arab untuk Quote (Class Helper)
 const ARABIC_FONTS = [
     { label: "Adobe Naskh", value: "font-adobe-naskh" },
     { label: "Al Jazeera", value: "font-al-jazeera" },
@@ -85,7 +86,6 @@ const ARABIC_FONTS = [
     { label: "Almarai", value: "font-almarai" },
 ];
 
-// Helper Deteksi YouTube ID
 const getYouTubeId = (url: string | null | undefined) => {
     if (!url) return null;
     const regExp =
@@ -102,7 +102,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
     const quillRef = useRef<any>(null);
     const lastSelectedFontRef = useRef<string | null>(null);
 
-    // State Tampilan & Sumber Data
     const [imageSourceType, setImageSourceType] = useState<
         "file" | "url" | "youtube"
     >("file");
@@ -117,14 +116,21 @@ export default function ArticleCreate({ categories }: CreateProps) {
         null,
     );
 
-    // Cropper State
     const [cropModalOpen, setCropModalOpen] = useState(false);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    // Form Inertia State
-    const { data, setData, post, processing, transform, errors } = useForm({
+    const {
+        data,
+        setData,
+        post,
+        processing,
+        transform,
+        errors,
+        setError,
+        clearErrors,
+    } = useForm({
         title: "",
         category_id: categories[0]?.id || "",
         image_file: null as File | null,
@@ -138,7 +144,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         quote_reference: "",
         quote_font: "font-adobe-naskh",
         quote_font_size: 36,
-        quote_line_height: 2.4, // Pengaturan default spasi baris quote
+        quote_line_height: 2.4,
         quote_color: "#1D4533",
         quote_image: null as File | null,
         quote_youtube_url: "",
@@ -151,7 +157,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
         ?.toLowerCase()
         .includes("tafsir");
 
-    // Otomatisasi font berikutnya saat baris baru / enter
     const handleChangeSelection = (range: any, source: string, editor: any) => {
         if (range && source === "user") {
             try {
@@ -173,11 +178,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
     transform((curr) => ({
         ...curr,
+        title: curr.title ? curr.title.trim() : "",
         content: curr.content
             ? curr.content.replace(/&nbsp;|\u00a0/g, " ")
             : "",
         description: curr.description
-            ? curr.description.replace(/&nbsp;|\u00a0/g, " ")
+            ? curr.description.replace(/&nbsp;|\u00a0/g, " ").trim()
             : "",
         quote_type: quoteType,
         quote_font: data.quote_font,
@@ -186,7 +192,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
         quote_color: data.quote_color,
     }));
 
-    // Preview Sinkronisasi Sampul Artikel
     useEffect(() => {
         if (imageSourceType === "file" && data.image_file) {
             const objectUrl = URL.createObjectURL(data.image_file);
@@ -202,7 +207,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     }, [data.image_file, data.image_url, imageSourceType]);
 
-    // Preview Sinkronisasi Quote Gambar
     useEffect(() => {
         if (quoteType === "image" && data.quote_image) {
             const objectUrl = URL.createObjectURL(data.quote_image);
@@ -217,7 +221,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
             if (file.size > 2 * 1024 * 1024) {
-                alert("Ukuran gambar terlalu besar! Maksimal 2 MB.");
+                toast.error("Ukuran gambar terlalu besar! Maksimal 2 MB.");
                 return;
             }
             const reader = new FileReader();
@@ -233,7 +237,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
             if (file.size > 2 * 1024 * 1024) {
-                alert("Ukuran gambar terlalu besar! Maksimal 2 MB.");
+                toast.error("Ukuran gambar terlalu besar! Maksimal 2 MB.");
                 return;
             }
             setData("quote_image", file);
@@ -255,7 +259,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
-    // Toolbar Quill Editor dengan Spasi (Line Height)
     const quillModules = useMemo(
         () => ({
             toolbar: [
@@ -305,15 +308,50 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        clearErrors();
 
-        const strippedContent = data.content.replace(/<[^>]*>?/gm, "").trim();
+        let hasError = false;
+
+        if (!data.title || !data.title.trim()) {
+            setError("title", "Judul artikel wajib diisi!");
+            hasError = true;
+        }
+
+        if (!data.description || !data.description.trim()) {
+            setError(
+                "description",
+                "Ringkasan / deskripsi artikel wajib diisi!",
+            );
+            hasError = true;
+        }
+
+        const strippedContent = data.content
+            ? data.content
+                  .replace(/<[^>]*>?/gm, "")
+                  .replace(/&nbsp;|\u00a0/g, " ")
+                  .trim()
+            : "";
+
         if (!strippedContent) {
-            alert("Mohon isi naskah artikel kajian terlebih dahulu!");
+            setError(
+                "content",
+                "Isi naskah artikel kajian wajib diisi dan tidak boleh kosong!",
+            );
+            hasError = true;
+        }
+
+        if (hasError) {
+            toast.error("Mohon lengkapi seluruh kolom yang wajib diisi (*)");
             return;
         }
 
         post("/admin/articles", {
             forceFormData: true,
+            onError: () => {
+                toast.error(
+                    "Gagal mempublikasikan artikel. Silakan periksa kolom isian.",
+                );
+            },
         });
     };
 
@@ -326,6 +364,52 @@ export default function ArticleCreate({ categories }: CreateProps) {
     return (
         <div className="min-h-screen bg-[#F7EAE0] text-[#5E3122] selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-16">
             <Head title="Tulis Artikel - Abu Haidar" />
+
+            {/* KOMPONEN TOASTER POJOK KANAN BAWAH */}
+            <Toaster
+                position="bottom-right"
+                gutter={10}
+                containerStyle={{
+                    bottom: 24,
+                    right: 24,
+                    zIndex: 9999999,
+                }}
+                toastOptions={{
+                    duration: 4000,
+                    style: {
+                        background: "#FDF9F5",
+                        color: "#5E3122",
+                        border: "1px solid #E8CEBC",
+                        borderRadius: "16px",
+                        padding: "12px 18px",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        boxShadow: "0 12px 30px -8px rgba(94, 49, 34, 0.2)",
+                    },
+                    success: {
+                        iconTheme: {
+                            primary: "#1D4533",
+                            secondary: "#FDF9F5",
+                        },
+                        style: {
+                            background: "#FDF9F5",
+                            border: "1px solid #1D4533/30",
+                            color: "#1D4533",
+                        },
+                    },
+                    error: {
+                        iconTheme: {
+                            primary: "#DC2626",
+                            secondary: "#FDF9F5",
+                        },
+                        style: {
+                            background: "#FDF9F5",
+                            border: "1px solid #FECACA",
+                            color: "#991B1B",
+                        },
+                    },
+                }}
+            />
 
             {/* HEADER */}
             <header className="sticky top-0 z-30 border-b border-[#F9D2BA] bg-[#F7EAE0]/95 backdrop-blur-md shadow-xs">
@@ -347,7 +431,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         type="button"
                         onClick={handleSubmit}
                         disabled={processing}
-                        className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-4 sm:px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-xs transition hover:bg-[#143325] disabled:opacity-50 cursor-pointer"
+                        className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-4 sm:px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-xs transition hover:bg-[#143325] disabled:opacity-50 cursor-pointer active:scale-95"
                     >
                         <Save size={15} /> <span>Simpan & Publikasikan</span>
                     </button>
@@ -361,23 +445,36 @@ export default function ArticleCreate({ categories }: CreateProps) {
                     encType="multipart/form-data"
                 >
                     <div className="rounded-2xl border border-[#F9D2BA] bg-white p-5 sm:p-8 shadow-xs space-y-5">
-                        {/* Judul Artikel */}
+                        {/* Judul Artikel (REQUIRED) */}
                         <div>
-                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5">
-                                Judul Artikel
+                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5 flex items-center justify-between">
+                                <span>
+                                    Judul Artikel{" "}
+                                    <span className="text-red-500">*</span>
+                                </span>
+                                <span className="text-[10.5px] font-normal lowercase tracking-normal text-[#5E3122]/60">
+                                    (Wajib diisi)
+                                </span>
                             </label>
                             <input
                                 type="text"
+                                required
                                 value={data.title}
-                                onChange={(e) =>
-                                    setData("title", e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setData("title", e.target.value);
+                                    if (errors.title) clearErrors("title");
+                                }}
                                 placeholder="Ketik judul kajian di sini..."
-                                className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 sm:py-3 text-[15px] sm:text-[16px] font-brand font-bold text-[#1D4533] focus:border-[#1D4533] focus:bg-white focus:outline-none"
+                                className={`w-full rounded-xl border px-4 py-2.5 sm:py-3 text-[15px] sm:text-[16px] font-brand font-bold text-[#1D4533] outline-none transition ${
+                                    errors.title
+                                        ? "border-red-400 bg-red-50/40 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-200"
+                                        : "border-[#F9D2BA] bg-[#FDFBF9] focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                }`}
                             />
                             {errors.title && (
-                                <p className="mt-1 text-[11px] font-bold text-red-600">
-                                    {errors.title}
+                                <p className="mt-1.5 flex items-center gap-1 text-[11.5px] font-bold text-red-600">
+                                    <AlertCircle size={13} />
+                                    <span>{errors.title}</span>
                                 </p>
                             )}
                         </div>
@@ -385,7 +482,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         {/* Kategori */}
                         <div>
                             <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5">
-                                Kategori
+                                Kategori <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={data.category_id}
@@ -495,7 +592,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 />
                             )}
 
-                            {/* Preview Sampul */}
                             {imageSourceType === "youtube" && ytId ? (
                                 <div className="mt-3 aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black">
                                     <iframe
@@ -608,7 +704,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             </div>
                         )}
 
-                        {/* BAGIAN TAFSIR & QUOTE (3 TAB: TEKS / GAMBAR / YOUTUBE) */}
+                        {/* BAGIAN TAFSIR & QUOTE */}
                         {isTafsirCategory && (
                             <div className="space-y-4 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] p-4 sm:p-5">
                                 <div className="flex items-center justify-between border-b border-[#F9D2BA] pb-3 flex-wrap gap-2">
@@ -663,7 +759,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 {/* 1. OPSI TEKS */}
                                 {quoteType === "text" && (
                                     <>
-                                        {/* Kustomisasi Font, Warna, Ukuran & Spasi Baris */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-[#F9D2BA] bg-white p-3.5 shadow-2xs">
                                             {/* Pilihan Font Arab */}
                                             <div>
@@ -755,7 +850,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 />
                                             </div>
 
-                                            {/* Slider Spasi Baris (Line Height) */}
+                                            {/* Slider Spasi Baris */}
                                             <div>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122] flex items-center gap-1">
@@ -911,23 +1006,37 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             </div>
                         )}
 
-                        {/* Ringkasan Singkat */}
+                        {/* Ringkasan Singkat (REQUIRED) */}
                         <div>
-                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5">
-                                Ringkasan Singkat (Deskripsi)
+                            <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5 flex items-center justify-between">
+                                <span>
+                                    Ringkasan Singkat (Deskripsi){" "}
+                                    <span className="text-red-500">*</span>
+                                </span>
+                                <span className="text-[10.5px] font-normal lowercase tracking-normal text-[#5E3122]/60">
+                                    (Wajib diisi)
+                                </span>
                             </label>
                             <textarea
                                 rows={2}
+                                required
                                 value={data.description}
-                                onChange={(e) =>
-                                    setData("description", e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setData("description", e.target.value);
+                                    if (errors.description)
+                                        clearErrors("description");
+                                }}
                                 placeholder="Ringkasan singkat artikel..."
-                                className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 text-[14px] text-[#5E3122] focus:border-[#1D4533] focus:bg-white focus:outline-none"
+                                className={`w-full rounded-xl border px-4 py-2.5 text-[14px] text-[#5E3122] outline-none transition ${
+                                    errors.description
+                                        ? "border-red-400 bg-red-50/40 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-200"
+                                        : "border-[#F9D2BA] bg-[#FDFBF9] focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                }`}
                             />
                             {errors.description && (
-                                <p className="mt-1 text-[11px] font-bold text-red-600">
-                                    {errors.description}
+                                <p className="mt-1.5 flex items-center gap-1 text-[11.5px] font-bold text-red-600">
+                                    <AlertCircle size={13} />
+                                    <span>{errors.description}</span>
                                 </p>
                             )}
                         </div>
@@ -946,7 +1055,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 }`}
                             >
                                 <Edit3 size={16} className="mr-2 inline" /> Mode
-                                Menulis
+                                Menulis <span className="text-red-500">*</span>
                             </button>
                             <button
                                 type="button"
@@ -973,9 +1082,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     ref={quillRef}
                                     theme="snow"
                                     value={data.content}
-                                    onChange={(content) =>
-                                        setData("content", content)
-                                    }
+                                    onChange={(content) => {
+                                        setData("content", content);
+                                        if (errors.content)
+                                            clearErrors("content");
+                                    }}
                                     onChangeSelection={handleChangeSelection}
                                     modules={quillModules}
                                     className="rounded-lg bg-white"
@@ -983,7 +1094,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 />
                                 {errors.content && (
                                     <div className="p-3 bg-red-50 border-t border-red-200 text-red-600 font-bold text-[12px] flex items-center gap-2">
-                                        <X size={15} /> {errors.content}
+                                        <AlertCircle size={15} />{" "}
+                                        <span>{errors.content}</span>
                                     </div>
                                 )}
                             </div>

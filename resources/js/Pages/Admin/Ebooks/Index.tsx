@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link, useForm, router } from "@inertiajs/react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import {
@@ -43,6 +44,11 @@ export default function AdminEbookIndex({ ebooks = [] }: IndexProps) {
         "all" | "published" | "draft"
     >("all");
     const [search, setSearch] = useState("");
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Form Tambah E-Book
     const createForm = useForm({
@@ -185,7 +191,7 @@ export default function AdminEbookIndex({ ebooks = [] }: IndexProps) {
                 <button
                     type="button"
                     onClick={() => setIsUploadModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#1D4533] px-5 py-2.5 text-[12.5px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-2xs transition hover:bg-[#143325] cursor-pointer w-full sm:w-fit shrink-0"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#1D4533] px-5 py-2.5 text-[12.5px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-2xs transition hover:bg-[#143325] cursor-pointer w-full sm:w-fit shrink-0 active:scale-95"
                 >
                     <Plus size={16} />
                     <span>Unggah Baru</span>
@@ -373,455 +379,533 @@ export default function AdminEbookIndex({ ebooks = [] }: IndexProps) {
                 </div>
             )}
 
-            {/* ================= MODAL 1: UPLOAD E-BOOK BARU ================= */}
-            <AnimatePresence>
-                {isUploadModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsUploadModalOpen(false)}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
-                        />
-
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                            className="relative w-full max-w-lg rounded-2xl bg-[#FDF9F5] shadow-2xl border border-[#E8CEBC] z-10 my-auto flex flex-col max-h-[92vh]"
-                        >
-                            {/* Modal Header */}
-                            <div className="flex items-center justify-between border-b border-[#E8CEBC] px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
-                                <h3 className="font-brand text-[15px] sm:text-[17px] font-bold text-[#1D4533] flex items-center gap-2">
-                                    <Upload size={18} /> Unggah E-Book / Risalah
-                                </h3>
-                                <button
-                                    type="button"
+            {/* ================= MODAL 1: UPLOAD E-BOOK BARU (PORTAL) ================= */}
+            {mounted &&
+                createPortal(
+                    <AnimatePresence>
+                        {isUploadModalOpen && (
+                            <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
                                     onClick={() => setIsUploadModalOpen(false)}
-                                    className="text-[#5E3122]/70 hover:text-black cursor-pointer p-1 rounded-lg hover:bg-[#FAF3EB]"
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-0"
+                                />
+
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                                    transition={{ duration: 0.25 }}
+                                    className="relative z-10 w-full max-w-lg rounded-3xl bg-[#FDF9F5] shadow-2xl border border-[#E8CEBC] flex flex-col max-h-[88vh] my-auto overflow-hidden text-[#5E3122]"
                                 >
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            {/* Modal Body (Scrollable on mobile) */}
-                            <form
-                                onSubmit={handleUploadSubmit}
-                                className="flex flex-col flex-1 overflow-hidden"
-                            >
-                                <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overscroll-contain">
-                                    {/* Judul Risalah */}
-                                    <div>
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            Judul Risalah / Buku *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={createForm.data.title}
-                                            onChange={(e) =>
-                                                createForm.setData(
-                                                    "title",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            placeholder="Contoh: Panduan Sholat Lengkap Sesuai Sunnah"
-                                            className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                        />
-                                        {createForm.errors.title && (
-                                            <p className="mt-1 text-[10px] text-red-500 font-bold">
-                                                {createForm.errors.title}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Penulis & Total Halaman */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                                Penulis / Pemateri
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={createForm.data.author}
-                                                onChange={(e) =>
-                                                    createForm.setData(
-                                                        "author",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Abu Haidar"
-                                                className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                                Jumlah Halaman
-                                            </label>
-                                            <input
-                                                type="number"
-                                                value={
-                                                    createForm.data.total_pages
-                                                }
-                                                onChange={(e) =>
-                                                    createForm.setData(
-                                                        "total_pages",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Contoh: 36"
-                                                className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Ringkasan Isi */}
-                                    <div>
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            Ringkasan Isi Risalah
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            value={createForm.data.description}
-                                            onChange={(e) =>
-                                                createForm.setData(
-                                                    "description",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            placeholder="Penjelasan ringkas materi di dalam buku..."
-                                            className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                        />
-                                    </div>
-
-                                    {/* File Dokumen PDF */}
-                                    <div>
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            File Dokumen PDF * (Maks. 20 MB)
-                                        </label>
-                                        <input
-                                            type="file"
-                                            required
-                                            accept="application/pdf"
-                                            onChange={(e) =>
-                                                createForm.setData(
-                                                    "pdf_file",
-                                                    e.target.files
-                                                        ? e.target.files[0]
-                                                        : null,
-                                                )
-                                            }
-                                            className="w-full text-[11.5px] sm:text-[12px] text-[#5E3122] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F2E2D5] file:px-3 file:py-1.5 file:text-[11px] file:font-bold file:text-[#1D4533] cursor-pointer"
-                                        />
-                                        {createForm.errors.pdf_file && (
-                                            <p className="mt-1 text-[10px] text-red-500 font-bold">
-                                                {createForm.errors.pdf_file}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Sampul Cover */}
-                                    <div>
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            Gambar Sampul / Cover (Opsional)
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) =>
-                                                createForm.setData(
-                                                    "cover_image",
-                                                    e.target.files
-                                                        ? e.target.files[0]
-                                                        : null,
-                                                )
-                                            }
-                                            className="w-full text-[11.5px] sm:text-[12px] text-[#5E3122] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F2E2D5] file:px-3 file:py-1.5 file:text-[11px] file:font-bold file:text-[#1D4533] cursor-pointer"
-                                        />
-                                    </div>
-
-                                    {/* Opsi Publikasi */}
-                                    <div className="rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] p-3">
-                                        <label className="flex items-start sm:items-center gap-2.5 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={
-                                                    createForm.data.is_published
-                                                }
-                                                onChange={(e) =>
-                                                    createForm.setData(
-                                                        "is_published",
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                                className="h-4 w-4 rounded text-[#1D4533] focus:ring-[#1D4533] accent-[#1D4533] mt-0.5 sm:mt-0 shrink-0"
-                                            />
+                                    {/* Modal Header */}
+                                    <div className="flex items-center justify-between border-b border-[#E8CEBC] bg-[#FAF3EB] px-6 py-4 shrink-0 rounded-t-3xl">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1D4533] text-[#F7EAE0] shadow-xs">
+                                                <Upload size={18} />
+                                            </div>
                                             <div>
-                                                <div className="text-[12px] font-bold text-[#1D4533]">
-                                                    Langsung Publikasikan
-                                                    (Terbit)
+                                                <h3 className="font-brand text-[17px] font-bold text-[#1D4533] leading-none">
+                                                    Unggah E-Book Baru
+                                                </h3>
+                                                <p className="text-[11px] text-[#8C5E43] font-medium mt-0.5">
+                                                    Publikasikan risalah atau
+                                                    kitab PDF
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setIsUploadModalOpen(false)
+                                            }
+                                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#E8CEBC] text-[#5E3122]/70 transition hover:bg-[#F2E2D5] hover:text-[#1D4533] cursor-pointer shadow-2xs"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+
+                                    {/* Modal Body */}
+                                    <form
+                                        onSubmit={handleUploadSubmit}
+                                        className="flex flex-col flex-1 min-h-0 overflow-hidden"
+                                    >
+                                        <div className="p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+                                            {/* Judul Risalah */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Judul Risalah / Buku *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={
+                                                        createForm.data.title
+                                                    }
+                                                    onChange={(e) =>
+                                                        createForm.setData(
+                                                            "title",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Contoh: Panduan Sholat Sesuai Sunnah"
+                                                    className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2.5 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                                />
+                                                {createForm.errors.title && (
+                                                    <p className="mt-1 text-[10.5px] text-red-500 font-bold">
+                                                        {
+                                                            createForm.errors
+                                                                .title
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Penulis & Total Halaman (2 Kolom) */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                                <div>
+                                                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                        Penulis / Pemateri
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={
+                                                            createForm.data
+                                                                .author
+                                                        }
+                                                        onChange={(e) =>
+                                                            createForm.setData(
+                                                                "author",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Abu Haidar"
+                                                        className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2.5 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                                    />
                                                 </div>
-                                                <div className="text-[10px] text-[#5E3122]/70">
-                                                    Jika tidak dicentang, file
-                                                    berstatus Draft.
+                                                <div>
+                                                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                        Jumlah Halaman
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={
+                                                            createForm.data
+                                                                .total_pages
+                                                        }
+                                                        onChange={(e) =>
+                                                            createForm.setData(
+                                                                "total_pages",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="Contoh: 36"
+                                                        className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2.5 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                                    />
                                                 </div>
                                             </div>
-                                        </label>
-                                    </div>
-                                </div>
 
-                                {/* Modal Footer */}
-                                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 px-4 sm:px-6 py-3.5 border-t border-[#E8CEBC] bg-[#FAF3EB]/50 shrink-0">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setIsUploadModalOpen(false)
-                                        }
-                                        className="w-full sm:w-auto rounded-xl border border-[#E8CEBC] px-4 py-2 text-[12px] font-bold text-[#5E3122] hover:bg-[#FAF3EB] cursor-pointer text-center"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={createForm.processing}
-                                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] font-bold text-[#F7EAE0] hover:bg-[#143325] disabled:opacity-50 cursor-pointer shadow-xs"
-                                    >
-                                        <Check size={16} />{" "}
-                                        <span>Simpan & Unggah PDF</span>
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                            {/* Ringkasan Isi */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Ringkasan Isi Risalah
+                                                </label>
+                                                <textarea
+                                                    rows={2}
+                                                    value={
+                                                        createForm.data
+                                                            .description
+                                                    }
+                                                    onChange={(e) =>
+                                                        createForm.setData(
+                                                            "description",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Penjelasan ringkas isi buku..."
+                                                    className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15 resize-none"
+                                                />
+                                            </div>
 
-            {/* ================= MODAL 2: EDIT E-BOOK ================= */}
-            <AnimatePresence>
-                {editingEbook && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setEditingEbook(null)}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
-                        />
+                                            {/* File Dokumen PDF */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    File Dokumen PDF * (Maks. 20
+                                                    MB)
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    required
+                                                    accept="application/pdf"
+                                                    onChange={(e) =>
+                                                        createForm.setData(
+                                                            "pdf_file",
+                                                            e.target.files
+                                                                ? e.target
+                                                                      .files[0]
+                                                                : null,
+                                                        )
+                                                    }
+                                                    className="w-full text-[12px] text-[#5E3122] file:mr-3 file:rounded-xl file:border-0 file:bg-[#1D4533] file:px-3.5 file:py-2 file:text-[11.5px] file:font-bold file:text-[#F7EAE0] hover:file:bg-[#143325] cursor-pointer"
+                                                />
+                                                {createForm.errors.pdf_file && (
+                                                    <p className="mt-1 text-[10.5px] text-red-500 font-bold">
+                                                        {
+                                                            createForm.errors
+                                                                .pdf_file
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
 
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                            className="relative w-full max-w-lg rounded-2xl bg-[#FDF9F5] shadow-2xl border border-[#E8CEBC] z-10 my-auto flex flex-col max-h-[92vh]"
-                        >
-                            {/* Modal Header */}
-                            <div className="flex items-center justify-between border-b border-[#E8CEBC] px-4 sm:px-6 py-3.5 sm:py-4 shrink-0">
-                                <h3 className="font-brand text-[15px] sm:text-[17px] font-bold text-[#1D4533] flex items-center gap-2 truncate pr-2">
-                                    <Edit3 size={18} className="shrink-0" />{" "}
-                                    <span className="truncate">
-                                        Sunting Risalah
-                                    </span>
-                                </h3>
-                                <button
-                                    type="button"
-                                    onClick={() => setEditingEbook(null)}
-                                    className="text-[#5E3122]/70 hover:text-black cursor-pointer p-1 rounded-lg hover:bg-[#FAF3EB] shrink-0"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
+                                            {/* Sampul Cover */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Gambar Sampul / Cover
+                                                    (Opsional)
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) =>
+                                                        createForm.setData(
+                                                            "cover_image",
+                                                            e.target.files
+                                                                ? e.target
+                                                                      .files[0]
+                                                                : null,
+                                                        )
+                                                    }
+                                                    className="w-full text-[12px] text-[#5E3122] file:mr-3 file:rounded-xl file:border-0 file:bg-[#FAF3EB] file:border-[#E8CEBC] file:border file:px-3.5 file:py-2 file:text-[11.5px] file:font-bold file:text-[#1D4533] hover:file:bg-[#F2E2D5] cursor-pointer"
+                                                />
+                                            </div>
 
-                            {/* Modal Body (Scrollable on mobile) */}
-                            <form
-                                onSubmit={handleEditSubmit}
-                                className="flex flex-col flex-1 overflow-hidden"
-                            >
-                                <div className="p-4 sm:p-6 space-y-4 overflow-y-auto overscroll-contain">
-                                    {/* Judul Risalah */}
-                                    <div>
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            Judul Risalah / Buku *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={editForm.data.title}
-                                            onChange={(e) =>
-                                                editForm.setData(
-                                                    "title",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                        />
-                                        {editForm.errors.title && (
-                                            <p className="mt-1 text-[10px] text-red-500 font-bold">
-                                                {editForm.errors.title}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Penulis & Total Halaman */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                                Penulis / Pemateri
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={editForm.data.author}
-                                                onChange={(e) =>
-                                                    editForm.setData(
-                                                        "author",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                            />
+                                            {/* Opsi Publikasi */}
+                                            <div className="rounded-2xl border border-[#E8CEBC] bg-[#FAF3EB] p-3.5">
+                                                <label className="flex items-center gap-3 cursor-pointer select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={
+                                                            createForm.data
+                                                                .is_published
+                                                        }
+                                                        onChange={(e) =>
+                                                            createForm.setData(
+                                                                "is_published",
+                                                                e.target
+                                                                    .checked,
+                                                            )
+                                                        }
+                                                        className="h-4 w-4 rounded text-[#1D4533] focus:ring-[#1D4533] accent-[#1D4533] shrink-0 cursor-pointer"
+                                                    />
+                                                    <div>
+                                                        <div className="text-[12px] font-bold text-[#1D4533]">
+                                                            Langsung Terbitkan
+                                                            E-Book
+                                                        </div>
+                                                        <div className="text-[10.5px] text-[#5E3122]/70">
+                                                            Dapat langsung
+                                                            diakses dan diunduh
+                                                            oleh pengunjung.
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                                Jumlah Halaman
-                                            </label>
-                                            <input
-                                                type="number"
-                                                value={
-                                                    editForm.data.total_pages
-                                                }
-                                                onChange={(e) =>
-                                                    editForm.setData(
-                                                        "total_pages",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                            />
-                                        </div>
-                                    </div>
 
-                                    {/* Ringkasan Isi */}
-                                    <div>
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            Ringkasan Isi Risalah
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            value={editForm.data.description}
-                                            onChange={(e) =>
-                                                editForm.setData(
-                                                    "description",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[12.5px] sm:text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:bg-[#FDF9F5] focus:outline-none"
-                                        />
-                                    </div>
-
-                                    {/* Ganti File Dokumen PDF */}
-                                    <div className="rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] p-3">
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            Ganti File PDF (Opsional)
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept="application/pdf"
-                                            onChange={(e) =>
-                                                editForm.setData(
-                                                    "pdf_file",
-                                                    e.target.files
-                                                        ? e.target.files[0]
-                                                        : null,
-                                                )
-                                            }
-                                            className="w-full text-[11.5px] sm:text-[12px] text-[#5E3122] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F2E2D5] file:px-3 file:py-1.5 file:text-[11px] file:font-bold file:text-[#1D4533] cursor-pointer"
-                                        />
-                                        <p className="mt-1.5 text-[10.5px] text-[#5E3122]/70 break-all">
-                                            File aktif:{" "}
-                                            <a
-                                                href={editingEbook.file_path}
-                                                target="_blank"
-                                                className="font-bold text-[#1D4533] underline"
+                                        {/* Modal Footer */}
+                                        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 px-6 py-4 border-t border-[#E8CEBC] bg-[#FAF3EB]/60 shrink-0 rounded-b-3xl">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setIsUploadModalOpen(false)
+                                                }
+                                                className="w-full sm:w-auto rounded-xl border border-[#E8CEBC] px-4 py-2 text-[12px] font-bold text-[#5E3122] hover:bg-[#FAF3EB] cursor-pointer text-center"
                                             >
-                                                Lihat PDF
-                                            </a>{" "}
-                                            ({editingEbook.file_size})
-                                        </p>
-                                    </div>
+                                                Batal
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={createForm.processing}
+                                                className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] font-bold text-[#F7EAE0] hover:bg-[#143325] disabled:opacity-50 cursor-pointer shadow-xs active:scale-95"
+                                            >
+                                                <Check size={16} />
+                                                <span>
+                                                    {createForm.processing
+                                                        ? "Mengunggah..."
+                                                        : "Simpan & Unggah"}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>,
+                    document.body,
+                )}
 
-                                    {/* Ganti Sampul */}
-                                    <div className="rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] p-3">
-                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                            Ganti Sampul (Opsional)
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) =>
-                                                editForm.setData(
-                                                    "cover_image",
-                                                    e.target.files
-                                                        ? e.target.files[0]
-                                                        : null,
-                                                )
+            {/* ================= MODAL 2: EDIT E-BOOK (PORTAL) ================= */}
+            {mounted &&
+                createPortal(
+                    <AnimatePresence>
+                        {editingEbook && (
+                            <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setEditingEbook(null)}
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-0"
+                                />
+
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                                    transition={{ duration: 0.25 }}
+                                    className="relative z-10 w-full max-w-lg rounded-3xl bg-[#FDF9F5] shadow-2xl border border-[#E8CEBC] flex flex-col max-h-[88vh] my-auto overflow-hidden text-[#5E3122]"
+                                >
+                                    {/* Modal Header */}
+                                    <div className="flex items-center justify-between border-b border-[#E8CEBC] bg-[#FAF3EB] px-6 py-4 shrink-0 rounded-t-3xl">
+                                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1D4533] text-[#F7EAE0] shadow-xs shrink-0">
+                                                <Edit3 size={18} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h3 className="font-brand text-[17px] font-bold text-[#1D4533] leading-none truncate">
+                                                    Sunting Risalah
+                                                </h3>
+                                                <p className="text-[11px] text-[#8C5E43] font-medium mt-0.5 truncate">
+                                                    Perbarui rincian, file PDF,
+                                                    atau sampul
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setEditingEbook(null)
                                             }
-                                            className="w-full text-[11.5px] sm:text-[12px] text-[#5E3122] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F2E2D5] file:px-3 file:py-1.5 file:text-[11px] file:font-bold file:text-[#1D4533] cursor-pointer"
-                                        />
+                                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#E8CEBC] text-[#5E3122]/70 transition hover:bg-[#F2E2D5] hover:text-[#1D4533] cursor-pointer shadow-2xs shrink-0"
+                                        >
+                                            <X size={16} />
+                                        </button>
                                     </div>
 
-                                    {/* Status Publikasi */}
-                                    <div className="rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] p-3">
-                                        <label className="flex items-start sm:items-center gap-2.5 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={
-                                                    editForm.data.is_published
-                                                }
-                                                onChange={(e) =>
-                                                    editForm.setData(
-                                                        "is_published",
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                                className="h-4 w-4 rounded text-[#1D4533] focus:ring-[#1D4533] accent-[#1D4533] mt-0.5 sm:mt-0 shrink-0"
-                                            />
+                                    {/* Modal Body */}
+                                    <form
+                                        onSubmit={handleEditSubmit}
+                                        className="flex flex-col flex-1 min-h-0 overflow-hidden"
+                                    >
+                                        <div className="p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+                                            {/* Judul Risalah */}
                                             <div>
-                                                <div className="text-[12px] font-bold text-[#1D4533]">
-                                                    Status: Publikasikan
-                                                    (Terbit)
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Judul Risalah / Buku *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={editForm.data.title}
+                                                    onChange={(e) =>
+                                                        editForm.setData(
+                                                            "title",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2.5 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                                />
+                                                {editForm.errors.title && (
+                                                    <p className="mt-1 text-[10.5px] text-red-500 font-bold">
+                                                        {editForm.errors.title}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Penulis & Total Halaman (2 Kolom) */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                                <div>
+                                                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                        Penulis / Pemateri
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={
+                                                            editForm.data.author
+                                                        }
+                                                        onChange={(e) =>
+                                                            editForm.setData(
+                                                                "author",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2.5 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                                    />
                                                 </div>
-                                                <div className="text-[10px] text-[#5E3122]/70">
-                                                    Hapus centang untuk
-                                                    mengubahnya menjadi Draft.
+                                                <div>
+                                                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                        Jumlah Halaman
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={
+                                                            editForm.data
+                                                                .total_pages
+                                                        }
+                                                        onChange={(e) =>
+                                                            editForm.setData(
+                                                                "total_pages",
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2.5 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                                    />
                                                 </div>
                                             </div>
-                                        </label>
-                                    </div>
-                                </div>
 
-                                {/* Modal Footer */}
-                                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 px-4 sm:px-6 py-3.5 border-t border-[#E8CEBC] bg-[#FAF3EB]/50 shrink-0">
-                                    <button
-                                        type="button"
-                                        onClick={() => setEditingEbook(null)}
-                                        className="w-full sm:w-auto rounded-xl border border-[#E8CEBC] px-4 py-2 text-[12px] font-bold text-[#5E3122] hover:bg-[#FAF3EB] cursor-pointer text-center"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={editForm.processing}
-                                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] font-bold text-[#F7EAE0] hover:bg-[#143325] disabled:opacity-50 cursor-pointer shadow-xs"
-                                    >
-                                        <Check size={16} />{" "}
-                                        <span>Simpan Perubahan</span>
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
+                                            {/* Ringkasan Isi */}
+                                            <div>
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Ringkasan Isi Risalah
+                                                </label>
+                                                <textarea
+                                                    rows={2}
+                                                    value={
+                                                        editForm.data
+                                                            .description
+                                                    }
+                                                    onChange={(e) =>
+                                                        editForm.setData(
+                                                            "description",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB] px-3.5 py-2 text-[13px] text-[#5E3122] outline-none transition focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15 resize-none"
+                                                />
+                                            </div>
+
+                                            {/* Ganti File Dokumen PDF */}
+                                            <div className="rounded-2xl border border-[#E8CEBC] bg-[#FAF3EB] p-3.5">
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Ganti File PDF (Opsional)
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    accept="application/pdf"
+                                                    onChange={(e) =>
+                                                        editForm.setData(
+                                                            "pdf_file",
+                                                            e.target.files
+                                                                ? e.target
+                                                                      .files[0]
+                                                                : null,
+                                                        )
+                                                    }
+                                                    className="w-full text-[12px] text-[#5E3122] file:mr-3 file:rounded-xl file:border-0 file:bg-[#1D4533] file:px-3.5 file:py-1.5 file:text-[11px] file:font-bold file:text-[#F7EAE0] hover:file:bg-[#143325] cursor-pointer"
+                                                />
+                                                <p className="mt-1.5 text-[10.5px] text-[#5E3122]/70 break-all">
+                                                    File aktif:{" "}
+                                                    <a
+                                                        href={
+                                                            editingEbook.file_path
+                                                        }
+                                                        target="_blank"
+                                                        className="font-bold text-[#1D4533] underline"
+                                                    >
+                                                        Lihat PDF
+                                                    </a>{" "}
+                                                    ({editingEbook.file_size})
+                                                </p>
+                                            </div>
+
+                                            {/* Ganti Sampul */}
+                                            <div className="rounded-2xl border border-[#E8CEBC] bg-[#FAF3EB] p-3.5">
+                                                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
+                                                    Ganti Sampul (Opsional)
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) =>
+                                                        editForm.setData(
+                                                            "cover_image",
+                                                            e.target.files
+                                                                ? e.target
+                                                                      .files[0]
+                                                                : null,
+                                                        )
+                                                    }
+                                                    className="w-full text-[12px] text-[#5E3122] file:mr-3 file:rounded-xl file:border-0 file:bg-white file:border-[#E8CEBC] file:border file:px-3.5 file:py-1.5 file:text-[11px] file:font-bold file:text-[#1D4533] hover:file:bg-[#FAF3EB] cursor-pointer"
+                                                />
+                                            </div>
+
+                                            {/* Status Publikasi */}
+                                            <div className="rounded-2xl border border-[#E8CEBC] bg-[#FAF3EB] p-3.5">
+                                                <label className="flex items-center gap-3 cursor-pointer select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={
+                                                            editForm.data
+                                                                .is_published
+                                                        }
+                                                        onChange={(e) =>
+                                                            editForm.setData(
+                                                                "is_published",
+                                                                e.target
+                                                                    .checked,
+                                                            )
+                                                        }
+                                                        className="h-4 w-4 rounded text-[#1D4533] focus:ring-[#1D4533] accent-[#1D4533] shrink-0 cursor-pointer"
+                                                    />
+                                                    <div>
+                                                        <div className="text-[12px] font-bold text-[#1D4533]">
+                                                            Status: Publikasikan
+                                                            (Terbit)
+                                                        </div>
+                                                        <div className="text-[10.5px] text-[#5E3122]/70">
+                                                            Hapus centang untuk
+                                                            mengubahnya menjadi
+                                                            Draft.
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* Modal Footer */}
+                                        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 px-6 py-4 border-t border-[#E8CEBC] bg-[#FAF3EB]/60 shrink-0 rounded-b-3xl">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setEditingEbook(null)
+                                                }
+                                                className="w-full sm:w-auto rounded-xl border border-[#E8CEBC] px-4 py-2 text-[12px] font-bold text-[#5E3122] hover:bg-[#FAF3EB] cursor-pointer text-center"
+                                            >
+                                                Batal
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={editForm.processing}
+                                                className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] font-bold text-[#F7EAE0] hover:bg-[#143325] disabled:opacity-50 cursor-pointer shadow-xs active:scale-95"
+                                            >
+                                                <Check size={16} />
+                                                <span>
+                                                    {editForm.processing
+                                                        ? "Menyimpan..."
+                                                        : "Simpan Perubahan"}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>,
+                    document.body,
                 )}
-            </AnimatePresence>
         </AdminLayout>
     );
 }

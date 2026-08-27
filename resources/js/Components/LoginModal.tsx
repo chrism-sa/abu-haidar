@@ -41,7 +41,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post("/login", {
-            preserveScroll: true,
             onSuccess: () => {
                 handleClose();
                 toast.success("Ahlan wa Sahlan! Berhasil masuk.", {
@@ -53,6 +52,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         fontWeight: "bold",
                     },
                 });
+                // router.visit() dihapus agar tidak terjadi reload 2x
             },
             onError: () => {
                 toast.error("Alamat email atau kata sandi tidak cocok.", {
@@ -238,7 +238,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1D4533] py-3 text-[13px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] disabled:opacity-70 cursor-pointer shadow-xs"
+                                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1D4533] py-3 text-[13px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] disabled:opacity-70 cursor-pointer shadow-xs active:scale-95"
                                 >
                                     {processing ? (
                                         <>
