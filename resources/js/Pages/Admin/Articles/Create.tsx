@@ -17,6 +17,20 @@ import {
     Palette,
     AlignVerticalSpaceAround,
     AlertCircle,
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    AlignJustify,
+    List,
+    ListOrdered,
+    Quote as QuoteIcon,
+    RotateCcw,
+    Highlighter,
+    Space,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { Category } from "@/types";
@@ -26,7 +40,11 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "@/Utils/cropImage";
 import toast, { Toaster } from "react-hot-toast";
 
-// 1. Whitelist Font Quill
+// =========================================================================
+// 1. REGISTRASI ATTRIBUTOR QUILL LENGKAP
+// =========================================================================
+
+// A. Font Family
 const FontStyle = Quill.import("attributors/style/font") as any;
 FontStyle.whitelist = [
     "helvetica",
@@ -41,40 +59,79 @@ FontStyle.whitelist = [
 ];
 Quill.register(FontStyle, true);
 
-// 2. Whitelist Ukuran Font Quill (Pixel)
+// B. Font Size (10px s.d. 64px)
 const SizeStyle = Quill.import("attributors/style/size") as any;
 SizeStyle.whitelist = [
+    "10px",
+    "11px",
     "12px",
+    "13px",
     "14px",
+    "15px",
     "16px",
     "18px",
     "20px",
+    "22px",
     "24px",
     "28px",
     "32px",
     "36px",
-    "46px",
+    "42px",
+    "48px",
+    "56px",
+    "64px",
 ];
 Quill.register(SizeStyle, true);
 
-// 3. Daftarkan Attributor Line Height (Spasi Baris)
+// C. Parchment Custom (Line Height & Letter Spacing)
 const Parchment = Quill.import("parchment") as any;
+
+// Spasi Baris (Line Height)
 const LineHeightStyle = new Parchment.StyleAttributor(
     "lineHeight",
     "line-height",
     {
         scope: Parchment.Scope ? Parchment.Scope.BLOCK : 3,
-        whitelist: ["1.2", "1.5", "1.8", "2.0", "2.4", "2.8", "3.2"],
+        whitelist: [
+            "0.8",
+            "1.0",
+            "1.2",
+            "1.4",
+            "1.6",
+            "1.8",
+            "2.0",
+            "2.4",
+            "2.8",
+            "3.2",
+            "3.5",
+        ],
     },
 );
 Quill.register(LineHeightStyle, true);
 
-// Daftarkan Direction Attributor untuk RTL & Align
+// Jarak Huruf/Kata (Letter Spacing)
+const LetterSpacingStyle = new Parchment.StyleAttributor(
+    "letterSpacing",
+    "letter-spacing",
+    {
+        scope: Parchment.Scope ? Parchment.Scope.INLINE : 1,
+        whitelist: ["-0.5px", "0px", "0.5px", "1px", "1.5px", "2px", "3px"],
+    },
+);
+Quill.register(LetterSpacingStyle, true);
+
+// Direction, Align, Color, Background
 const DirectionStyle = Quill.import("attributors/style/direction") as any;
 Quill.register(DirectionStyle, true);
 
 const AlignStyle = Quill.import("attributors/style/align") as any;
 Quill.register(AlignStyle, true);
+
+const ColorStyle = Quill.import("attributors/style/color") as any;
+Quill.register(ColorStyle, true);
+
+const BackgroundStyle = Quill.import("attributors/style/background") as any;
+Quill.register(BackgroundStyle, true);
 
 const ARABIC_FONTS = [
     { label: "Adobe Naskh", value: "font-adobe-naskh" },
@@ -101,6 +158,32 @@ interface CreateProps {
 export default function ArticleCreate({ categories }: CreateProps) {
     const quillRef = useRef<any>(null);
     const lastSelectedFontRef = useRef<string | null>(null);
+    const [isRtlActive, setIsRtlActive] = useState<boolean>(false);
+    // State Active Format Realtime Toolbar
+    const [activeFormats, setActiveFormats] = useState<{
+        bold?: boolean;
+        italic?: boolean;
+        underline?: boolean;
+        strike?: boolean;
+        blockquote?: boolean;
+        list?: string | boolean;
+        align?: string;
+        direction?: string;
+        font?: string;
+        size?: string;
+        lineHeight?: string;
+        letterSpacing?: string;
+        color?: string;
+        background?: string;
+    }>({});
+
+    // State Toolbar Custom
+    const [selectedFont, setSelectedFont] = useState("helvetica");
+    const [selectedSize, setSelectedSize] = useState("16px");
+    const [selectedLineHeight, setSelectedLineHeight] = useState("1.8");
+    const [selectedLetterSpacing, setSelectedLetterSpacing] = useState("0px");
+    const [editorTextColor, setEditorTextColor] = useState("#1D4533");
+    const [editorBgColor, setEditorBgColor] = useState("#FFFF00");
 
     const [imageSourceType, setImageSourceType] = useState<
         "file" | "url" | "youtube"
@@ -116,11 +199,13 @@ export default function ArticleCreate({ categories }: CreateProps) {
         null,
     );
 
+    // Cropper State
     const [cropModalOpen, setCropModalOpen] = useState(false);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
+    // Form Inertia State
     const {
         data,
         setData,
@@ -157,22 +242,35 @@ export default function ArticleCreate({ categories }: CreateProps) {
         ?.toLowerCase()
         .includes("tafsir");
 
+    // Fungsi mengecek dan menyinkronkan format teks yang sedang aktif ke state React
+    const syncCurrentFormats = (quillInstance?: any) => {
+        const quill = quillInstance || quillRef.current?.getEditor();
+        if (!quill) return;
+        const formats = quill.getFormat() || {};
+        setActiveFormats(formats);
+    };
+
+    // Terapkan format dan langsung sinkronkan status tombol aktif
+    const applyFormat = (formatName: string, value: any) => {
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+        quill.format(formatName, value);
+        setTimeout(() => syncCurrentFormats(quill), 10);
+    };
+
+    // Deteksi posisi kursor / teks yang diseleksi pengguna secara realtime
     const handleChangeSelection = (range: any, source: string, editor: any) => {
         if (range && source === "user") {
             try {
-                const format = editor.getFormat(range);
-                if (format && format.font) {
-                    lastSelectedFontRef.current = format.font;
-                } else if (
-                    lastSelectedFontRef.current &&
-                    format &&
-                    !format.font
-                ) {
+                const formats = editor.getFormat(range) || {};
+                setActiveFormats(formats);
+
+                if (formats.font) {
+                    lastSelectedFontRef.current = formats.font;
+                } else if (lastSelectedFontRef.current) {
                     editor.format("font", lastSelectedFontRef.current);
                 }
-            } catch (err) {
-                // Ignore transisi range
-            }
+            } catch (err) {}
         }
     };
 
@@ -261,29 +359,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
     const quillModules = useMemo(
         () => ({
-            toolbar: [
-                [{ font: FontStyle.whitelist }],
-                [{ size: SizeStyle.whitelist }],
-                [
-                    {
-                        lineHeight: [
-                            "1.2",
-                            "1.5",
-                            "1.8",
-                            "2.0",
-                            "2.4",
-                            "2.8",
-                            "3.2",
-                        ],
-                    },
-                ],
-                ["bold", "italic", "underline", "strike"],
-                [{ color: [] }, { background: [] }],
-                [{ align: [] }, { direction: "rtl" }],
-                [{ list: "ordered" }, { list: "bullet" }],
-                ["blockquote", "link"],
-                ["clean"],
-            ],
+            toolbar: false,
             clipboard: {
                 matchers: [
                     [
@@ -341,7 +417,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
 
         if (hasError) {
-            toast.error("Mohon lengkapi seluruh kolom yang wajib diisi (*)");
+            toast.error("Sila lengkapkan semua ruangan yang bertanda (*)");
             return;
         }
 
@@ -349,7 +425,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
             forceFormData: true,
             onError: () => {
                 toast.error(
-                    "Gagal mempublikasikan artikel. Silakan periksa kolom isian.",
+                    "Gagal menerbitkan artikel. Sila semak ruangan input.",
                 );
             },
         });
@@ -365,7 +441,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
         <div className="min-h-screen bg-[#F7EAE0] text-[#5E3122] selection:bg-[#1D4533] selection:text-[#F7EAE0] pb-16">
             <Head title="Tulis Artikel - Abu Haidar" />
 
-            {/* KOMPONEN TOASTER POJOK KANAN BAWAH */}
+            {/* TOASTER */}
             <Toaster
                 position="bottom-right"
                 gutter={10}
@@ -386,38 +462,16 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         fontWeight: 600,
                         boxShadow: "0 12px 30px -8px rgba(94, 49, 34, 0.2)",
                     },
-                    success: {
-                        iconTheme: {
-                            primary: "#1D4533",
-                            secondary: "#FDF9F5",
-                        },
-                        style: {
-                            background: "#FDF9F5",
-                            border: "1px solid #1D4533/30",
-                            color: "#1D4533",
-                        },
-                    },
-                    error: {
-                        iconTheme: {
-                            primary: "#DC2626",
-                            secondary: "#FDF9F5",
-                        },
-                        style: {
-                            background: "#FDF9F5",
-                            border: "1px solid #FECACA",
-                            color: "#991B1B",
-                        },
-                    },
                 }}
             />
 
-            {/* HEADER */}
-            <header className="sticky top-0 z-30 border-b border-[#F9D2BA] bg-[#F7EAE0]/95 backdrop-blur-md shadow-xs">
-                <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4">
+            {/* HEADER (Sticky Kokoh dengan z-50 dan shadow jelas) */}
+            <header className="sticky top-0 z-50 w-full border-b border-[#E8CEBC] bg-[#F7EAE0]/95 backdrop-blur-md shadow-sm">
+                <div className="mx-auto flex max-w-[1050px] items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5">
                     <div className="flex items-center gap-3 min-w-0">
                         <Link
                             href="/admin/articles"
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#F9D2BA] bg-white text-[#5E3122] transition hover:bg-[#F9D2BA]/30 shrink-0"
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E8CEBC] bg-white text-[#5E3122] transition hover:bg-[#FAF3EB] shrink-0 shadow-2xs"
                             aria-label="Kembali"
                         >
                             <ArrowLeft size={18} />
@@ -431,20 +485,20 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         type="button"
                         onClick={handleSubmit}
                         disabled={processing}
-                        className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-4 sm:px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-xs transition hover:bg-[#143325] disabled:opacity-50 cursor-pointer active:scale-95"
+                        className="flex items-center gap-1.5 rounded-full bg-[#1D4533] px-4 sm:px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] shadow-sm transition hover:bg-[#143325] disabled:opacity-50 cursor-pointer active:scale-95"
                     >
-                        <Save size={15} /> <span>Simpan & Publikasikan</span>
+                        <Save size={15} /> <span>Simpan & Terbitkan</span>
                     </button>
                 </div>
             </header>
 
-            <main className="mx-auto max-w-[900px] px-4 sm:px-6 py-6 sm:py-8">
+            <main className="mx-auto max-w-[1050px] px-4 sm:px-6 py-6 sm:py-8">
                 <form
                     onSubmit={handleSubmit}
                     className="space-y-6"
                     encType="multipart/form-data"
                 >
-                    <div className="rounded-2xl border border-[#F9D2BA] bg-white p-5 sm:p-8 shadow-xs space-y-5">
+                    <div className="rounded-2xl border border-[#E8CEBC] bg-white p-5 sm:p-8 shadow-xs space-y-5">
                         {/* Judul Artikel (REQUIRED) */}
                         <div>
                             <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5 flex items-center justify-between">
@@ -464,11 +518,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     setData("title", e.target.value);
                                     if (errors.title) clearErrors("title");
                                 }}
-                                placeholder="Ketik judul kajian di sini..."
+                                placeholder="Taip tajuk artikel di sini..."
                                 className={`w-full rounded-xl border px-4 py-2.5 sm:py-3 text-[15px] sm:text-[16px] font-brand font-bold text-[#1D4533] outline-none transition ${
                                     errors.title
                                         ? "border-red-400 bg-red-50/40 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-200"
-                                        : "border-[#F9D2BA] bg-[#FDFBF9] focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                        : "border-[#E8CEBC] bg-[#FAF3EB]/50 focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
                                 }`}
                             />
                             {errors.title && (
@@ -492,7 +546,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         Number(e.target.value),
                                     )
                                 }
-                                className="w-full rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] px-4 py-2.5 sm:py-3 text-[13px] sm:text-[14px] text-[#5E3122] focus:border-[#1D4533] focus:bg-white focus:outline-none"
+                                className="w-full rounded-xl border border-[#E8CEBC] bg-[#FAF3EB]/50 px-4 py-2.5 sm:py-3 text-[13px] sm:text-[14px] text-[#5E3122] focus:border-[#1D4533] focus:bg-white focus:outline-none"
                             >
                                 {categories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>
@@ -508,7 +562,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         </div>
 
                         {/* Gambar / Video Sampul */}
-                        <div className="space-y-3 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] p-4">
+                        <div className="space-y-3 rounded-xl border border-[#E8CEBC] bg-[#FAF3EB]/40 p-4">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                                 <label className="text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] flex items-center gap-2">
                                     <ImageIcon
@@ -517,7 +571,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     />{" "}
                                     Gambar / Video Sampul
                                 </label>
-                                <div className="flex rounded-lg border border-[#F9D2BA] bg-white p-0.5 text-[11px] font-bold">
+                                <div className="flex rounded-lg border border-[#E8CEBC] bg-white p-0.5 text-[11px] font-bold">
                                     <button
                                         type="button"
                                         onClick={() =>
@@ -529,7 +583,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 : "text-[#5E3122]/70"
                                         }`}
                                     >
-                                        <Upload size={12} /> Upload
+                                        <Upload size={12} /> Muat Naik
                                     </button>
                                     <button
                                         type="button"
@@ -542,7 +596,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 : "text-[#5E3122]/70"
                                         }`}
                                     >
-                                        <Link2 size={12} /> Tautan
+                                        <Link2 size={12} /> Pautan URL
                                     </button>
                                     <button
                                         type="button"
@@ -566,10 +620,10 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                         type="file"
                                         accept="image/*"
                                         onChange={handleFileSelect}
-                                        className="w-full text-[13px] text-[#5E3122] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F9D2BA]/40 file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#1D4533] hover:file:bg-[#F9D2BA]/60 cursor-pointer"
+                                        className="w-full text-[13px] text-[#5E3122] file:mr-4 file:rounded-lg file:border-0 file:bg-[#E8CEBC]/60 file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#1D4533] hover:file:bg-[#E8CEBC] cursor-pointer"
                                     />
                                     <p className="mt-1 text-[11px] text-[#5E3122]/60">
-                                        Maksimal ukuran gambar 2 MB.
+                                        Saiz maksimum gambar 2 MB.
                                     </p>
                                 </div>
                             ) : (
@@ -584,7 +638,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             ? "Contoh: https://www.youtube.com/watch?v=..."
                                             : "https://domain.com/gambar-artikel.jpg"
                                     }
-                                    className={`w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2.5 text-[13px] text-[#5E3122] focus:outline-none ${
+                                    className={`w-full rounded-xl border border-[#E8CEBC] bg-white px-4 py-2.5 text-[13px] text-[#5E3122] focus:outline-none ${
                                         imageSourceType === "youtube"
                                             ? "focus:border-red-600"
                                             : "focus:border-[#1D4533]"
@@ -592,6 +646,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 />
                             )}
 
+                            {/* Preview Sampul */}
                             {imageSourceType === "youtube" && ytId ? (
                                 <div className="mt-3 aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black">
                                     <iframe
@@ -602,7 +657,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 </div>
                             ) : imageSourceType !== "youtube" &&
                               imagePreview ? (
-                                <div className="mt-3 relative h-44 w-full max-w-sm overflow-hidden rounded-xl border border-[#F9D2BA] group bg-[#F7EAE0]">
+                                <div className="mt-3 relative h-44 w-full max-w-sm overflow-hidden rounded-xl border border-[#E8CEBC] group bg-[#F7EAE0]">
                                     <img
                                         src={imagePreview}
                                         alt="Thumbnail Preview"
@@ -616,8 +671,8 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             }
                                             className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-white font-bold text-[12px] opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
-                                            <Crop size={16} /> Sesuaikan /
-                                            Pangkas Ulang
+                                            <Crop size={16} /> Potong Semula
+                                            (Crop)
                                         </button>
                                     )}
                                 </div>
@@ -628,7 +683,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         {cropModalOpen && tempImageSrc && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
                                 <div className="w-full max-w-2xl rounded-2xl bg-white p-5 sm:p-6 shadow-2xl space-y-4">
-                                    <div className="flex items-center justify-between border-b border-[#F9D2BA] pb-3">
+                                    <div className="flex items-center justify-between border-b border-[#E8CEBC] pb-3">
                                         <h3 className="font-brand text-[16px] font-bold text-[#1D4533] flex items-center gap-2">
                                             <Crop
                                                 size={18}
@@ -678,7 +733,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onChange={(e) =>
                                                 setZoom(Number(e.target.value))
                                             }
-                                            className="w-full h-1.5 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
+                                            className="w-full h-1.5 bg-[#E8CEBC] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
                                         />
                                     </div>
                                     <div className="flex justify-end gap-2.5 pt-2">
@@ -687,7 +742,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onClick={() =>
                                                 setCropModalOpen(false)
                                             }
-                                            className="rounded-xl border border-[#F9D2BA] px-4 py-2 text-[12px] sm:text-[13px] font-bold text-[#5E3122] hover:bg-[#F9D2BA]/30"
+                                            className="rounded-xl border border-[#E8CEBC] px-4 py-2 text-[12px] sm:text-[13px] font-bold text-[#5E3122] hover:bg-[#FAF3EB]"
                                         >
                                             Batal
                                         </button>
@@ -696,8 +751,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             onClick={handleSaveCrop}
                                             className="flex items-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] hover:bg-[#143325]"
                                         >
-                                            <Check size={16} /> Terapkan
-                                            Potongan
+                                            <Check size={16} /> Guna Potongan
                                         </button>
                                     </div>
                                 </div>
@@ -706,16 +760,16 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
                         {/* BAGIAN TAFSIR & QUOTE */}
                         {isTafsirCategory && (
-                            <div className="space-y-4 rounded-xl border border-[#F9D2BA] bg-[#FDFBF9] p-4 sm:p-5">
-                                <div className="flex items-center justify-between border-b border-[#F9D2BA] pb-3 flex-wrap gap-2">
+                            <div className="space-y-4 rounded-xl border border-[#E8CEBC] bg-[#FAF3EB]/40 p-4 sm:p-5">
+                                <div className="flex items-center justify-between border-b border-[#E8CEBC] pb-3 flex-wrap gap-2">
                                     <h4 className="text-[13px] font-bold font-brand text-[#1D4533] flex items-center gap-2">
                                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D4533] text-[10px] text-[#F7EAE0]">
                                             ✓
                                         </span>
-                                        Kutipan / Media Tafsir Ayat
+                                        Petikan / Media Tafsir Ayat
                                     </h4>
 
-                                    <div className="flex rounded-lg border border-[#F9D2BA] bg-white p-0.5 text-[11px] font-bold">
+                                    <div className="flex rounded-lg border border-[#E8CEBC] bg-white p-0.5 text-[11px] font-bold">
                                         <button
                                             type="button"
                                             onClick={() => setQuoteType("text")}
@@ -756,11 +810,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     </div>
                                 </div>
 
-                                {/* 1. OPSI TEKS */}
+                                {/* OPSI TEKS QUOTE */}
                                 {quoteType === "text" && (
                                     <>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-[#F9D2BA] bg-white p-3.5 shadow-2xs">
-                                            {/* Pilihan Font Arab */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-[#E8CEBC] bg-white p-3.5 shadow-2xs">
+                                            {/* Font Arab */}
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
                                                     Jenis Font Arab
@@ -773,7 +827,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                             e.target.value,
                                                         )
                                                     }
-                                                    className="w-full rounded-lg border border-[#F9D2BA] bg-[#FDFBF9] px-2.5 py-1.5 text-[12px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
+                                                    className="w-full rounded-lg border border-[#E8CEBC] bg-[#FAF3EB]/50 px-2.5 py-1.5 text-[12px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
                                                 >
                                                     {ARABIC_FONTS.map(
                                                         (font) => (
@@ -790,7 +844,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 </select>
                                             </div>
 
-                                            {/* Pilihan Warna Teks */}
+                                            {/* Warna Teks Quote */}
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1 flex items-center gap-1">
                                                     <Palette size={12} /> Warna
@@ -806,7 +860,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className="h-8 w-10 cursor-pointer rounded-md border border-[#F9D2BA] bg-white p-0.5"
+                                                        className="h-8 w-10 cursor-pointer rounded-md border border-[#E8CEBC] bg-white p-0.5"
                                                     />
                                                     <input
                                                         type="text"
@@ -817,12 +871,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className="w-full rounded-lg border border-[#F9D2BA] bg-[#FDFBF9] px-2.5 py-1.5 text-[12px] font-mono text-[#5E3122] uppercase focus:border-[#1D4533] focus:outline-none"
+                                                        className="w-full rounded-lg border border-[#E8CEBC] bg-[#FAF3EB]/50 px-2 py-1.5 text-[11px] font-mono text-[#5E3122] uppercase focus:border-[#1D4533] focus:outline-none"
                                                     />
                                                 </div>
                                             </div>
 
-                                            {/* Slider Ukuran Font */}
+                                            {/* Ukuran Font Quote */}
                                             <div>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
@@ -846,11 +900,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                             ),
                                                         )
                                                     }
-                                                    className="w-full h-1.5 mt-2 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
+                                                    className="w-full h-1.5 mt-2 bg-[#E8CEBC] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
                                                 />
                                             </div>
 
-                                            {/* Slider Spasi Baris */}
+                                            {/* Spasi Baris Quote */}
                                             <div>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122] flex items-center gap-1">
@@ -882,7 +936,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                             ),
                                                         )
                                                     }
-                                                    className="w-full h-1.5 mt-2 bg-[#F9D2BA] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
+                                                    className="w-full h-1.5 mt-2 bg-[#E8CEBC] rounded-lg appearance-none cursor-pointer accent-[#1D4533]"
                                                 />
                                             </div>
                                         </div>
@@ -905,13 +959,13 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                     data.quote_line_height,
                                             }}
                                             placeholder="إِنَّ أَكْرَمَكُمْ عِندَ اللَّهِ أَتْقَاكُمْ"
-                                            className={`${data.quote_font} w-full rounded-xl border border-[#F9D2BA] bg-white px-5 py-4 focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal`}
+                                            className={`${data.quote_font} w-full rounded-xl border border-[#E8CEBC] bg-white px-5 py-4 focus:border-[#1D4533] focus:outline-none text-right transition-all tracking-normal`}
                                         />
 
                                         <div className="grid gap-3 sm:grid-cols-2 mt-2">
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                                    Terjemahan Arti
+                                                    Terjemahan
                                                 </label>
                                                 <input
                                                     type="text"
@@ -925,12 +979,12 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                         )
                                                     }
                                                     placeholder="Sesungguhnya yang paling mulia..."
-                                                    className="w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2 text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
+                                                    className="w-full rounded-xl border border-[#E8CEBC] bg-white px-4 py-2 text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
                                                 />
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                                    Referensi Surat / Ayat
+                                                    Rujukan Surah / Ayat
                                                 </label>
                                                 <input
                                                     type="text"
@@ -942,43 +996,43 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                         )
                                                     }
                                                     placeholder="QS. Al-Hujurat: 13"
-                                                    className="w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2 text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
+                                                    className="w-full rounded-xl border border-[#E8CEBC] bg-white px-4 py-2 text-[13px] text-[#5E3122] focus:border-[#1D4533] focus:outline-none"
                                                 />
                                             </div>
                                         </div>
                                     </>
                                 )}
 
-                                {/* 2. OPSI GAMBAR */}
+                                {/* OPSI GAMBAR QUOTE */}
                                 {quoteType === "image" && (
                                     <div className="space-y-3">
                                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
-                                            Upload Gambar Kartu Quote
+                                            Muat Naik Gambar Kad Petikan
                                         </label>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             onChange={handleQuoteImageSelect}
-                                            className="w-full text-[13px] text-[#5E3122] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F9D2BA]/40 file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#1D4533] cursor-pointer"
+                                            className="w-full text-[13px] text-[#5E3122] file:mr-4 file:rounded-lg file:border-0 file:bg-[#E8CEBC]/60 file:px-4 file:py-2 file:text-[12px] file:font-bold file:text-[#1D4533] cursor-pointer"
                                         />
                                         <p className="mt-1 text-[11px] text-[#5E3122]/60">
-                                            Maksimal ukuran gambar 2 MB.
+                                            Saiz maksimum gambar 2 MB.
                                         </p>
                                         {quoteImagePreview && (
                                             <img
                                                 src={quoteImagePreview}
                                                 alt="Preview Quote"
-                                                className="mt-2 w-48 rounded-xl border border-[#F9D2BA] object-cover shadow-xs"
+                                                className="mt-2 w-48 rounded-xl border border-[#E8CEBC] object-cover shadow-xs"
                                             />
                                         )}
                                     </div>
                                 )}
 
-                                {/* 3. OPSI VIDEO YOUTUBE */}
+                                {/* OPSI YOUTUBE QUOTE */}
                                 {quoteType === "youtube" && (
                                     <div className="space-y-3">
                                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
-                                            Tautan Video Kajian / Ayat (YouTube)
+                                            Pautan Video (YouTube)
                                         </label>
                                         <input
                                             type="url"
@@ -990,7 +1044,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 )
                                             }
                                             placeholder="Contoh: https://www.youtube.com/watch?v=..."
-                                            className="w-full rounded-xl border border-[#F9D2BA] bg-white px-4 py-2.5 text-[13px] text-[#5E3122] focus:border-red-600 focus:outline-none"
+                                            className="w-full rounded-xl border border-[#E8CEBC] bg-white px-4 py-2.5 text-[13px] text-[#5E3122] focus:border-red-600 focus:outline-none"
                                         />
                                         {quoteYtId && (
                                             <div className="mt-2 aspect-video w-full max-w-sm overflow-hidden rounded-xl bg-black">
@@ -1010,7 +1064,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         <div>
                             <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5 flex items-center justify-between">
                                 <span>
-                                    Ringkasan Singkat (Deskripsi){" "}
+                                    Ringkasan Artikel{" "}
                                     <span className="text-red-500">*</span>
                                 </span>
                                 <span className="text-[10.5px] font-normal lowercase tracking-normal text-[#5E3122]/60">
@@ -1026,11 +1080,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                     if (errors.description)
                                         clearErrors("description");
                                 }}
-                                placeholder="Ringkasan singkat artikel..."
+                                placeholder="Ringkasan ringkas artikel..."
                                 className={`w-full rounded-xl border px-4 py-2.5 text-[14px] text-[#5E3122] outline-none transition ${
                                     errors.description
                                         ? "border-red-400 bg-red-50/40 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-200"
-                                        : "border-[#F9D2BA] bg-[#FDFBF9] focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
+                                        : "border-[#E8CEBC] bg-[#FAF3EB]/50 focus:border-[#1D4533] focus:bg-white focus:ring-2 focus:ring-[#1D4533]/15"
                                 }`}
                             />
                             {errors.description && (
@@ -1043,15 +1097,15 @@ export default function ArticleCreate({ categories }: CreateProps) {
                     </div>
 
                     {/* BLOK EDITOR & PREVIEW */}
-                    <div className="rounded-2xl border border-[#F9D2BA] bg-white shadow-xs">
-                        <div className="flex overflow-hidden rounded-t-2xl border-b border-[#F9D2BA] bg-[#FDFBF9]">
+                    <div className="rounded-2xl border border-[#E8CEBC] bg-white shadow-xs">
+                        <div className="flex overflow-hidden rounded-t-2xl border-b border-[#E8CEBC] bg-[#FAF3EB]">
                             <button
                                 type="button"
                                 onClick={() => setViewMode("edit")}
                                 className={`flex-1 py-3.5 sm:py-4 text-[13px] font-bold font-brand transition-colors cursor-pointer ${
                                     viewMode === "edit"
                                         ? "border-t-[3px] border-[#1D4533] bg-white text-[#1D4533]"
-                                        : "text-[#5E3122]/70 hover:bg-[#F9D2BA]/20"
+                                        : "text-[#5E3122]/70 hover:bg-[#FAF3EB]/70"
                                 }`}
                             >
                                 <Edit3 size={16} className="mr-2 inline" /> Mode
@@ -1063,11 +1117,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                 className={`flex-1 py-3.5 sm:py-4 text-[13px] font-bold font-brand transition-colors cursor-pointer ${
                                     viewMode === "preview"
                                         ? "border-t-[3px] border-[#1D4533] bg-white text-[#1D4533]"
-                                        : "text-[#5E3122]/70 hover:bg-[#F9D2BA]/20"
+                                        : "text-[#5E3122]/70 hover:bg-[#FAF3EB]/70"
                                 }`}
                             >
                                 <Eye size={16} className="mr-2 inline" />{" "}
-                                Pratinjau Website Asli
+                                Pratinjau Website
                             </button>
                         </div>
 
@@ -1075,23 +1129,714 @@ export default function ArticleCreate({ categories }: CreateProps) {
                         <div
                             className={`${
                                 viewMode === "edit" ? "block" : "hidden"
-                            } quill-wrapper relative rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
+                            } relative rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-7 lg:p-9`}
                         >
-                            <div className="mx-auto max-w-[800px] relative rounded-b-2xl rounded-t-none border border-[#F9D2BA] bg-white shadow-xs">
-                                <ReactQuill
-                                    ref={quillRef}
-                                    theme="snow"
-                                    value={data.content}
-                                    onChange={(content) => {
-                                        setData("content", content);
-                                        if (errors.content)
-                                            clearErrors("content");
-                                    }}
-                                    onChangeSelection={handleChangeSelection}
-                                    modules={quillModules}
-                                    className="rounded-lg bg-white"
-                                    placeholder="Mulai menulis artikel atau naskah kajian di sini..."
-                                />
+                            {/* overflow-hidden DIHAPUS agar sticky berfungsi normal */}
+                            <div className="mx-auto max-w-[950px] relative rounded-2xl border border-[#E8CEBC] bg-white shadow-xs">
+                                {/* TOOLBAR FORMAT FONT STICKY (Menempel pas di bawah Header Utama saat scroll) */}
+                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 p-2.5 bg-[#FAF3EB] border-b border-[#E8CEBC] rounded-t-2xl select-none sticky top-[56px] sm:top-[64px] z-30 shadow-xs backdrop-blur-md">
+                                    {/* 1. Font Family */}
+                                    <div className="flex flex-col">
+                                        <select
+                                            value={
+                                                activeFormats.font ||
+                                                "helvetica"
+                                            }
+                                            onChange={(e) =>
+                                                applyFormat(
+                                                    "font",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className={`h-8 rounded-lg border px-2 text-[11px] font-bold outline-none cursor-pointer max-w-[110px] sm:max-w-[130px] truncate transition-all ${
+                                                activeFormats.font &&
+                                                activeFormats.font !==
+                                                    "helvetica"
+                                                    ? "border-[#1D4533] bg-[#1D4533] text-[#F7EAE0] shadow-2xs"
+                                                    : "border-[#E8CEBC] bg-white text-[#1D4533] hover:border-[#1D4533]"
+                                            }`}
+                                            title="Pilihan Font"
+                                        >
+                                            <option
+                                                value="helvetica"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Helvetica
+                                            </option>
+                                            <option
+                                                value="amiri"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Amiri (Arab)
+                                            </option>
+                                            <option
+                                                value="adobe-naskh"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Adobe Naskh
+                                            </option>
+                                            <option
+                                                value="scheherazade"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Scheherazade
+                                            </option>
+                                            <option
+                                                value="cairo"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Cairo
+                                            </option>
+                                            <option
+                                                value="tajawal"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Tajawal
+                                            </option>
+                                            <option
+                                                value="almarai"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Almarai
+                                            </option>
+                                            <option
+                                                value="al-jazeera"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Al Jazeera
+                                            </option>
+                                            <option
+                                                value="times"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                Times New Roman
+                                            </option>
+                                        </select>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Jenis Font
+                                        </span>
+                                    </div>
+
+                                    {/* 2. Font Size */}
+                                    <div className="flex flex-col">
+                                        <select
+                                            value={activeFormats.size || "16px"}
+                                            onChange={(e) =>
+                                                applyFormat(
+                                                    "size",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className={`h-8 rounded-lg border px-1.5 text-[11px] font-bold outline-none cursor-pointer w-[64px] transition-all ${
+                                                activeFormats.size &&
+                                                activeFormats.size !== "16px"
+                                                    ? "border-[#1D4533] bg-[#1D4533] text-[#F7EAE0] shadow-2xs"
+                                                    : "border-[#E8CEBC] bg-white text-[#1D4533] hover:border-[#1D4533]"
+                                            }`}
+                                            title="Ukuran Font"
+                                        >
+                                            {SizeStyle.whitelist.map(
+                                                (sz: string) => (
+                                                    <option
+                                                        key={sz}
+                                                        value={sz}
+                                                        className="bg-white text-[#1D4533]"
+                                                    >
+                                                        {sz}
+                                                    </option>
+                                                ),
+                                            )}
+                                        </select>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Ukuran
+                                        </span>
+                                    </div>
+
+                                    {/* 3. Spasi Baris (Line Height) */}
+                                    <div className="flex flex-col">
+                                        <select
+                                            value={
+                                                activeFormats.lineHeight ||
+                                                "1.8"
+                                            }
+                                            onChange={(e) =>
+                                                applyFormat(
+                                                    "lineHeight",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className={`h-8 rounded-lg border px-1.5 text-[11px] font-bold outline-none cursor-pointer w-[68px] transition-all ${
+                                                activeFormats.lineHeight &&
+                                                activeFormats.lineHeight !==
+                                                    "1.8"
+                                                    ? "border-[#1D4533] bg-[#1D4533] text-[#F7EAE0] shadow-2xs"
+                                                    : "border-[#E8CEBC] bg-white text-[#1D4533] hover:border-[#1D4533]"
+                                            }`}
+                                            title="Tinggi Baris (Line Height)"
+                                        >
+                                            <option
+                                                value="0.8"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                0.8x
+                                            </option>
+                                            <option
+                                                value="1.0"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                1.0x
+                                            </option>
+                                            <option
+                                                value="1.2"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                1.2x
+                                            </option>
+                                            <option
+                                                value="1.4"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                1.4x
+                                            </option>
+                                            <option
+                                                value="1.6"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                1.6x
+                                            </option>
+                                            <option
+                                                value="1.8"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                1.8x
+                                            </option>
+                                            <option
+                                                value="2.0"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                2.0x
+                                            </option>
+                                            <option
+                                                value="2.4"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                2.4x
+                                            </option>
+                                            <option
+                                                value="2.8"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                2.8x
+                                            </option>
+                                            <option
+                                                value="3.2"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                3.2x
+                                            </option>
+                                            <option
+                                                value="3.5"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                3.5x
+                                            </option>
+                                        </select>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Spasi Baris
+                                        </span>
+                                    </div>
+
+                                    {/* 4. Jarak Huruf (Letter Spacing) */}
+                                    <div className="flex flex-col">
+                                        <select
+                                            value={
+                                                activeFormats.letterSpacing ||
+                                                "0px"
+                                            }
+                                            onChange={(e) =>
+                                                applyFormat(
+                                                    "letterSpacing",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className={`h-8 rounded-lg border px-1.5 text-[11px] font-bold outline-none cursor-pointer w-[76px] transition-all ${
+                                                activeFormats.letterSpacing &&
+                                                activeFormats.letterSpacing !==
+                                                    "0px"
+                                                    ? "border-[#1D4533] bg-[#1D4533] text-[#F7EAE0] shadow-2xs"
+                                                    : "border-[#E8CEBC] bg-white text-[#1D4533] hover:border-[#1D4533]"
+                                            }`}
+                                            title="Jarak Huruf / Kata"
+                                        >
+                                            <option
+                                                value="-0.5px"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                -0.5px
+                                            </option>
+                                            <option
+                                                value="0px"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                0px (Normal)
+                                            </option>
+                                            <option
+                                                value="0.5px"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                +0.5px
+                                            </option>
+                                            <option
+                                                value="1px"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                +1.0px
+                                            </option>
+                                            <option
+                                                value="1.5px"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                +1.5px
+                                            </option>
+                                            <option
+                                                value="2px"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                +2.0px
+                                            </option>
+                                            <option
+                                                value="3px"
+                                                className="bg-white text-[#1D4533]"
+                                            >
+                                                +3.0px
+                                            </option>
+                                        </select>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Jarak Huruf
+                                        </span>
+                                    </div>
+
+                                    <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
+
+                                    {/* 5. Warna Font */}
+                                    <div className="flex flex-col">
+                                        <div
+                                            className={`flex items-center gap-1 rounded-lg border px-1.5 h-8 transition-all ${
+                                                activeFormats.color
+                                                    ? "border-[#1D4533] bg-[#1D4533]/10"
+                                                    : "border-[#E8CEBC] bg-white"
+                                            }`}
+                                        >
+                                            <Palette
+                                                size={12}
+                                                className="text-[#1D4533]"
+                                            />
+                                            <input
+                                                type="color"
+                                                value={
+                                                    activeFormats.color ||
+                                                    "#1D4533"
+                                                }
+                                                onChange={(e) =>
+                                                    applyFormat(
+                                                        "color",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="h-5 w-5 cursor-pointer rounded border border-[#E8CEBC] bg-white p-0"
+                                                title="Pilih Warna Teks"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={
+                                                    activeFormats.color ||
+                                                    "#1D4533"
+                                                }
+                                                onChange={(e) =>
+                                                    applyFormat(
+                                                        "color",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="#1D4533"
+                                                className="w-13 text-[10px] font-mono uppercase text-[#1D4533] font-bold outline-none"
+                                            />
+                                        </div>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Warna Font
+                                        </span>
+                                    </div>
+
+                                    {/* 6. Warna Blok (Highlight) */}
+                                    <div className="flex flex-col">
+                                        <div
+                                            className={`flex items-center gap-1 rounded-lg border px-1.5 h-8 transition-all ${
+                                                activeFormats.background
+                                                    ? "border-amber-500 bg-amber-50"
+                                                    : "border-[#E8CEBC] bg-white"
+                                            }`}
+                                        >
+                                            <Highlighter
+                                                size={12}
+                                                className={
+                                                    activeFormats.background
+                                                        ? "text-amber-700"
+                                                        : "text-[#1D4533]"
+                                                }
+                                            />
+                                            <input
+                                                type="color"
+                                                value={
+                                                    activeFormats.background ||
+                                                    "#FFFF00"
+                                                }
+                                                onChange={(e) =>
+                                                    applyFormat(
+                                                        "background",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="h-5 w-5 cursor-pointer rounded border border-[#E8CEBC] bg-white p-0"
+                                                title="Pilih Warna Sorotan / Blok"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={
+                                                    activeFormats.background ||
+                                                    ""
+                                                }
+                                                onChange={(e) =>
+                                                    applyFormat(
+                                                        "background",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Polos"
+                                                className="w-13 text-[10px] font-mono uppercase text-[#1D4533] font-bold outline-none"
+                                            />
+                                            {activeFormats.background && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        applyFormat(
+                                                            "background",
+                                                            false,
+                                                        )
+                                                    }
+                                                    className="flex h-4 w-4 items-center justify-center rounded text-red-600 hover:bg-red-100 transition"
+                                                    title="Hapus Warna Blok (Polos)"
+                                                >
+                                                    <X size={10} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Warna Blok
+                                        </span>
+                                    </div>
+
+                                    <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
+
+                                    {/* 7. Format Huruf (Bold, Italic, Underline, Strike) */}
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-0.5">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "bold",
+                                                        !activeFormats.bold,
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.bold
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs font-extrabold"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Tebal (Bold)"
+                                            >
+                                                <Bold size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "italic",
+                                                        !activeFormats.italic,
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.italic
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Miring (Italic)"
+                                            >
+                                                <Italic size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "underline",
+                                                        !activeFormats.underline,
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.underline
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Garis Bawah (Underline)"
+                                            >
+                                                <Underline size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "strike",
+                                                        !activeFormats.strike,
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.strike
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Coret (Strikethrough)"
+                                            >
+                                                <Strikethrough size={13} />
+                                            </button>
+                                        </div>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Gaya Teks
+                                        </span>
+                                    </div>
+
+                                    <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
+
+                                    {/* 8. Alignment & RTL */}
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-0.5">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat("align", false)
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    !activeFormats.align
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Rata Kiri"
+                                            >
+                                                <AlignLeft size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "align",
+                                                        "center",
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.align ===
+                                                    "center"
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Rata Tengah"
+                                            >
+                                                <AlignCenter size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "align",
+                                                        "right",
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.align ===
+                                                    "right"
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Rata Kanan (Naskah Arab)"
+                                            >
+                                                <AlignRight size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "align",
+                                                        "justify",
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.align ===
+                                                    "justify"
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Rata Kanan Kiri"
+                                            >
+                                                <AlignJustify size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const isRtl =
+                                                        activeFormats.direction ===
+                                                        "rtl";
+                                                    applyFormat(
+                                                        "direction",
+                                                        isRtl ? false : "rtl",
+                                                    );
+                                                    applyFormat(
+                                                        "align",
+                                                        isRtl ? false : "right",
+                                                    );
+                                                }}
+                                                className={`h-8 px-2 flex items-center justify-center rounded-lg border text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.direction ===
+                                                    "rtl"
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title={
+                                                    activeFormats.direction ===
+                                                    "rtl"
+                                                        ? "Matikan RTL (Kembali LTR)"
+                                                        : "Aktifkan Teks Arab (RTL)"
+                                                }
+                                            >
+                                                RTL (ع)
+                                            </button>
+                                        </div>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Perataan
+                                        </span>
+                                    </div>
+
+                                    <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
+
+                                    {/* 9. List, Blockquote & Reset */}
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-0.5">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "list",
+                                                        activeFormats.list ===
+                                                            "bullet"
+                                                            ? false
+                                                            : "bullet",
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.list ===
+                                                    "bullet"
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Daftar Poin (Bullet)"
+                                            >
+                                                <List size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "list",
+                                                        activeFormats.list ===
+                                                            "ordered"
+                                                            ? false
+                                                            : "ordered",
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.list ===
+                                                    "ordered"
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Daftar Nomor"
+                                            >
+                                                <ListOrdered size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    applyFormat(
+                                                        "blockquote",
+                                                        !activeFormats.blockquote,
+                                                    )
+                                                }
+                                                className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95 ${
+                                                    activeFormats.blockquote
+                                                        ? "bg-[#1D4533] text-[#F7EAE0] border-[#1D4533] shadow-2xs"
+                                                        : "bg-white text-[#1D4533] border-[#E8CEBC] hover:bg-[#FAF3EB]"
+                                                }`}
+                                                title="Kutipan (Blockquote)"
+                                            >
+                                                <QuoteIcon size={13} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const quill =
+                                                        quillRef.current?.getEditor();
+                                                    if (quill) {
+                                                        const range =
+                                                            quill.getSelection();
+                                                        if (range) {
+                                                            quill.removeFormat(
+                                                                range.index,
+                                                                range.length,
+                                                            );
+                                                            syncCurrentFormats(
+                                                                quill,
+                                                            );
+                                                        }
+                                                    }
+                                                }}
+                                                className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#E8CEBC] bg-white text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                                title="Hapus Semua Format (Reset)"
+                                            >
+                                                <RotateCcw size={13} />
+                                            </button>
+                                        </div>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Format Lain
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Ruang Penulisan Quill */}
+                                <div className="p-4 sm:p-6 min-h-[420px]">
+                                    <ReactQuill
+                                        ref={quillRef}
+                                        theme="snow"
+                                        value={data.content}
+                                        onChange={(content) => {
+                                            setData("content", content);
+                                            if (errors.content)
+                                                clearErrors("content");
+                                        }}
+                                        onChangeSelection={
+                                            handleChangeSelection
+                                        }
+                                        modules={quillModules}
+                                        placeholder="Mula menulis teks artikel kajian di sini..."
+                                    />
+                                </div>
+
                                 {errors.content && (
                                     <div className="p-3 bg-red-50 border-t border-red-200 text-red-600 font-bold text-[12px] flex items-center gap-2">
                                         <AlertCircle size={15} />{" "}
@@ -1101,100 +1846,120 @@ export default function ArticleCreate({ categories }: CreateProps) {
                             </div>
                         </div>
 
-                        {/* Mode Pratinjau */}
+                        {/* Mode Pratinjau (Identik 100% dengan Show.tsx) */}
                         <div
                             className={`${
                                 viewMode === "preview" ? "block" : "hidden"
-                            } rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-12`}
+                            } rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-10`}
                         >
-                            <div className="mx-auto max-w-[800px] rounded-2xl border border-[#F9D2BA] bg-white p-6 sm:p-10 shadow-xs">
-                                <h1 className="mb-4 font-brand text-[24px] sm:text-[32px] md:text-[36px] font-bold leading-tight text-[#1D4533]">
-                                    {data.title ||
-                                        "Judul Artikel Akan Tampil Di Sini"}
-                                </h1>
+                            <div className="mx-auto max-w-[850px] space-y-6">
+                                {/* Wadah Utama Konten (Selaras dengan Show.tsx: rounded-3xl, bg-[#FAF1E8], border-[#E8CEBC]) */}
+                                <div className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-10 md:p-12 shadow-xs">
+                                    {/* 1. Judul Artikel */}
+                                    <h1 className="mb-6 font-brand text-[24px] sm:text-[32px] md:text-[36px] font-bold leading-tight text-[#1D4533]">
+                                        {data.title ||
+                                            "Judul Artikel Akan Tampil Di Sini"}
+                                    </h1>
 
-                                {imageSourceType === "youtube" && ytId ? (
-                                    <div className="mb-8 aspect-video w-full overflow-hidden rounded-xl bg-black">
-                                        <iframe
-                                            src={`https://www.youtube.com/embed/${ytId}`}
-                                            className="h-full w-full border-0"
-                                            allowFullScreen
-                                        />
-                                    </div>
-                                ) : (
-                                    imagePreview && (
-                                        <div className="mb-8 aspect-[2/1] w-full overflow-hidden rounded-xl bg-[#F7EAE0]">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="h-full w-full object-cover"
+                                    {/* 2. Media Sampul Artikel (YouTube / Image) */}
+                                    {imageSourceType === "youtube" && ytId ? (
+                                        <div className="mb-8 aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
+                                            <iframe
+                                                src={`https://www.youtube.com/embed/${ytId}`}
+                                                className="h-full w-full border-0"
+                                                allowFullScreen
                                             />
                                         </div>
-                                    )
-                                )}
-
-                                {isTafsirCategory &&
-                                    quoteType === "text" &&
-                                    data.quote_arabic && (
-                                        <div className="mb-8 rounded-xl border-l-4 border-[#1D4533] bg-[#F9D2BA]/20 p-6 text-center">
-                                            <p
-                                                className={`${data.quote_font} mb-3`}
-                                                style={{
-                                                    fontSize: `${data.quote_font_size}px`,
-                                                    color: data.quote_color,
-                                                    lineHeight:
-                                                        data.quote_line_height,
-                                                }}
-                                                dir="rtl"
-                                            >
-                                                {data.quote_arabic}
-                                            </p>
-                                            <p className="mb-1 text-[13px] italic text-[#5E3122]">
-                                                "{data.quote_translation}"
-                                            </p>
-                                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#1D4533]">
-                                                {data.quote_reference}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                {isTafsirCategory &&
-                                    quoteType === "image" &&
-                                    quoteImagePreview && (
-                                        <div className="mb-8 rounded-xl bg-[#F9D2BA]/20 p-4 text-center">
-                                            <img
-                                                src={quoteImagePreview}
-                                                className="mx-auto rounded-xl shadow-xs object-cover max-h-80"
-                                                alt="Preview Quote Gambar"
-                                            />
-                                        </div>
-                                    )}
-
-                                {isTafsirCategory &&
-                                    quoteType === "youtube" &&
-                                    quoteYtId && (
-                                        <div className="mb-8 overflow-hidden rounded-xl bg-[#F9D2BA]/20 p-4 text-center">
-                                            <div className="mx-auto aspect-video w-full max-w-lg overflow-hidden rounded-xl bg-black shadow-sm">
-                                                <iframe
-                                                    src={`https://www.youtube.com/embed/${quoteYtId}`}
-                                                    className="h-full w-full border-0"
-                                                    allowFullScreen
+                                    ) : (
+                                        imagePreview && (
+                                            <div className="mb-8 aspect-[2/1] w-full overflow-hidden rounded-2xl bg-[#F7EAE0] border border-[#E8CEBC] shadow-xs">
+                                                <img
+                                                    src={imagePreview}
+                                                    alt="Pratinjau Sampul"
+                                                    className="h-full w-full object-cover"
                                                 />
                                             </div>
-                                        </div>
+                                        )
                                     )}
 
-                                <div
-                                    className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#5E3122]"
-                                    dangerouslySetInnerHTML={{
-                                        __html: data.content
-                                            ? data.content.replace(
-                                                  /&nbsp;|\u00a0/g,
-                                                  " ",
-                                              )
-                                            : "",
-                                    }}
-                                />
+                                    {/* 3. Media / Kartu Tafsir Ayat (Jika Kategori Tafsir) */}
+                                    {isTafsirCategory && (
+                                        <>
+                                            {/* Opsi Teks Ayat */}
+                                            {quoteType === "text" &&
+                                                data.quote_arabic && (
+                                                    <div className="mb-8 rounded-2xl border-l-4 border-[#1D4533] bg-[#FAF3EB] p-6 sm:p-8 text-center shadow-xs">
+                                                        <p
+                                                            className={`${data.quote_font} mb-3`}
+                                                            style={{
+                                                                fontSize: `${data.quote_font_size}px`,
+                                                                color: data.quote_color,
+                                                                lineHeight:
+                                                                    data.quote_line_height,
+                                                                letterSpacing: `${(data as any).quote_letter_spacing || 0}px`,
+                                                            }}
+                                                            dir="rtl"
+                                                        >
+                                                            {data.quote_arabic}
+                                                        </p>
+                                                        <p className="mb-1.5 text-[13.5px] sm:text-[14.5px] italic text-[#5E3122]/90 leading-relaxed font-serif">
+                                                            "
+                                                            {
+                                                                data.quote_translation
+                                                            }
+                                                            "
+                                                        </p>
+                                                        <span className="text-[11px] sm:text-[11.5px] font-bold uppercase tracking-wider text-[#1D4533]">
+                                                            {
+                                                                data.quote_reference
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                            {/* Opsi Gambar Quote */}
+                                            {quoteType === "image" &&
+                                                quoteImagePreview && (
+                                                    <div className="mb-8 rounded-2xl bg-[#FAF3EB] p-4 sm:p-6 text-center border border-[#E8CEBC]">
+                                                        <img
+                                                            src={
+                                                                quoteImagePreview
+                                                            }
+                                                            className="mx-auto rounded-xl shadow-xs object-cover max-h-80"
+                                                            alt="Pratinjau Kutipan Gambar"
+                                                        />
+                                                    </div>
+                                                )}
+
+                                            {/* Opsi Video YouTube Quote */}
+                                            {quoteType === "youtube" &&
+                                                quoteYtId && (
+                                                    <div className="mb-8 overflow-hidden rounded-2xl bg-[#FAF3EB] p-4 sm:p-6 text-center border border-[#E8CEBC]">
+                                                        <div className="mx-auto aspect-video w-full max-w-lg overflow-hidden rounded-xl bg-black shadow-sm">
+                                                            <iframe
+                                                                src={`https://www.youtube.com/embed/${quoteYtId}`}
+                                                                className="h-full w-full border-0"
+                                                                allowFullScreen
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                        </>
+                                    )}
+
+                                    {/* 4. Naskah Isi Artikel (Class & Styling Sama Persis dengan Show.tsx) */}
+                                    <div
+                                        className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#4A2619] prose-headings:text-[#1D4533] prose-p:leading-relaxed prose-strong:text-[#1D4533] prose-blockquote:border-[#8C5E43] prose-blockquote:text-[#5E3122] prose-a:text-[#1D4533] [hyphens:none] [overflow-wrap:break-word] [word-break:normal]"
+                                        dangerouslySetInnerHTML={{
+                                            __html: data.content
+                                                ? data.content.replace(
+                                                      /&nbsp;|\u00a0/g,
+                                                      " ",
+                                                  )
+                                                : "",
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

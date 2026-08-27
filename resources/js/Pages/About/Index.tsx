@@ -15,6 +15,7 @@ import {
     Upload,
     User,
     Sparkles,
+    Heart,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -29,6 +30,27 @@ interface AboutProps {
         image_url?: string | null;
     };
 }
+
+// Konfigurasi varian animasi yang halus
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.12,
+            delayChildren: 0.1,
+        },
+    },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 18 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    },
+};
 
 export default function AboutIndex({ about }: AboutProps) {
     const { auth } = usePage<{ auth?: { user?: { role?: string } } }>().props;
@@ -82,7 +104,7 @@ export default function AboutIndex({ about }: AboutProps) {
                 );
             },
             onError: () => {
-                toast.error("Gagal menyimpan perubahan. Periksa form.");
+                toast.error("Gagal menyimpan perubahan. Periksa form isian.");
             },
         });
     };
@@ -91,17 +113,17 @@ export default function AboutIndex({ about }: AboutProps) {
         <MainLayout title={about.title}>
             <Head title={`${about.title} - Abu Haidar`} />
 
-            <div className="mx-auto max-w-[1000px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="mx-auto max-w-[1000px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+            >
                 {/* NAVIGASI & TOMBOL EDIT */}
-                <div className="mb-6 flex items-center justify-between gap-4">
-                    <Link
-                        href="/home"
-                        className="inline-flex items-center gap-2 rounded-xl border border-[#E8CEBC] bg-[#FAF1E8] px-3.5 py-2 text-[12px] sm:text-[13px] font-bold text-[#1D4533] hover:bg-[#F2E2D5] transition shadow-2xs active:scale-95"
-                    >
-                        <ArrowLeft size={15} />
-                        <span>Kembali ke Beranda</span>
-                    </Link>
-
+                <motion.div
+                    variants={itemVariants}
+                    className="mb-6 flex items-center justify-end gap-4"
+                >
                     {isAdmin && (
                         <button
                             type="button"
@@ -112,19 +134,29 @@ export default function AboutIndex({ about }: AboutProps) {
                             <span>Sunting Profil & Konten</span>
                         </button>
                     )}
-                </div>
+                </motion.div>
 
-                {/* 1. KARTU PROFIL & BIOGRAFI SINGKAT (COMPACT AVATAR) */}
-                <div className="mb-8 rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-8 md:p-10 shadow-xs relative overflow-hidden">
+                {/* 1. KARTU PROFIL & BIOGRAFI SINGKAT */}
+                <motion.div
+                    variants={itemVariants}
+                    whileHover={{ y: -2 }}
+                    transition={{ duration: 0.2 }}
+                    className="mb-8 rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-8 md:p-10 shadow-xs relative overflow-hidden"
+                >
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
                         {/* Foto Profil / PP Avatar */}
                         <div className="relative shrink-0">
-                            <div className="h-28 w-28 sm:h-36 sm:w-36 overflow-hidden rounded-full border-4 border-[#FDF9F5] bg-[#EAD4C3] shadow-md ring-2 ring-[#1D4533]/20 flex items-center justify-center">
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.4, delay: 0.2 }}
+                                className="h-28 w-28 sm:h-36 sm:w-36 overflow-hidden rounded-full border-4 border-[#FDF9F5] bg-[#EAD4C3] shadow-md ring-2 ring-[#1D4533]/20 flex items-center justify-center group"
+                            >
                                 {about.image_url ? (
                                     <img
                                         src={about.image_url}
                                         alt={about.title}
-                                        className="h-full w-full object-cover"
+                                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
                                 ) : (
                                     <User
@@ -132,7 +164,7 @@ export default function AboutIndex({ about }: AboutProps) {
                                         className="text-[#8C5E43]/50"
                                     />
                                 )}
-                            </div>
+                            </motion.div>
                         </div>
 
                         {/* Identitas & Judul Profil */}
@@ -163,45 +195,60 @@ export default function AboutIndex({ about }: AboutProps) {
                             />
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 2. VISI & MISI CARD */}
                 {(about.vision || about.mission) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <motion.div
+                        variants={itemVariants}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-5"
+                    >
                         {about.vision && (
-                            <div className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-7 shadow-xs">
-                                <div className="flex items-center gap-2 text-[#1D4533] font-brand font-bold text-[17px] mb-2.5">
-                                    <Target
-                                        size={18}
-                                        className="text-amber-700"
-                                    />
-                                    <span>Visi Dakwah</span>
+                            <motion.div
+                                whileHover={{ y: -3 }}
+                                transition={{ duration: 0.2 }}
+                                className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-7 shadow-xs flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="flex items-center gap-2 text-[#1D4533] font-brand font-bold text-[17px] mb-2.5">
+                                        <Target
+                                            size={18}
+                                            className="text-amber-700"
+                                        />
+                                        <span>Visi Dakwah</span>
+                                    </div>
+                                    <p className="text-[12.5px] sm:text-[13.5px] leading-relaxed text-[#5E3122]/85">
+                                        {about.vision}
+                                    </p>
                                 </div>
-                                <p className="text-[12.5px] sm:text-[13.5px] leading-relaxed text-[#5E3122]/85">
-                                    {about.vision}
-                                </p>
-                            </div>
+                            </motion.div>
                         )}
 
                         {about.mission && (
-                            <div className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-7 shadow-xs">
-                                <div className="flex items-center gap-2 text-[#1D4533] font-brand font-bold text-[17px] mb-2.5">
-                                    <Compass
-                                        size={18}
-                                        className="text-emerald-700"
-                                    />
-                                    <span>Misi Dakwah</span>
+                            <motion.div
+                                whileHover={{ y: -3 }}
+                                transition={{ duration: 0.2 }}
+                                className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-7 shadow-xs flex flex-col justify-between"
+                            >
+                                <div>
+                                    <div className="flex items-center gap-2 text-[#1D4533] font-brand font-bold text-[17px] mb-2.5">
+                                        <Compass
+                                            size={18}
+                                            className="text-emerald-700"
+                                        />
+                                        <span>Misi Dakwah</span>
+                                    </div>
+                                    <p className="text-[12.5px] sm:text-[13.5px] leading-relaxed text-[#5E3122]/85">
+                                        {about.mission}
+                                    </p>
                                 </div>
-                                <p className="text-[12.5px] sm:text-[13.5px] leading-relaxed text-[#5E3122]/85">
-                                    {about.mission}
-                                </p>
-                            </div>
+                            </motion.div>
                         )}
-                    </div>
+                    </motion.div>
                 )}
-            </div>
+            </motion.div>
 
-            {/* MODAL SUNTING (PORTAL BODY - ANTI TERPOTONG) */}
+            {/* MODAL SUNTING (PORTAL BODY DENGAN ANIMASI HALUS) */}
             {mounted &&
                 createPortal(
                     <AnimatePresence>
@@ -211,14 +258,19 @@ export default function AboutIndex({ about }: AboutProps) {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
                                     onClick={handleCloseModal}
-                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-0"
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-xs z-0"
                                 />
 
                                 <motion.div
-                                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                    initial={{ opacity: 0, scale: 0.94, y: 20 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                                    exit={{ opacity: 0, scale: 0.94, y: 20 }}
+                                    transition={{
+                                        duration: 0.25,
+                                        ease: [0.22, 1, 0.36, 1],
+                                    }}
                                     className="relative z-10 w-full max-w-xl rounded-3xl bg-[#FDF9F5] shadow-2xl border border-[#E8CEBC] flex flex-col my-auto max-h-[90vh] overflow-hidden text-[#5E3122]"
                                 >
                                     {/* Modal Header */}
@@ -241,7 +293,7 @@ export default function AboutIndex({ about }: AboutProps) {
                                             type="button"
                                             onClick={handleCloseModal}
                                             disabled={processing}
-                                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#E8CEBC] text-[#5E3122]/70 transition hover:bg-[#F2E2D5] hover:text-[#1D4533] cursor-pointer shadow-2xs"
+                                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#E8CEBC] text-[#5E3122]/70 transition hover:bg-[#F2E2D5] hover:text-[#1D4533] cursor-pointer shadow-2xs active:scale-90"
                                         >
                                             <X size={16} />
                                         </button>
@@ -289,7 +341,7 @@ export default function AboutIndex({ about }: AboutProps) {
                                                             onClick={() =>
                                                                 fileInputRef.current?.click()
                                                             }
-                                                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] px-3.5 py-1.5 text-[11px] font-bold text-[#F7EAE0] hover:bg-[#143325] transition cursor-pointer shadow-2xs w-fit"
+                                                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#1D4533] px-3.5 py-1.5 text-[11px] font-bold text-[#F7EAE0] hover:bg-[#143325] transition cursor-pointer shadow-2xs w-fit active:scale-95"
                                                         >
                                                             <Upload size={13} />
                                                             <span>
