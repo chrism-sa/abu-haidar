@@ -40,6 +40,7 @@ export default function Dashboard({ auth }: DashboardProps) {
     const [confirmText, setConfirmText] = useState("");
     const [mounted, setMounted] = useState(false);
     const [isClearingCache, setIsClearingCache] = useState(false);
+    const [isCleaningStorage, setIsCleaningStorage] = useState(false); // State untuk loading bersih storage
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -77,6 +78,45 @@ export default function Dashboard({ auth }: DashboardProps) {
                     toast.error("Gagal membersihkan cache sistem.");
                 },
                 onFinish: () => setIsClearingCache(false),
+            },
+        );
+    };
+
+    // Handler untuk membersihkan file sampah storage
+    const handleCleanStorage = () => {
+        if (isCleaningStorage) return;
+        if (
+            !confirm(
+                "Apakah Anda yakin ingin memindai dan menghapus file gambar sisa yang tidak terpakai di storage?",
+            )
+        ) {
+            return;
+        }
+
+        setIsCleaningStorage(true);
+        const toastId = toast.loading(
+            "Memindai dan membersihkan file sampah storage...",
+        );
+
+        router.post(
+            "/admin/storage/clean",
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(
+                        "File sampah di storage berhasil dibersihkan!",
+                        {
+                            id: toastId,
+                        },
+                    );
+                },
+                onError: () => {
+                    toast.error("Gagal membersihkan file sampah storage.", {
+                        id: toastId,
+                    });
+                },
+                onFinish: () => setIsCleaningStorage(false),
             },
         );
     };
@@ -367,6 +407,29 @@ export default function Dashboard({ auth }: DashboardProps) {
                                         ? "Membersihkan..."
                                         : "Bersihkan Cache"}
                                 </span>
+                            </button>
+
+                            {/* Tombol Bersihkan Sampah Storage (Tepat di Sebelah Cache Clear) */}
+                            <button
+                                type="button"
+                                onClick={handleCleanStorage}
+                                disabled={isCleaningStorage}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-700 px-3.5 py-2 text-[11px] sm:text-[12px] font-bold text-white transition hover:bg-amber-800 shadow-2xs cursor-pointer active:scale-95 disabled:opacity-60"
+                            >
+                                {isCleaningStorage ? (
+                                    <>
+                                        <Loader2
+                                            size={13}
+                                            className="animate-spin"
+                                        />
+                                        <span>Membersihkan...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={13} />
+                                        <span>Bersihkan Sampah Storage</span>
+                                    </>
+                                )}
                             </button>
 
                             {/* Info Admin Aktif */}

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Article extends Model
 {
@@ -27,7 +28,7 @@ class Article extends Model
         'is_hero' => 'boolean',
         'is_featured' => 'boolean',
     ];
-    
+
     /**
      * Relasi ke Category
      */
@@ -45,7 +46,7 @@ class Article extends Model
     }
 
     /**
-     * Event Lifecycle Model: Otomatis hapus file storage sebelum data artikel terhapus
+     * Event Lifecycle Model: Otomatis hapus semua file terkait dari storage saat artikel dihapus
      */
     protected static function booted()
     {
@@ -58,7 +59,22 @@ class Article extends Model
                 }
             }
 
-            // 2. Hapus file gambar quote terkait jika tersimpan di disk public storage
+            // 2. Scan & Hapus semua gambar editor yang disisipkan di dalam teks HTML artikel (content)
+            if ($article->content) {
+                preg_match_all('/<img[^>]+src="([^">]+)"/i', $article->content, $matches);
+                if (!empty($matches[1])) {
+                    foreach ($matches[1] as $imgUrl) {
+                        if (str_contains($imgUrl, '/storage/')) {
+                            $mediaPath = Str::after($imgUrl, '/storage/');
+                            if ($mediaPath && Storage::disk('public')->exists($mediaPath)) {
+                                Storage::disk('public')->delete($mediaPath);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Hapus file gambar quote terkait & hapus data quote-nya
             foreach ($article->quotes as $quote) {
                 if ($quote->image && str_starts_with($quote->image, '/storage/')) {
                     $quotePath = str_replace('/storage/', '', $quote->image);
@@ -66,7 +82,7 @@ class Article extends Model
                         Storage::disk('public')->delete($quotePath);
                     }
                 }
-                $quote->delete(); // Hapus baris relasi quote dari DB
+                $quote->delete();
             }
         });
     }

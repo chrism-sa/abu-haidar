@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
+import axios from "axios";
+import ImageCropperModal from "@/Components/ImageCropperModal";
 import {
     ArrowLeft,
     Save,
@@ -30,6 +32,7 @@ import {
     Quote as QuoteIcon,
     RotateCcw,
     Highlighter,
+    Video,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { Category, Article } from "@/types";
@@ -85,7 +88,6 @@ Quill.register(SizeStyle, true);
 // C. Parchment Custom (Line Height & Letter Spacing)
 const Parchment = Quill.import("parchment") as any;
 
-// Spasi Baris (Line Height)
 const LineHeightStyle = new Parchment.StyleAttributor(
     "lineHeight",
     "line-height",
@@ -108,7 +110,6 @@ const LineHeightStyle = new Parchment.StyleAttributor(
 );
 Quill.register(LineHeightStyle, true);
 
-// Jarak Huruf/Kata (Letter Spacing)
 const LetterSpacingStyle = new Parchment.StyleAttributor(
     "letterSpacing",
     "letter-spacing",
@@ -119,7 +120,6 @@ const LetterSpacingStyle = new Parchment.StyleAttributor(
 );
 Quill.register(LetterSpacingStyle, true);
 
-// Direction, Align, Color, Background
 const DirectionStyle = Quill.import("attributors/style/direction") as any;
 Quill.register(DirectionStyle, true);
 
@@ -144,10 +144,11 @@ const ARABIC_FONTS = [
 
 const getYouTubeId = (url: string | null | undefined) => {
     if (!url) return null;
+    const cleanUrl = url.trim();
     const regExp =
-        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
+        /^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = cleanUrl.match(regExp);
+    return match && match[1].length === 11 ? match[1] : null;
 };
 
 interface QuoteItem {
@@ -192,7 +193,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         background?: string;
     }>({});
 
-    // Menentukan jenis quote awal (youtube / image file / text)
+    // Menentukan jenis quote awal
     const initialQuoteIsYoutube = quote?.image
         ? Boolean(getYouTubeId(quote.image))
         : false;
@@ -212,6 +213,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
 
     const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
 
+    // State Sampul Artikel (Cover Crop)
     const [tempImageSrc, setTempImageSrc] = useState<string | null>(
         article.image || null,
     );
@@ -222,11 +224,15 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         !initialQuoteIsYoutube && quote?.image ? quote.image : null,
     );
 
-    // Cropper State
-    const [cropModalOpen, setCropModalOpen] = useState(false);
+    const [coverCropModalOpen, setCoverCropModalOpen] = useState(false);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+    // State Crop Gambar untuk Naskah Editor (Quill Content)
+    const [editorCropModalOpen, setEditorCropModalOpen] = useState(false);
+    const [selectedEditorRawImage, setSelectedEditorRawImage] =
+        useState<string>("");
 
     // Form Inertia State
     const {
@@ -267,7 +273,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         ?.toLowerCase()
         .includes("tafsir");
 
-    // Fungsi mengecek dan menyinkronkan format teks yang sedang aktif ke state React
     const syncCurrentFormats = (quillInstance?: any) => {
         const quill = quillInstance || quillRef.current?.getEditor();
         if (!quill) return;
@@ -275,7 +280,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         setActiveFormats(formats);
     };
 
-    // Terapkan format langsung ke editor saat teks diseleksi
     const applyFormat = (formatName: string, value: any) => {
         const quill = quillRef.current?.getEditor();
         if (!quill) return;
@@ -298,7 +302,158 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
     };
 
-    // Transformasi & Pembersihan Karakter Sebelum Dikirim
+    // Handler Buka File Gambar untuk Disisipkan ke Naskah Quill
+    const handleTriggerContentImage = () => {
+        const input = document.createElement("input");
+        input.setAttribute("type", "file");
+        input.setAttribute(
+            "accept",
+            "image/png, image/jpeg, image/jpg, image/webp",
+        );
+        input.click();
+
+        input.onchange = () => {
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("Ukuran gambar maksimal 5 MB!");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                setSelectedEditorRawImage(reader.result as string);
+                setEditorCropModalOpen(true);
+            };
+            reader.readAsDataURL(file);
+        };
+    };
+
+    // Handler Selesai Crop Gambar Naskah -> Upload ke Server
+    const handleEditorCropComplete = async (croppedBlob: Blob) => {
+        setEditorCropModalOpen(false);
+        const toastId = toast.loading(
+            "Mengunggah gambar hasil crop ke naskah...",
+        );
+
+        const formData = new FormData();
+        formData.append("file", croppedBlob, "editor-image.png");
+
+        try {
+            const response = await axios.post(
+                "/admin/editor/upload-media",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                },
+            );
+
+            if (response.data && response.data.success) {
+                const quill = quillRef.current?.getEditor();
+                if (quill) {
+                    const range = quill.getSelection(true);
+                    const index = range ? range.index : quill.getLength();
+                    quill.insertEmbed(index, "image", response.data.url);
+                    quill.setSelection(index + 1, 0);
+                }
+                toast.success("Gambar berhasil disisipkan ke naskah!", {
+                    id: toastId,
+                });
+            } else {
+                toast.error(
+                    response.data?.message || "Gagal menyisipkan gambar.",
+                    { id: toastId },
+                );
+            }
+        } catch (err: any) {
+            console.error("Upload error:", err);
+            const errorMsg =
+                err.response?.data?.message ||
+                "Gagal mengunggah gambar. Pastikan format file sesuai.";
+            toast.error(errorMsg, { id: toastId });
+        }
+    };
+
+    // Handler Sisipkan Video YouTube ke Naskah
+    const handleInsertYoutubeContent = () => {
+        const url = prompt(
+            "Masukkan Tautan Video YouTube:\nContoh: https://www.youtube.com/watch?v=...",
+        );
+        if (!url) return;
+
+        const ytId = getYouTubeId(url);
+        if (!ytId) {
+            toast.error("Format tautan YouTube tidak valid!");
+            return;
+        }
+
+        const embedUrl = `https://www.youtube.com/embed/${ytId}`;
+        const quill = quillRef.current?.getEditor();
+        if (quill) {
+            const range = quill.getSelection(true);
+            const index = range ? range.index : quill.getLength();
+            quill.insertEmbed(index, "video", embedUrl, "user");
+            quill.setSelection(index + 1, 0);
+            toast.success("Video YouTube berhasil disisipkan!");
+        }
+    };
+
+    // Parser Pratinjau Naskah Presisi
+    const renderArticleHtml = (htmlContent: string) => {
+        if (!htmlContent) return "";
+        const cleanHtml = htmlContent.replace(/&nbsp;|\u00a0/g, " ");
+
+        if (typeof window === "undefined") return cleanHtml;
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(cleanHtml, "text/html");
+
+            // Format Gambar Pratinjau agar Proporsional dan Tidak Raksasa
+            const images = doc.querySelectorAll("img");
+            images.forEach((img) => {
+                img.setAttribute("loading", "lazy");
+                img.className =
+                    "mx-auto block h-auto max-h-[380px] w-auto max-w-[90%] sm:max-w-[650px] rounded-2xl border border-[#E8CEBC] object-contain my-6 shadow-xs";
+            });
+
+            // Format Iframe YouTube Pratinjau
+            const iframes = doc.querySelectorAll("iframe");
+            iframes.forEach((iframe) => {
+                const src = iframe.getAttribute("src") || "";
+                const ytId = getYouTubeId(src);
+                if (ytId) {
+                    const wrapper = doc.createElement("div");
+                    wrapper.className =
+                        "my-6 w-full overflow-hidden rounded-2xl bg-black shadow-md";
+
+                    const newIframe = doc.createElement("iframe");
+                    newIframe.setAttribute(
+                        "src",
+                        `https://www.youtube.com/embed/${ytId}`,
+                    );
+                    newIframe.className = "w-full aspect-video border-0 block";
+                    newIframe.setAttribute(
+                        "allow",
+                        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+                    );
+                    newIframe.setAttribute("allowfullscreen", "true");
+
+                    wrapper.appendChild(newIframe);
+                    iframe.parentNode?.replaceChild(wrapper, iframe);
+                }
+            });
+
+            return doc.body.innerHTML;
+        } catch (e) {
+            return cleanHtml;
+        }
+    };
+
     transform((curr) => ({
         ...curr,
         title: curr.title ? curr.title.trim() : "",
@@ -315,7 +470,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         quote_color: data.quote_color,
     }));
 
-    // Preview Sinkronisasi Sampul Artikel
     useEffect(() => {
         if (imageSourceType === "file" && data.image_file) {
             const objectUrl = URL.createObjectURL(data.image_file);
@@ -331,7 +485,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
     }, [data.image_file, data.image_url, imageSourceType, article.image]);
 
-    // Preview Sinkronisasi Quote Gambar
     useEffect(() => {
         if (quoteType === "image" && data.quote_image) {
             const objectUrl = URL.createObjectURL(data.quote_image);
@@ -349,34 +502,41 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
     }, [data.quote_image, quoteType, quote?.image]);
 
+    // Handle File Sampul
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
-            if (file.size > 2 * 1024 * 1024) {
-                toast.error("Ukuran gambar terlalu besar! Maksimal 2 MB.");
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error(
+                    "Ukuran gambar sampul terlalu besar! Maksimal 5 MB.",
+                );
                 return;
             }
             const reader = new FileReader();
             reader.addEventListener("load", () => {
                 setTempImageSrc(reader.result?.toString() || null);
-                setCropModalOpen(true);
+                setCoverCropModalOpen(true);
             });
             reader.readAsDataURL(file);
         }
     };
 
+    // Handle File Quote
     const handleQuoteImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
-            if (file.size > 2 * 1024 * 1024) {
-                toast.error("Ukuran gambar terlalu besar! Maksimal 2 MB.");
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error(
+                    "Ukuran gambar quote terlalu besar! Maksimal 5 MB.",
+                );
                 return;
             }
             setData("quote_image", file);
         }
     };
 
-    const handleSaveCrop = async () => {
+    // Simpan Crop Sampul
+    const handleSaveCoverCrop = async () => {
         try {
             if (tempImageSrc && croppedAreaPixels) {
                 const croppedFile = await getCroppedImg(
@@ -384,7 +544,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                     croppedAreaPixels,
                 );
                 setData("image_file", croppedFile);
-                setCropModalOpen(false);
+                setCoverCropModalOpen(false);
             }
         } catch (e) {
             console.error(e);
@@ -428,10 +588,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
         }
 
         if (!data.description || !data.description.trim()) {
-            setError(
-                "description",
-                "Ringkasan / deskripsi artikel wajib diisi!",
-            );
+            setError("description", "Ringkasan artikel wajib diisi!");
             hasError = true;
         }
 
@@ -537,7 +694,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                     encType="multipart/form-data"
                 >
                     <div className="rounded-2xl border border-[#E8CEBC] bg-white p-5 sm:p-8 shadow-xs space-y-5">
-                        {/* Judul Artikel (REQUIRED) */}
+                        {/* Judul Artikel */}
                         <div>
                             <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5 flex items-center justify-between">
                                 <span>
@@ -662,7 +819,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                     />
                                     <p className="mt-1 text-[11px] text-[#5E3122]/60">
                                         Biarkan kosong jika tidak mengubah
-                                        sampul. Maks. 2 MB.
+                                        sampul. Maks. 5 MB.
                                     </p>
                                 </div>
                             ) : (
@@ -706,9 +863,9 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                setCropModalOpen(true)
+                                                setCoverCropModalOpen(true)
                                             }
-                                            className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-white font-bold text-[12px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-white font-bold text-[12px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                                         >
                                             <Crop size={16} /> Sesuaikan /
                                             Pangkas Ulang
@@ -718,8 +875,8 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             ) : null}
                         </div>
 
-                        {/* Modal Cropper */}
-                        {cropModalOpen && tempImageSrc && (
+                        {/* Modal Cropper untuk Sampul */}
+                        {coverCropModalOpen && tempImageSrc && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
                                 <div className="w-full max-w-2xl rounded-2xl bg-white p-5 sm:p-6 shadow-2xl space-y-4">
                                     <div className="flex items-center justify-between border-b border-[#E8CEBC] pb-3">
@@ -733,9 +890,9 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                setCropModalOpen(false)
+                                                setCoverCropModalOpen(false)
                                             }
-                                            className="text-[#5E3122]/60 hover:text-black"
+                                            className="text-[#5E3122]/60 hover:text-black cursor-pointer"
                                         >
                                             <X size={18} />
                                         </button>
@@ -779,16 +936,16 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                setCropModalOpen(false)
+                                                setCoverCropModalOpen(false)
                                             }
-                                            className="rounded-xl border border-[#E8CEBC] px-4 py-2 text-[12px] sm:text-[13px] font-bold text-[#5E3122] hover:bg-[#FAF3EB]"
+                                            className="rounded-xl border border-[#E8CEBC] px-4 py-2 text-[12px] sm:text-[13px] font-bold text-[#5E3122] hover:bg-[#FAF3EB] cursor-pointer"
                                         >
                                             Batal
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={handleSaveCrop}
-                                            className="flex items-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] hover:bg-[#143325]"
+                                            onClick={handleSaveCoverCrop}
+                                            className="flex items-center gap-1.5 rounded-xl bg-[#1D4533] px-5 py-2 text-[12px] sm:text-[13px] font-bold text-[#F7EAE0] hover:bg-[#143325] cursor-pointer"
                                         >
                                             <Check size={16} /> Terapkan
                                             Potongan
@@ -798,7 +955,15 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             </div>
                         )}
 
-                        {/* BAGIAN TAFSIR & QUOTE (TETAP SEMPURNA) */}
+                        {/* Modal Cropper untuk Gambar Naskah Editor (Quill) */}
+                        <ImageCropperModal
+                            isOpen={editorCropModalOpen}
+                            imageSrc={selectedEditorRawImage}
+                            onClose={() => setEditorCropModalOpen(false)}
+                            onCropComplete={handleEditorCropComplete}
+                        />
+
+                        {/* BAGIAN TAFSIR & QUOTE */}
                         {isTafsirCategory && (
                             <div className="space-y-4 rounded-xl border border-[#E8CEBC] bg-[#FAF3EB]/40 p-4 sm:p-5">
                                 <div className="flex items-center justify-between border-b border-[#E8CEBC] pb-3 flex-wrap gap-2">
@@ -813,7 +978,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         <button
                                             type="button"
                                             onClick={() => setQuoteType("text")}
-                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition cursor-pointer ${
                                                 quoteType === "text"
                                                     ? "bg-[#1D4533] text-[#F7EAE0]"
                                                     : "text-[#5E3122]/70"
@@ -826,7 +991,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             onClick={() =>
                                                 setQuoteType("image")
                                             }
-                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition cursor-pointer ${
                                                 quoteType === "image"
                                                     ? "bg-[#1D4533] text-[#F7EAE0]"
                                                     : "text-[#5E3122]/70"
@@ -839,7 +1004,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             onClick={() =>
                                                 setQuoteType("youtube")
                                             }
-                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition ${
+                                            className={`flex items-center gap-1 rounded-md px-3 py-1 transition cursor-pointer ${
                                                 quoteType === "youtube"
                                                     ? "bg-red-600 text-white"
                                                     : "text-[#5E3122]/70"
@@ -850,11 +1015,9 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                     </div>
                                 </div>
 
-                                {/* OPSI TEKS QUOTE */}
                                 {quoteType === "text" && (
                                     <>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl border border-[#E8CEBC] bg-white p-3.5 shadow-2xs">
-                                            {/* Font Arab */}
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
                                                     Jenis Font Arab
@@ -884,7 +1047,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                                 </select>
                                             </div>
 
-                                            {/* Warna Teks Quote */}
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1 flex items-center gap-1">
                                                     <Palette size={12} /> Warna
@@ -916,7 +1078,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                                 </div>
                                             </div>
 
-                                            {/* Ukuran Font Quote */}
                                             <div>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
@@ -944,7 +1105,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                                 />
                                             </div>
 
-                                            {/* Spasi Baris Quote */}
                                             <div>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <label className="text-[11px] font-bold uppercase tracking-wider text-[#5E3122] flex items-center gap-1">
@@ -981,7 +1141,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             </div>
                                         </div>
 
-                                        {/* Textarea Input Ayat Arab */}
                                         <textarea
                                             rows={3}
                                             dir="rtl"
@@ -1043,7 +1202,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                     </>
                                 )}
 
-                                {/* OPSI GAMBAR QUOTE */}
                                 {quoteType === "image" && (
                                     <div className="space-y-3">
                                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
@@ -1057,7 +1215,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         />
                                         <p className="mt-1 text-[11px] text-[#5E3122]/60">
                                             Biarkan kosong jika tidak mengubah
-                                            gambar quote. Maks. 2 MB.
+                                            gambar quote. Maks. 5 MB.
                                         </p>
                                         {quoteImagePreview && (
                                             <img
@@ -1069,7 +1227,6 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                     </div>
                                 )}
 
-                                {/* OPSI YOUTUBE QUOTE */}
                                 {quoteType === "youtube" && (
                                     <div className="space-y-3">
                                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122]">
@@ -1101,7 +1258,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             </div>
                         )}
 
-                        {/* Ringkasan Singkat (REQUIRED) */}
+                        {/* Ringkasan Singkat */}
                         <div>
                             <label className="block text-[12px] font-bold uppercase tracking-wider font-brand text-[#5E3122] mb-1.5 flex items-center justify-between">
                                 <span>
@@ -1173,9 +1330,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             } relative rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-7 lg:p-9`}
                         >
                             <div className="mx-auto max-w-[950px] relative rounded-2xl border border-[#E8CEBC] bg-white shadow-xs">
-                                {/* ========================================================= */}
-                                {/* CUSTOM TOOLBAR LENGKAP: FONT, BLOK, SPASI KATA & BARIS */}
-                                {/* ========================================================= */}
+                                {/* CUSTOM TOOLBAR LENGKAP */}
                                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 p-2.5 bg-[#FAF3EB] border-b border-[#E8CEBC] rounded-t-2xl select-none sticky top-[56px] sm:top-[64px] z-30 shadow-xs backdrop-blur-md">
                                     {/* 1. Font Family */}
                                     <div className="flex flex-col">
@@ -1199,58 +1354,29 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             }`}
                                             title="Pilihan Font"
                                         >
-                                            <option
-                                                value="helvetica"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="helvetica">
                                                 Helvetica
                                             </option>
-                                            <option
-                                                value="amiri"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="amiri">
                                                 Amiri (Arab)
                                             </option>
-                                            <option
-                                                value="adobe-naskh"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="adobe-naskh">
                                                 Adobe Naskh
                                             </option>
-                                            <option
-                                                value="scheherazade"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="scheherazade">
                                                 Scheherazade
                                             </option>
-                                            <option
-                                                value="cairo"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                Cairo
-                                            </option>
-                                            <option
-                                                value="tajawal"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="cairo">Cairo</option>
+                                            <option value="tajawal">
                                                 Tajawal
                                             </option>
-                                            <option
-                                                value="almarai"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="almarai">
                                                 Almarai
                                             </option>
-                                            <option
-                                                value="al-jazeera"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="al-jazeera">
                                                 Al Jazeera
                                             </option>
-                                            <option
-                                                value="times"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="times">
                                                 Times New Roman
                                             </option>
                                         </select>
@@ -1279,11 +1405,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         >
                                             {SizeStyle.whitelist.map(
                                                 (sz: string) => (
-                                                    <option
-                                                        key={sz}
-                                                        value={sz}
-                                                        className="bg-white text-[#1D4533]"
-                                                    >
+                                                    <option key={sz} value={sz}>
                                                         {sz}
                                                     </option>
                                                 ),
@@ -1294,7 +1416,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         </span>
                                     </div>
 
-                                    {/* 3. Spasi Baris (Line Height) */}
+                                    {/* 3. Spasi Baris */}
                                     <div className="flex flex-col">
                                         <select
                                             value={
@@ -1316,79 +1438,24 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             }`}
                                             title="Tinggi Baris (Line Height)"
                                         >
-                                            <option
-                                                value="0.8"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                0.8x
-                                            </option>
-                                            <option
-                                                value="1.0"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                1.0x
-                                            </option>
-                                            <option
-                                                value="1.2"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                1.2x
-                                            </option>
-                                            <option
-                                                value="1.4"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                1.4x
-                                            </option>
-                                            <option
-                                                value="1.6"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                1.6x
-                                            </option>
-                                            <option
-                                                value="1.8"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                1.8x
-                                            </option>
-                                            <option
-                                                value="2.0"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                2.0x
-                                            </option>
-                                            <option
-                                                value="2.4"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                2.4x
-                                            </option>
-                                            <option
-                                                value="2.8"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                2.8x
-                                            </option>
-                                            <option
-                                                value="3.2"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                3.2x
-                                            </option>
-                                            <option
-                                                value="3.5"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                3.5x
-                                            </option>
+                                            <option value="0.8">0.8x</option>
+                                            <option value="1.0">1.0x</option>
+                                            <option value="1.2">1.2x</option>
+                                            <option value="1.4">1.4x</option>
+                                            <option value="1.6">1.6x</option>
+                                            <option value="1.8">1.8x</option>
+                                            <option value="2.0">2.0x</option>
+                                            <option value="2.4">2.4x</option>
+                                            <option value="2.8">2.8x</option>
+                                            <option value="3.2">3.2x</option>
+                                            <option value="3.5">3.5x</option>
                                         </select>
                                         <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
                                             Spasi Baris
                                         </span>
                                     </div>
 
-                                    {/* 4. Jarak Huruf (Letter Spacing) */}
+                                    {/* 4. Jarak Huruf */}
                                     <div className="flex flex-col">
                                         <select
                                             value={
@@ -1410,48 +1477,21 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             }`}
                                             title="Jarak Huruf / Kata"
                                         >
-                                            <option
-                                                value="-0.5px"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="-0.5px">
                                                 -0.5px
                                             </option>
-                                            <option
-                                                value="0px"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="0px">
                                                 0px (Normal)
                                             </option>
-                                            <option
-                                                value="0.5px"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="0.5px">
                                                 +0.5px
                                             </option>
-                                            <option
-                                                value="1px"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                +1.0px
-                                            </option>
-                                            <option
-                                                value="1.5px"
-                                                className="bg-white text-[#1D4533]"
-                                            >
+                                            <option value="1px">+1.0px</option>
+                                            <option value="1.5px">
                                                 +1.5px
                                             </option>
-                                            <option
-                                                value="2px"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                +2.0px
-                                            </option>
-                                            <option
-                                                value="3px"
-                                                className="bg-white text-[#1D4533]"
-                                            >
-                                                +3.0px
-                                            </option>
+                                            <option value="2px">+2.0px</option>
+                                            <option value="3px">+3.0px</option>
                                         </select>
                                         <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
                                             Jarak Huruf
@@ -1509,7 +1549,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                         </span>
                                     </div>
 
-                                    {/* 6. Warna Blok (Highlight) */}
+                                    {/* 6. Warna Blok */}
                                     <div className="flex flex-col">
                                         <div
                                             className={`flex items-center gap-1 rounded-lg border px-1.5 h-8 transition-all ${
@@ -1565,8 +1605,8 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                                             false,
                                                         )
                                                     }
-                                                    className="flex h-4 w-4 items-center justify-center rounded text-red-600 hover:bg-red-100 transition"
-                                                    title="Hapus Warna Blok (Polos)"
+                                                    className="flex h-4 w-4 items-center justify-center rounded text-red-600 hover:bg-red-100 transition cursor-pointer"
+                                                    title="Hapus Warna Blok"
                                                 >
                                                     <X size={10} />
                                                 </button>
@@ -1579,7 +1619,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
 
                                     <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
 
-                                    {/* 7. Format Huruf (Bold, Italic, Underline, Strike) */}
+                                    {/* 7. Format Huruf */}
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-0.5">
                                             <button
@@ -1767,7 +1807,45 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
 
                                     <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
 
-                                    {/* 9. List, Blockquote & Reset */}
+                                    {/* 9. Sisipkan Media ke Naskah (Foto & Video) */}
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-0.5">
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    handleTriggerContentImage
+                                                }
+                                                className="h-8 px-2 flex items-center gap-1 rounded-lg border border-[#E8CEBC] bg-white text-[#1D4533] hover:bg-[#FAF3EB] text-[11px] font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                                                title="Sesuaikan & Sisipkan Gambar ke dalam Naskah"
+                                            >
+                                                <ImagePlus size={13} />
+                                                <span className="hidden sm:inline">
+                                                    Foto
+                                                </span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    handleInsertYoutubeContent
+                                                }
+                                                className="h-8 px-2 flex items-center gap-1 rounded-lg border border-[#E8CEBC] bg-white text-red-600 hover:bg-red-50 text-[11px] font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                                                title="Sisipkan Video YouTube ke dalam Naskah"
+                                            >
+                                                <Video size={13} />
+                                                <span className="hidden sm:inline">
+                                                    Video
+                                                </span>
+                                            </button>
+                                        </div>
+                                        <span className="text-[9px] font-medium text-[#8C5E43] mt-0.5 pl-0.5">
+                                            Sisip Media
+                                        </span>
+                                    </div>
+
+                                    <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
+
+                                    {/* 10. List, Blockquote & Reset */}
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-0.5">
                                             <button
@@ -1888,117 +1966,48 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                             </div>
                         </div>
 
-                        {/* Mode Pratinjau (Identik 100% dengan Show.tsx) */}
+                        {/* Mode Pratinjau (Presisi 1:1) */}
                         <div
                             className={`${
                                 viewMode === "preview" ? "block" : "hidden"
-                            } rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-8 lg:p-10`}
+                            } rounded-b-2xl bg-[#F7EAE0] p-4 sm:p-7 lg:p-9`}
                         >
-                            <div className="mx-auto max-w-[850px] space-y-6">
-                                {/* Wadah Utama Konten (Selaras dengan Show.tsx: rounded-3xl, bg-[#FAF1E8], border-[#E8CEBC]) */}
-                                <div className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-10 md:p-12 shadow-xs">
-                                    {/* 1. Judul Artikel */}
-                                    <h1 className="mb-6 font-brand text-[24px] sm:text-[32px] md:text-[36px] font-bold leading-tight text-[#1D4533]">
-                                        {data.title ||
-                                            "Judul Artikel Akan Tampil Di Sini"}
-                                    </h1>
+                            <div className="mx-auto max-w-[860px] space-y-6">
+                                <h1 className="font-brand text-[24px] sm:text-[32px] md:text-[38px] font-bold leading-tight text-[#1D4533]">
+                                    {data.title ||
+                                        "Judul Kajian Ilmiah Akan Tampil Di Sini"}
+                                </h1>
 
-                                    {/* 2. Media Sampul Artikel (YouTube / Image) */}
-                                    {imageSourceType === "youtube" && ytId ? (
-                                        <div className="mb-8 aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
-                                            <iframe
-                                                src={`https://www.youtube.com/embed/${ytId}`}
-                                                className="h-full w-full border-0"
-                                                allowFullScreen
-                                            />
-                                        </div>
-                                    ) : (
-                                        imagePreview && (
-                                            <div className="mb-8 aspect-[2/1] w-full overflow-hidden rounded-2xl bg-[#F7EAE0] border border-[#E8CEBC] shadow-xs">
-                                                <img
-                                                    src={imagePreview}
-                                                    alt="Pratinjau Sampul"
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            </div>
-                                        )
-                                    )}
+                                {imageSourceType === "youtube" && ytId ? (
+                                    <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-xs">
+                                        <iframe
+                                            src={`https://www.youtube.com/embed/${ytId}`}
+                                            title={data.title}
+                                            className="h-full w-full border-0 block"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                ) : imagePreview ? (
+                                    <div className="aspect-[2/1] w-full overflow-hidden rounded-2xl bg-[#FAF1E8] border border-[#E8CEBC] shadow-xs">
+                                        <img
+                                            src={imagePreview}
+                                            alt={data.title}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </div>
+                                ) : null}
 
-                                    {/* 3. Media / Kartu Tafsir Ayat (Jika Kategori Tafsir) */}
-                                    {isTafsirCategory && (
-                                        <>
-                                            {/* Opsi Teks Ayat */}
-                                            {quoteType === "text" &&
-                                                data.quote_arabic && (
-                                                    <div className="mb-8 rounded-2xl border-l-4 border-[#1D4533] bg-[#FAF3EB] p-6 sm:p-8 text-center shadow-xs">
-                                                        <p
-                                                            className={`${data.quote_font} mb-3`}
-                                                            style={{
-                                                                fontSize: `${data.quote_font_size}px`,
-                                                                color: data.quote_color,
-                                                                lineHeight:
-                                                                    data.quote_line_height,
-                                                                letterSpacing: `${(data as any).quote_letter_spacing || 0}px`,
-                                                            }}
-                                                            dir="rtl"
-                                                        >
-                                                            {data.quote_arabic}
-                                                        </p>
-                                                        <p className="mb-1.5 text-[13.5px] sm:text-[14.5px] italic text-[#5E3122]/90 leading-relaxed font-serif">
-                                                            "
-                                                            {
-                                                                data.quote_translation
-                                                            }
-                                                            "
-                                                        </p>
-                                                        <span className="text-[11px] sm:text-[11.5px] font-bold uppercase tracking-wider text-[#1D4533]">
-                                                            {
-                                                                data.quote_reference
-                                                            }
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                            {/* Opsi Gambar Quote */}
-                                            {quoteType === "image" &&
-                                                quoteImagePreview && (
-                                                    <div className="mb-8 rounded-2xl bg-[#FAF3EB] p-4 sm:p-6 text-center border border-[#E8CEBC]">
-                                                        <img
-                                                            src={
-                                                                quoteImagePreview
-                                                            }
-                                                            className="mx-auto rounded-xl shadow-xs object-cover max-h-80"
-                                                            alt="Pratinjau Kutipan Gambar"
-                                                        />
-                                                    </div>
-                                                )}
-
-                                            {/* Opsi Video YouTube Quote */}
-                                            {quoteType === "youtube" &&
-                                                quoteYtId && (
-                                                    <div className="mb-8 overflow-hidden rounded-2xl bg-[#FAF3EB] p-4 sm:p-6 text-center border border-[#E8CEBC]">
-                                                        <div className="mx-auto aspect-video w-full max-w-lg overflow-hidden rounded-xl bg-black shadow-sm">
-                                                            <iframe
-                                                                src={`https://www.youtube.com/embed/${quoteYtId}`}
-                                                                className="h-full w-full border-0"
-                                                                allowFullScreen
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                        </>
-                                    )}
-
-                                    {/* 4. Naskah Isi Artikel (Class & Styling Sama Persis dengan Show.tsx) */}
+                                <div
+                                    id="article-content-body"
+                                    className="rounded-3xl border border-[#E8CEBC] bg-[#FAF1E8] p-6 sm:p-10 md:p-12 shadow-xs"
+                                >
                                     <div
-                                        className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#4A2619] prose-headings:text-[#1D4533] prose-p:leading-relaxed prose-strong:text-[#1D4533] prose-blockquote:border-[#8C5E43] prose-blockquote:text-[#5E3122] prose-a:text-[#1D4533] [hyphens:none] [overflow-wrap:break-word] [word-break:normal]"
+                                        className="article-content prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#4A2619] prose-headings:text-[#1D4533] prose-p:leading-relaxed prose-strong:text-[#1D4533] prose-blockquote:border-[#8C5E43] prose-blockquote:text-[#5E3122] prose-a:text-[#1D4533] [hyphens:none] [overflow-wrap:break-word] [word-break:normal]"
                                         dangerouslySetInnerHTML={{
-                                            __html: data.content
-                                                ? data.content.replace(
-                                                      /&nbsp;|\u00a0/g,
-                                                      " ",
-                                                  )
-                                                : "",
+                                            __html: renderArticleHtml(
+                                                data.content,
+                                            ),
                                         }}
                                     />
                                 </div>

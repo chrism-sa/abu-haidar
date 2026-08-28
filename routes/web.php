@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ArticleController;
@@ -473,12 +474,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil diperbarui!');
     })->name('articles.update');
 
+    Route::post('/editor/upload-media', [ArticleController::class, 'uploadEditorMedia'])->name('editor.upload');
+
     Route::delete('/articles/{id}', function ($id) {
         $article = Article::findOrFail($id);
         $article->delete();
 
         return redirect()->back()->with('success', 'Artikel beserta seluruh aset gambar berhasil dihapus bersih!');
     })->name('articles.destroy');
+
     // 1. TOGGLE PUBLISH (WAJIB RETURN BACK UNTUK INERTIA)
     Route::post('/articles/{id}/toggle-publish', function ($id) {
         $article = Article::findOrFail($id);
@@ -840,4 +844,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Artisan::call('optimize:clear');
         return back()->with('success', 'Cache sistem berhasil dibersihkan bersih!');
     })->name('cache.clear');
+
+    Route::post('/storage/clean', [ArticleController::class, 'cleanStorageImages'])->name('admin.storage.clean');
 });

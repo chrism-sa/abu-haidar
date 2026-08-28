@@ -419,10 +419,149 @@ button {
 
 /* Hilangkan warna background biru muda bawaan autofill browser */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #FAF3EB inset !important;
-    -webkit-text-fill-color: #5E3122 !important;
+    -webkit-box-shadow: 0 0 0 1000px #faf3eb inset !important;
+    -webkit-text-fill-color: #5e3122 !important;
     transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Styling Gambar & Video Iframe di dalam Naskah Artikel */
+.article-content img,
+.ql-editor img {
+    border-radius: 1rem;
+    margin: 1.5rem auto;
+    max-height: 550px;
+    width: auto;
+    max-width: 100%;
+    object-fit: cover;
+    display: block;
+    box-shadow: 0 4px 14px rgba(94, 49, 34, 0.08);
+}
+
+/* Iframe Video YouTube di dalam Naskah */
+.article-content iframe,
+.ql-editor iframe {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: none !important;
+    border-radius: 1rem !important;
+    display: block !important;
+    border: none !important;
+    background-color: #000 !important;
+}
+
+@media (min-width: 640px) {
+    .article-content iframe,
+    .ql-editor iframe {
+        min-height: 380px;
+    }
+}
+/* =========================================================================
+   STYLING KHUSUS CETAK & PDF (@media print)
+   ========================================================================= */
+
+/* Di layar web biasa: sembunyikan elemen cetak */
+.print-only-link,
+.print-header,
+.print-footer {
+    display: none;
+}
+
+@media print {
+    /* 1. Sembunyikan navigasi, sidebar, dan video player */
+    header:not(.print-article-header),
+    nav,
+    footer,
+    aside,
+    button,
+    .no-print,
+    #navbar,
+    #sidebar,
+    [aria-label="Bottom Navigation"],
+    iframe {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+    }
+
+    /* 2. Matikan SEMUA efek transform / GPU agar teks bisa diblok & link PDF aktif */
+    *,
+    *::before,
+    *::after {
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+        animation: none !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+    }
+
+    /* 3. Tampilkan Kop, Footer, dan Teks Link Cetak */
+    .print-header,
+    .print-footer,
+    .print-only-link {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .print-only-link {
+        margin: 10pt auto !important;
+        text-align: center !important;
+        font-family: monospace !important;
+        font-size: 9pt !important;
+        color: #8c5e43 !important;
+    }
+
+    /* 4. Format Lembar Kertas Putih Bersih */
+    html,
+    body,
+    #app,
+    main {
+        background: #ffffff !important;
+        color: #1a1a1a !important;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .grid {
+        display: block !important;
+    }
+
+    article {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    #article-content-body,
+    .rounded-3xl,
+    .rounded-2xl {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 5. Gambar Naskah & Sampul */
+    .print-cover img,
+    .article-content img {
+        max-width: 75% !important;
+        max-height: 250px !important;
+        margin: 10pt auto !important;
+        display: block !important;
+        border-radius: 6px !important;
+        page-break-inside: avoid !important;
+    }
+
+    @page {
+        size: A4;
+        margin: 18mm 15mm 18mm 15mm;
+    }
 }

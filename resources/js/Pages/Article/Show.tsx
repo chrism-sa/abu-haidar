@@ -1,5 +1,4 @@
 import {
-    ArrowRight,
     BookOpen,
     ChevronRight,
     Link2,
@@ -69,15 +68,111 @@ const timeAgo = (dateString: string) => {
 
 const getYouTubeId = (url: string | null | undefined) => {
     if (!url) return null;
+    const cleanUrl = url.trim();
     const regExp =
-        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
+        /^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = cleanUrl.match(regExp);
+    return match && match[1].length === 11 ? match[1] : null;
 };
 
-// =========================================================================
-// VARIAN ANIMASI ULTRA SMOOTH (APPLE / iOS NATIVE FEEL)
-// =========================================================================
+// Helper Video: Menampilkan Player di Web & URL Teks Murni saat Dicetak ke PDF
+// Helper Video Bersih: Mencegah Duplikasi & Mencegah Video Terpotong
+const createVideoElement = (doc: Document, ytId: string) => {
+    const wrapper = doc.createElement("div");
+    wrapper.className = "my-6 w-full video-container-block";
+    wrapper.setAttribute("data-rendered-video", "true");
+
+    // 1. Tampilan Video Player di Web (Rasio 16:9 Murni Tanpa Double Wrapper)
+    const screenPlayer = doc.createElement("div");
+    screenPlayer.className = "w-full overflow-hidden rounded-2xl bg-black shadow-md no-print";
+
+    const newIframe = doc.createElement("iframe");
+    newIframe.setAttribute("src", `https://www.youtube.com/embed/${ytId}`);
+    newIframe.className = "w-full aspect-video border-0 block";
+    newIframe.setAttribute(
+        "allow",
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+    );
+    newIframe.setAttribute("allowfullscreen", "true");
+    screenPlayer.appendChild(newIframe);
+
+    // 2. Teks URL Polos untuk Cetak PDF
+    const printLinkBox = doc.createElement("p");
+    printLinkBox.className = "print-only-link text-center my-4 font-mono text-[9pt] text-[#8C5E43]";
+    printLinkBox.textContent = `https://www.youtube.com/watch?v=${ytId}`;
+
+    wrapper.appendChild(screenPlayer);
+    wrapper.appendChild(printLinkBox);
+    return wrapper;
+};
+
+const renderArticleHtml = (htmlContent: string) => {
+    if (!htmlContent) return "";
+    const cleanHtml = htmlContent.replace(/&nbsp;|\u00a0/g, " ");
+
+    if (typeof window === "undefined") return cleanHtml;
+
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(cleanHtml, "text/html");
+
+        // 1. Konversi iframe YouTube asli bawaan editor
+        const iframes = doc.querySelectorAll("iframe:not([data-processed])");
+        iframes.forEach((iframe) => {
+            if (iframe.closest("[data-rendered-video]")) return;
+            const src = iframe.getAttribute("src") || "";
+            const ytId = getYouTubeId(src);
+            if (ytId) {
+                const videoEl = createVideoElement(doc, ytId);
+                iframe.parentNode?.replaceChild(videoEl, iframe);
+            }
+        });
+
+        // 2. Konversi link <a> YouTube murni
+        const links = doc.querySelectorAll("a");
+        links.forEach((link) => {
+            if (link.closest("[data-rendered-video]")) return;
+            const href = link.getAttribute("href") || link.textContent || "";
+            const ytId = getYouTubeId(href);
+            if (ytId) {
+                const videoEl = createVideoElement(doc, ytId);
+                if (
+                    link.parentNode &&
+                    link.parentNode.nodeName === "P" &&
+                    link.parentNode.childNodes.length === 1
+                ) {
+                    link.parentNode.parentNode?.replaceChild(
+                        videoEl,
+                        link.parentNode,
+                    );
+                } else {
+                    link.parentNode?.replaceChild(videoEl, link);
+                }
+            }
+        });
+
+        // 3. Konversi paragraf <p> yang hanya berisi URL teks mentah YouTube
+        const paragraphs = doc.querySelectorAll("p");
+        paragraphs.forEach((p) => {
+            if (p.closest("[data-rendered-video]")) return;
+            const text = p.textContent?.trim() || "";
+            const ytId = getYouTubeId(text);
+            if (
+                ytId &&
+                (text.startsWith("http://") || text.startsWith("https://")) &&
+                p.children.length === 0
+            ) {
+                const videoEl = createVideoElement(doc, ytId);
+                p.parentNode?.replaceChild(videoEl, p);
+            }
+        });
+
+        return doc.body.innerHTML;
+    } catch (e) {
+        return cleanHtml;
+    }
+};
+
 const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -101,7 +196,7 @@ const itemVariants = {
         filter: "blur(0px)",
         transition: {
             duration: 0.85,
-            ease: [0.25, 1, 0.5, 1], // Kurva super lembut, landing sangat empuk
+            ease: [0.25, 1, 0.5, 1],
         },
     },
 };
@@ -153,7 +248,6 @@ export default function Show({
 
     return (
         <MainLayout title={article.title}>
-            {/* Meta Tags Lengkap untuk Social Sharing & SEO */}
             <Head>
                 <title>{`${article.title} - Abu Haidar`}</title>
                 {article.description && (
@@ -188,14 +282,48 @@ export default function Show({
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10 transform-gpu"
+                className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10 transform-gpu print:transform-none print:p-0"
             >
-                <div className="grid gap-10 lg:gap-12 lg:grid-cols-[1fr_340px]">
+                <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_300px]">
                     <article className="min-w-0">
-                        {/* Breadcrumbs */}
+                        {/* 1. KOP SURAT RESMI CETAK (Logo MainLayout) */}
+                        <div className="print-header hidden mb-6 pb-4 border-b-2 border-[#1D4533]">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src="/LOGO.png"
+                                        alt="Abu Haidar Logo"
+                                        style={{
+                                            filter: "brightness(0) saturate(100%) invert(20%) sepia(35%) saturate(1600%) hue-rotate(345deg) brightness(90%) contrast(92%)",
+                                        }}
+                                        className="h-10 w-auto object-contain"
+                                    />
+                                    <div className="h-8 w-[1.5px] bg-[#5E3122]/30"></div>
+                                    <div>
+                                        <div className="font-brand text-[15pt] font-bold leading-none text-[#1D4533]">
+                                            Abu Haidar
+                                        </div>
+                                        <div className="mt-1 text-[7.5pt] font-bold tracking-[0.14em] text-[#8C5E43] uppercase">
+                                            Media Islam & Dakwah
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="text-right text-[8pt] text-gray-500">
+                                    <p className="m-0 font-bold text-[#1D4533]">
+                                        Naskah Kajian Ilmiah
+                                    </p>
+                                    <p className="m-0 font-mono text-[7.5pt]">
+                                        {currentUrl}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Breadcrumbs (No Print) */}
                         <motion.nav
                             variants={itemVariants}
-                            className="mb-5 flex flex-wrap items-center gap-2 text-[11.5px] font-semibold text-[#8C5E43]"
+                            className="no-print mb-5 flex flex-wrap items-center gap-2 text-[11.5px] font-semibold text-[#8C5E43]"
                         >
                             <Link
                                 href="/home"
@@ -222,8 +350,11 @@ export default function Show({
                             </span>
                         </motion.nav>
 
-                        {/* Article Header */}
-                        <motion.header variants={itemVariants} className="mb-7">
+                        {/* 3. Article Header & Judul */}
+                        <motion.header
+                            variants={itemVariants}
+                            className="mb-7 print-article-header"
+                        >
                             {article.category && (
                                 <CategoryBadge>
                                     {article.category.name}
@@ -233,35 +364,42 @@ export default function Show({
                                 {article.title}
                             </h1>
 
-                            <div className="mt-4 flex flex-wrap items-center gap-3 border-y border-[#E8CEBC] py-3.5 text-[12px] sm:text-[12.5px] font-semibold text-[#5E3122]/75">
+                            <div className="mt-4 flex flex-wrap items-center gap-3 border-y border-[#E8CEBC] py-3.5 text-[12px] sm:text-[12.5px] font-semibold text-[#5E3122]/75 print-meta">
                                 <span className="flex items-center gap-1.5">
                                     <Calendar
                                         size={13}
-                                        className="text-[#8C5E43]"
+                                        className="text-[#8C5E43] no-print"
                                     />
                                     Ditulis: {formatDate(article.created_at)}
                                 </span>
-                                <span className="h-1 w-1 rounded-full bg-[#E8CEBC]"></span>
-                                <span className="italic text-[#8C5E43]">
+                                <span className="h-1 w-1 rounded-full bg-[#E8CEBC] no-print"></span>
+                                <span className="italic text-[#8C5E43] no-print">
                                     {timeAgo(article.updated_at)}
                                 </span>
                             </div>
                         </motion.header>
 
-                        {/* Media Sampul: YouTube Player / Image */}
+                        {/* 4. Media Sampul: YouTube Player / Image */}
                         <motion.div
                             variants={itemVariants}
-                            className="mb-8 overflow-hidden rounded-2xl border border-[#E8CEBC] bg-[#FAF1E8] shadow-xs"
+                            className="mb-8 overflow-hidden rounded-2xl border border-[#E8CEBC] bg-[#FAF1E8] shadow-xs print-cover"
                         >
                             {ytId ? (
-                                <div className="aspect-video w-full bg-black">
-                                    <iframe
-                                        src={`https://www.youtube.com/embed/${ytId}`}
-                                        title={article.title}
-                                        className="h-full w-full border-0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                    />
+                                <div>
+                                    <div className="aspect-video w-full bg-black no-print">
+                                        <iframe
+                                            src={`https://www.youtube.com/embed/${ytId}`}
+                                            title={article.title}
+                                            className="h-full w-full border-0 block"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        />
+                                    </div>
+
+                                    {/* Link Sampul YouTube Cetak/PDF (Teks URL Polos) */}
+                                    <p className="print-only-link text-center my-4 font-mono text-[9pt] text-[#8C5E43]">
+                                        {`https://www.youtube.com/watch?v=${ytId}`}
+                                    </p>
                                 </div>
                             ) : article.image ? (
                                 <div className="aspect-[2/1] w-full bg-[#FAF1E8] overflow-hidden">
@@ -274,7 +412,7 @@ export default function Show({
                             ) : null}
                         </motion.div>
 
-                        {/* Naskah Artikel (Selaras dengan Tone Warm Paper Sidebar & Editor) */}
+                        {/* 5. Naskah Artikel */}
                         <motion.div
                             variants={itemVariants}
                             id="article-content-body"
@@ -283,20 +421,27 @@ export default function Show({
                             <div
                                 className="article-content prose prose-sm sm:prose-base lg:prose-lg max-w-none text-[#4A2619] prose-headings:text-[#1D4533] prose-p:leading-relaxed prose-strong:text-[#1D4533] prose-blockquote:border-[#8C5E43] prose-blockquote:text-[#5E3122] prose-a:text-[#1D4533] [hyphens:none] [overflow-wrap:break-word] [word-break:normal]"
                                 dangerouslySetInnerHTML={{
-                                    __html: article.content
-                                        ? article.content.replace(
-                                              /&nbsp;|\u00a0/g,
-                                              " ",
-                                          )
-                                        : "",
+                                    __html: renderArticleHtml(article.content),
                                 }}
                             />
                         </motion.div>
 
-                        {/* Share & Download Toolbar */}
+                        {/* 6. Footer Resmi Cetak */}
+                        <div className="print-footer hidden mt-8 pt-4 border-t border-gray-300 text-center text-[8pt] text-gray-500">
+                            <p className="m-0 font-semibold text-[#1D4533]">
+                                © {new Date().getFullYear()} Abu Haidar Official
+                                • Media Dakwah & Risalah Islam Sunnah
+                            </p>
+                            <p className="m-0">
+                                Dokumen digital ini dicetak langsung dari portal
+                                resmi Abu Haidar.
+                            </p>
+                        </div>
+
+                        {/* 7. Share & Download Toolbar (No Print) */}
                         <motion.div
                             variants={itemVariants}
-                            className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[#E8CEBC] pt-6"
+                            className="no-print mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[#E8CEBC] pt-6"
                         >
                             <div className="flex flex-wrap items-center gap-3">
                                 <span className="text-[12px] font-bold text-[#1D4533] flex items-center gap-1.5">
@@ -412,11 +557,11 @@ export default function Show({
                             </motion.button>
                         </motion.div>
 
-                        {/* Artikel Terkait */}
+                        {/* 8. Artikel Terkait (No Print) */}
                         {relatedArticles.length > 0 && (
                             <motion.section
                                 variants={itemVariants}
-                                className="mt-12 sm:mt-14"
+                                className="no-print mt-12 sm:mt-14"
                             >
                                 <h2 className="mb-5 border-b border-[#E8CEBC] pb-3 font-brand text-[20px] font-bold text-[#1D4533]">
                                     Artikel Terkait
@@ -491,15 +636,17 @@ export default function Show({
                         )}
                     </article>
 
-                    {/* Sidebar Kanan (Kutipan + E-Book + Kategori + Artikel Populer) */}
-                    <motion.aside variants={itemVariants} className="space-y-6">
+                    {/* 9. Sidebar Kanan (No Print) */}
+                    <motion.aside
+                        variants={itemVariants}
+                        className="no-print space-y-6"
+                    >
                         <Sidebar
                             categories={categories}
                             quote={quote}
                             ebooks={ebooks}
                         />
 
-                        {/* Artikel Populer Card */}
                         {popularArticles.length > 0 && (
                             <section className="rounded-2xl border border-[#E8CEBC] bg-[#FAF1E8] p-5 shadow-sm">
                                 <h3 className="mb-4 border-b border-[#E8CEBC] pb-3 font-brand text-[15px] font-bold text-[#1D4533] flex items-center gap-2">

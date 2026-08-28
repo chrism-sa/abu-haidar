@@ -9,6 +9,8 @@ use App\Models\Ebook;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Artisan;
 
 class ArticleController extends Controller
 {
@@ -57,7 +59,6 @@ class ArticleController extends Controller
             }
         ])->orderByRaw('FIELD(id, 2, 3, 1, 4, 5, 6, 7, 8, 9)')->get();
 
-        // Mengambil data ebook terbit untuk sidebar
         $ebooks = Ebook::where('is_published', true)->latest()->take(3)->get();
 
         return Inertia::render('Article/Show', [
@@ -85,7 +86,7 @@ class ArticleController extends Controller
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'content' => 'required|string',
-            'image_file' => 'nullable|image|max:2048',
+            'image_file' => 'nullable|image|max:5120',
             'image_url' => 'nullable|url',
             'quote_type' => 'nullable|string|in:text,image,youtube',
             'quote_arabic' => 'nullable|string',
@@ -94,7 +95,7 @@ class ArticleController extends Controller
             'quote_font' => 'nullable|string',
             'quote_font_size' => 'nullable|numeric',
             'quote_color' => 'nullable|string',
-            'quote_image' => 'nullable|image|max:2048',
+            'quote_image' => 'nullable|image|max:5120',
             'quote_youtube_url' => 'nullable|url',
         ]);
 
@@ -131,7 +132,7 @@ class ArticleController extends Controller
                 'reference' => $request->quote_reference,
                 'font' => $request->input('quote_font', 'font-adobe-naskh'),
                 'font_size' => $request->input('quote_font_size', 36),
-                'line_height' => $request->input('quote_line_height', 2.4), // <-- Simpan nilai ini
+                'line_height' => $request->input('quote_line_height', 2.4),
                 'color' => $request->input('quote_color', '#1D4533'),
             ]);
         } elseif ($quoteType === 'image' && $request->hasFile('quote_image')) {
@@ -172,7 +173,7 @@ class ArticleController extends Controller
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'content' => 'required|string',
-            'image_file' => 'nullable|image|max:2048',
+            'image_file' => 'nullable|image|max:5120',
             'image_url' => 'nullable|url',
             'quote_type' => 'nullable|string|in:text,image,youtube',
             'quote_arabic' => 'nullable|string',
@@ -182,15 +183,28 @@ class ArticleController extends Controller
             'quote_font_size' => 'nullable|numeric',
             'quote_color' => 'nullable|string',
             'quote_line_height' => 'nullable|numeric',
-            'quote_image' => 'nullable|image|max:2048',
+            'quote_image' => 'nullable|image|max:5120',
             'quote_youtube_url' => 'nullable|url',
         ]);
 
-        // Update Gambar Sampul Utama
+        // Update Gambar Sampul Utama & Hapus File Lama Jika Diganti
         $imagePath = $article->image;
         if ($request->hasFile('image_file')) {
+            if ($article->image && str_starts_with($article->image, '/storage/')) {
+                $oldCover = str_replace('/storage/', '', $article->image);
+                if (Storage::disk('public')->exists($oldCover)) {
+                    Storage::disk('public')->delete($oldCover);
+                }
+            }
             $imagePath = '/storage/' . $request->file('image_file')->store('articles', 'public');
         } elseif ($request->filled('image_url')) {
+            // Jika berganti dari file lokal ke link YouTube / URL luar, hapus file lokal lamanya
+            if ($article->image && str_starts_with($article->image, '/storage/')) {
+                $oldCover = str_replace('/storage/', '', $article->image);
+                if (Storage::disk('public')->exists($oldCover)) {
+                    Storage::disk('public')->delete($oldCover);
+                }
+            }
             $imagePath = $request->image_url;
         }
 
@@ -212,13 +226,21 @@ class ArticleController extends Controller
 
         if ($quoteType === 'text') {
             if ($request->filled('quote_arabic')) {
+                // Hapus gambar lama pada quote jika sebelumnya tipe image
+                if ($quote && $quote->image && str_starts_with($quote->image, '/storage/')) {
+                    $oldQuoteImg = str_replace('/storage/', '', $quote->image);
+                    if (Storage::disk('public')->exists($oldQuoteImg)) {
+                        Storage::disk('public')->delete($oldQuoteImg);
+                    }
+                }
+
                 $quoteData = [
                     'arabic' => $request->quote_arabic,
                     'translation' => $request->quote_translation,
                     'reference' => $request->quote_reference,
                     'font' => $request->input('quote_font', 'font-adobe-naskh'),
                     'font_size' => $request->input('quote_font_size', 36),
-                    'line_height' => $request->input('quote_line_height', 2.4), // <-- Update nilai ini
+                    'line_height' => $request->input('quote_line_height', 2.4),
                     'color' => $request->input('quote_color', '#1D4533'),
                     'image' => null,
                 ];
@@ -229,11 +251,23 @@ class ArticleController extends Controller
                     $article->quotes()->create($quoteData);
                 }
             } elseif ($quote) {
+                if ($quote->image && str_starts_with($quote->image, '/storage/')) {
+                    $oldQuoteImg = str_replace('/storage/', '', $quote->image);
+                    if (Storage::disk('public')->exists($oldQuoteImg)) {
+                        Storage::disk('public')->delete($oldQuoteImg);
+                    }
+                }
                 $quote->delete();
             }
         } elseif ($quoteType === 'image') {
             $quoteImagePath = $quote?->image;
             if ($request->hasFile('quote_image')) {
+                if ($quote && $quote->image && str_starts_with($quote->image, '/storage/')) {
+                    $oldQuoteImg = str_replace('/storage/', '', $quote->image);
+                    if (Storage::disk('public')->exists($oldQuoteImg)) {
+                        Storage::disk('public')->delete($oldQuoteImg);
+                    }
+                }
                 $quoteImagePath = '/storage/' . $request->file('quote_image')->store('quotes', 'public');
             }
 
@@ -252,6 +286,13 @@ class ArticleController extends Controller
             }
         } elseif ($quoteType === 'youtube') {
             if ($request->filled('quote_youtube_url')) {
+                if ($quote && $quote->image && str_starts_with($quote->image, '/storage/')) {
+                    $oldQuoteImg = str_replace('/storage/', '', $quote->image);
+                    if (Storage::disk('public')->exists($oldQuoteImg)) {
+                        Storage::disk('public')->delete($oldQuoteImg);
+                    }
+                }
+
                 $quoteData = [
                     'image' => $request->quote_youtube_url,
                     'arabic' => null,
@@ -269,5 +310,49 @@ class ArticleController extends Controller
         }
 
         return redirect()->route('admin.articles.index')->with('success', 'Artikel berhasil diperbarui.');
+    }
+
+    public function uploadEditorMedia(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
+        ], [
+            'file.required' => 'File gambar wajib dipilih!',
+            'file.image' => 'File harus berupa gambar.',
+            'file.max' => 'Ukuran gambar maksimal 5 MB.',
+        ]);
+
+        try {
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $path = $file->store('articles/media', 'public');
+                $url = '/storage/' . $path;
+
+                return response()->json([
+                    'success' => true,
+                    'url' => $url,
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengunggah file: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'File gambar tidak ditemukan.'
+        ], 400);
+    }
+
+    public function cleanStorageImages()
+    {
+        try {
+            Artisan::call('storage:clean-images');
+            return redirect()->back()->with('success', 'File sampah di storage berhasil dibersihkan!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membersihkan storage: ' . $e->getMessage());
+        }
     }
 }
