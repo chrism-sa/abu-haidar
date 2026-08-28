@@ -75,24 +75,34 @@ const getYouTubeId = (url: string | null | undefined) => {
     return match && match[2].length === 11 ? match[2] : null;
 };
 
-// Motion Variants
+// =========================================================================
+// VARIAN ANIMASI ULTRA SMOOTH (APPLE / iOS NATIVE FEEL)
+// =========================================================================
 const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
         transition: {
-            staggerChildren: 0.1,
+            staggerChildren: 0.12,
             delayChildren: 0.05,
         },
     },
 };
 
 const itemVariants = {
-    hidden: { opacity: 0, y: 16 },
+    hidden: {
+        opacity: 0,
+        y: 12,
+        filter: "blur(4px)",
+    },
     visible: {
         opacity: 1,
         y: 0,
-        transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+        filter: "blur(0px)",
+        transition: {
+            duration: 0.85,
+            ease: [0.25, 1, 0.5, 1], // Kurva super lembut, landing sangat empuk
+        },
     },
 };
 
@@ -178,7 +188,7 @@ export default function Show({
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10"
+                className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10 transform-gpu"
             >
                 <div className="grid gap-10 lg:gap-12 lg:grid-cols-[1fr_340px]">
                     <article className="min-w-0">
@@ -295,8 +305,9 @@ export default function Show({
                                 </span>
                                 <div className="flex items-center gap-1.5">
                                     <motion.a
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.08, y: -2 }}
+                                        whileTap={{ scale: 0.94 }}
+                                        transition={{ duration: 0.2 }}
                                         href={shareLinks.whatsapp}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -306,8 +317,9 @@ export default function Show({
                                         <FaWhatsapp size={14} />
                                     </motion.a>
                                     <motion.a
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.08, y: -2 }}
+                                        whileTap={{ scale: 0.94 }}
+                                        transition={{ duration: 0.2 }}
                                         href={shareLinks.telegram}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -317,8 +329,9 @@ export default function Show({
                                         <FaTelegramPlane size={14} />
                                     </motion.a>
                                     <motion.a
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.08, y: -2 }}
+                                        whileTap={{ scale: 0.94 }}
+                                        transition={{ duration: 0.2 }}
                                         href={shareLinks.facebook}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -328,8 +341,9 @@ export default function Show({
                                         <FaFacebookF size={13} />
                                     </motion.a>
                                     <motion.a
-                                        whileHover={{ scale: 1.1, y: -2 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={{ scale: 1.08, y: -2 }}
+                                        whileTap={{ scale: 0.94 }}
+                                        transition={{ duration: 0.2 }}
                                         href={shareLinks.twitter}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -341,8 +355,9 @@ export default function Show({
 
                                     <div className="relative flex items-center">
                                         <motion.button
-                                            whileHover={{ scale: 1.1, y: -2 }}
-                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.08, y: -2 }}
+                                            whileTap={{ scale: 0.94 }}
+                                            transition={{ duration: 0.2 }}
                                             type="button"
                                             onClick={copyLinkToClipboard}
                                             className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF1E8] border border-[#E8CEBC] text-[#1D4533] transition hover:bg-[#1D4533] hover:text-[#F7EAE0] cursor-pointer shadow-2xs"
@@ -357,8 +372,8 @@ export default function Show({
                                                 <motion.span
                                                     initial={{
                                                         opacity: 0,
-                                                        y: 5,
-                                                        scale: 0.9,
+                                                        y: 6,
+                                                        scale: 0.92,
                                                     }}
                                                     animate={{
                                                         opacity: 1,
@@ -367,13 +382,14 @@ export default function Show({
                                                     }}
                                                     exit={{
                                                         opacity: 0,
-                                                        y: 5,
-                                                        scale: 0.9,
+                                                        y: 6,
+                                                        scale: 0.92,
                                                     }}
                                                     transition={{
-                                                        duration: 0.2,
+                                                        duration: 0.3,
+                                                        ease: [0.16, 1, 0.3, 1],
                                                     }}
-                                                    className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#1D4533] px-2.5 py-1 text-[10px] font-bold text-[#F7EAE0] shadow-sm flex items-center gap-1 pointer-events-none z-20"
+                                                    className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#1D4533] px-2.5 py-1 text-[10px] font-bold text-[#F7EAE0] shadow-md flex items-center gap-1 pointer-events-none z-20"
                                                 >
                                                     <Check size={11} /> Tautan
                                                     disalin!
@@ -387,6 +403,7 @@ export default function Show({
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.97 }}
+                                transition={{ duration: 0.2 }}
                                 type="button"
                                 onClick={handleDownloadPDF}
                                 className="inline-flex items-center gap-2 rounded-xl bg-[#1D4533] px-4 py-2 text-[12px] font-bold text-[#F7EAE0] transition hover:bg-[#143325] shadow-2xs cursor-pointer active:scale-95"
@@ -416,8 +433,11 @@ export default function Show({
                                         return (
                                             <motion.div
                                                 key={relArticle.id}
-                                                whileHover={{ y: -4 }}
-                                                transition={{ duration: 0.2 }}
+                                                whileHover={{ y: -3 }}
+                                                transition={{
+                                                    duration: 0.25,
+                                                    ease: [0.16, 1, 0.3, 1],
+                                                }}
                                                 className="h-full"
                                             >
                                                 <Link
@@ -434,7 +454,7 @@ export default function Show({
                                                                     alt={
                                                                         relArticle.title
                                                                     }
-                                                                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                                                    className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
                                                                 />
                                                             ) : (
                                                                 <div className="flex h-full w-full items-center justify-center text-[9px] font-bold text-[#5E3122]/40">
@@ -495,7 +515,10 @@ export default function Show({
                                             <motion.div
                                                 key={popArticle.id}
                                                 whileHover={{ x: 3 }}
-                                                transition={{ duration: 0.15 }}
+                                                transition={{
+                                                    duration: 0.2,
+                                                    ease: [0.16, 1, 0.3, 1],
+                                                }}
                                             >
                                                 <Link
                                                     href={`/artikel/${popArticle.slug}`}
