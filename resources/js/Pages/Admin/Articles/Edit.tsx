@@ -47,8 +47,8 @@ import toast, { Toaster } from "react-hot-toast";
 // =========================================================================
 
 // A. Font Family
-const FontStyle = Quill.import("attributors/style/font") as any;
-FontStyle.whitelist = [
+const FontAttributor = Quill.import("attributors/class/font") as any;
+FontAttributor.whitelist = [
     "helvetica",
     "times",
     "amiri",
@@ -59,7 +59,17 @@ FontStyle.whitelist = [
     "adobe-naskh",
     "al-jazeera",
 ];
-Quill.register(FontStyle, true);
+Quill.register(FontAttributor, true);
+
+const ARABIC_FONTS = [
+    { label: "Adobe Naskh", value: "font-adobe-naskh" },
+    { label: "Al Jazeera", value: "font-al-jazeera" },
+    { label: "Amiri (Standar Mushaf)", value: "font-amiri" },
+    { label: "Scheherazade New", value: "font-scheherazade" },
+    { label: "Cairo", value: "font-cairo" },
+    { label: "Tajawal", value: "font-tajawal" },
+    { label: "Almarai", value: "font-almarai" },
+];
 
 // B. Font Size (10px s.d. 64px)
 const SizeStyle = Quill.import("attributors/style/size") as any;
@@ -131,16 +141,6 @@ Quill.register(ColorStyle, true);
 
 const BackgroundStyle = Quill.import("attributors/style/background") as any;
 Quill.register(BackgroundStyle, true);
-
-const ARABIC_FONTS = [
-    { label: "Adobe Naskh", value: "font-adobe-naskh" },
-    { label: "Al Jazeera", value: "font-al-jazeera" },
-    { label: "Amiri (Standar Mushaf)", value: "font-amiri" },
-    { label: "Scheherazade New", value: "font-scheherazade" },
-    { label: "Cairo", value: "font-cairo" },
-    { label: "Tajawal", value: "font-tajawal" },
-    { label: "Almarai", value: "font-almarai" },
-];
 
 const getYouTubeId = (url: string | null | undefined) => {
     if (!url) return null;
@@ -1364,7 +1364,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                                 Adobe Naskh
                                             </option>
                                             <option value="scheherazade">
-                                                Scheherazade
+                                                Scheherazade New
                                             </option>
                                             <option value="cairo">Cairo</option>
                                             <option value="tajawal">

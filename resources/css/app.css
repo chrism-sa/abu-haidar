@@ -72,95 +72,103 @@
     font-style: normal;
     font-display: swap;
 }
-
 /* =========================================
-   2. CLASS HELPER FONT ARAB (Untuk Textarea & Preview)
+   CLASS HELPER FONT ARAB (Untuk Textarea & Preview)
 ========================================= */
-.font-amiri,
-.ql-font-amiri {
+.font-amiri {
     font-family: "Amiri", serif !important;
 }
-
-.font-adobe-naskh,
-.ql-font-adobe-naskh {
+.font-adobe-naskh {
     font-family: "AdobeNaskh", "adobe-naskh", serif !important;
 }
-
-.font-tajawal,
-.ql-font-tajawal {
+.font-tajawal {
     font-family: "Tajawal", sans-serif !important;
 }
-
-.font-cairo,
-.ql-font-cairo {
+.font-cairo {
     font-family: "Cairo", sans-serif !important;
 }
-
-.font-almarai,
-.ql-font-almarai {
+.font-almarai {
     font-family: "Almarai", sans-serif !important;
 }
-
-.font-scheherazade,
-.ql-font-scheherazade {
+.font-scheherazade {
     font-family: "Scheherazade New", serif !important;
 }
-
-.font-al-jazeera,
-.ql-font-al-jazeera {
+.font-al-jazeera {
     font-family: "Al Jazeera", "al-jazeera", sans-serif !important;
 }
 
+/* Dukungan Inline Style Quill (Format .ql-font-[value]) */
+.ql-font-helvetica {
+    font-family: "HelveticaCustom", sans-serif !important;
+}
+.ql-font-amiri {
+    font-family: "Amiri", serif !important;
+}
+.ql-font-adobe-naskh {
+    font-family: "AdobeNaskh", "adobe-naskh", serif !important;
+}
+.ql-font-scheherazade {
+    font-family: "Scheherazade New", serif !important;
+}
+.ql-font-cairo {
+    font-family: "Cairo", sans-serif !important;
+}
+.ql-font-tajawal {
+    font-family: "Tajawal", sans-serif !important;
+}
+.ql-font-almarai {
+    font-family: "Almarai", sans-serif !important;
+}
+.ql-font-al-jazeera {
+    font-family: "Al Jazeera", sans-serif !important;
+}
+.ql-font-times {
+    font-family: "Times New Roman", serif !important;
+}
+
 /* =========================================
-   3. DROPDOWN MAPPING QUILL (Label Toolbar)
+   LABEL DROPDOWN TOOLBAR QUILL
 ========================================= */
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="helvetica"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="helvetica"]::before {
     content: "Helvetica" !important;
-    font-family: "HelveticaCustom", sans-serif !important;
 }
-
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="amiri"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="amiri"]::before {
     content: "Amiri" !important;
     font-family: "Amiri", serif !important;
 }
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tajawal"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tajawal"]::before {
-    content: "Tajawal" !important;
-    font-family: "Tajawal", sans-serif !important;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="cairo"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="cairo"]::before {
-    content: "Cairo" !important;
-    font-family: "Cairo", sans-serif !important;
-}
-
-.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="almarai"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="almarai"]::before {
-    content: "Almarai" !important;
-    font-family: "Almarai", sans-serif !important;
-}
-
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="scheherazade"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="scheherazade"]::before {
-    content: "Scheherazade" !important;
+    content: "Scheherazade New" !important;
     font-family: "Scheherazade New", serif !important;
 }
-
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="adobe-naskh"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="adobe-naskh"]::before {
     content: "Adobe Naskh" !important;
     font-family: "AdobeNaskh", serif !important;
 }
-
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="cairo"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="cairo"]::before {
+    content: "Cairo" !important;
+}
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tajawal"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tajawal"]::before {
+    content: "Tajawal" !important;
+}
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="almarai"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="almarai"]::before {
+    content: "Almarai" !important;
+}
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="al-jazeera"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="al-jazeera"]::before {
     content: "Al Jazeera" !important;
-    font-family: "Al Jazeera", sans-serif !important;
 }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times"]::before {
+    content: "Times New Roman" !important;
+}
+
 /* =========================================
    1. SETTING GLOBAL TEKS ARAB (RTL)
 ========================================= */
