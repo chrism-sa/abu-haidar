@@ -41,7 +41,6 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "@/Utils/cropImage";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
-
 // =========================================================================
 // 1. REGISTRASI ATTRIBUTOR QUILL LENGKAP
 // =========================================================================
@@ -380,12 +379,13 @@ export default function ArticleCreate({ categories }: CreateProps) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(cleanHtml, "text/html");
 
-            // Format Gambar Pratinjau
+            // Format Gambar Pratinjau di Naskah
             const images = doc.querySelectorAll("img");
             images.forEach((img) => {
                 img.setAttribute("loading", "lazy");
+                // Ganti object-cover menjadi object-contain dan tambahkan properti rendering warna asli
                 img.className =
-                    "mx-auto block h-auto max-h-[480px] w-auto max-w-full rounded-2xl border border-[#E8CEBC] object-cover my-6 shadow-2xs";
+                    "mx-auto block h-auto max-h-[520px] w-auto max-w-full rounded-2xl border border-[#E8CEBC] object-contain my-6 shadow-2xs [image-rendering:-webkit-optimize-contrast]";
             });
 
             // Format Iframe YouTube Pratinjau
@@ -436,6 +436,132 @@ export default function ArticleCreate({ categories }: CreateProps) {
         quote_line_height: Number(data.quote_line_height),
         quote_color: data.quote_color,
     }));
+
+    // 1. Tambahkan handler paste di dalam komponen (setelah deklarasi quillRef)
+    useEffect(() => {
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+
+        const handlePaste = async (e: ClipboardEvent) => {
+            const clipboardData = e.clipboardData;
+            if (!clipboardData) return;
+
+            const imageItem = Array.from(clipboardData.items).find((item) =>
+                item.type.startsWith("image/"),
+            );
+
+            // Kalau bukan gambar, biarkan Quill menangani paste normal
+            if (!imageItem) return;
+
+            // Hentikan paste gambar bawaan Quill
+            e.preventDefault();
+
+            const file = imageItem.getAsFile();
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("Ukuran gambar maksimal 5 MB!");
+                return;
+            }
+
+            const toastId = toast.loading("Mengunggah gambar hasil paste...");
+
+            const formData = new FormData();
+
+            formData.append("file", file, `pasted-image-${Date.now()}.png`);
+
+            try {
+                const response = await axios.post(
+                    "/admin/editor/upload-media",
+                    formData,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                    },
+                );
+
+                if (!response.data?.success) {
+                    toast.error(
+                        response.data?.message || "Gagal mengunggah gambar.",
+                        {
+                            id: toastId,
+                        },
+                    );
+                    return;
+                }
+
+                const editor = quillRef.current?.getEditor();
+
+                if (!editor) {
+                    toast.error("Editor tidak ditemukan.", {
+                        id: toastId,
+                    });
+                    return;
+                }
+
+                const range = editor.getSelection(true);
+                const index = range ? range.index : editor.getLength();
+
+                editor.insertEmbed(index, "image", response.data.url);
+
+                editor.setSelection(index + 1, 0);
+
+                toast.success("Gambar berhasil disisipkan!", {
+                    id: toastId,
+                });
+            } catch (err) {
+                console.error("Paste upload error:", err);
+
+                toast.error("Gagal mengunggah gambar hasil paste.", {
+                    id: toastId,
+                });
+            }
+        };
+
+        const editorElement = quill.root;
+
+        // Capture phase supaya event ditangkap
+        // sebelum handler paste milik Quill.
+        editorElement.addEventListener("paste", handlePaste, true);
+
+        return () => {
+            editorElement.removeEventListener("paste", handlePaste, true);
+        };
+    }, []);
+
+    // Tambahkan ini di dalam useEffect setelah deklarasi quillRef untuk mengatur ukuran gambar via klik
+    useEffect(() => {
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+
+        const handleImageClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target && target.tagName === "IMG") {
+                const currentWidth =
+                    target.style.width ||
+                    target.getAttribute("width") ||
+                    "100%";
+                const newWidth = prompt(
+                    "Masukkan ukuran lebar gambar secara lengkap (contoh: 300px, 50%, atau 100%) :",
+                    currentWidth,
+                );
+                if (newWidth !== null) {
+                    target.style.width = newWidth;
+                    target.removeAttribute("width");
+                    target.removeAttribute("height");
+                }
+            }
+        };
+
+        const quillRoot = quill.root;
+        quillRoot.addEventListener("click", handleImageClick);
+
+        return () => {
+            quillRoot.removeEventListener("click", handleImageClick);
+        };
+    }, [quillRef]);
 
     useEffect(() => {
         if (imageSourceType === "file" && data.image_file) {

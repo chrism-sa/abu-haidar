@@ -117,20 +117,30 @@ export default function Home({
                             </div>
                             <Link
                                 href={`/artikel/${heroArticle.slug}`}
-                                className="relative min-h-[240px] sm:min-h-[300px] lg:min-h-full w-full overflow-hidden block bg-[#F2E0D2] order-1 lg:order-2 border-b lg:border-b-0 lg:border-l border-[#E6CEBC]"
+                                className="relative min-h-[260px] sm:min-h-[320px] lg:min-h-full w-full overflow-hidden flex items-center justify-center bg-[#F2E0D2]/50 order-1 lg:order-2 border-b lg:border-b-0 lg:border-l border-[#E6CEBC] p-4 sm:p-6"
                             >
                                 {heroImageUrl ? (
-                                    <img
-                                        src={heroImageUrl}
-                                        alt={heroArticle.title}
-                                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                                    />
+                                    <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-2xl">
+                                        {/* Background blur samar untuk mengisi area kosong jika foto bukan 16:9 */}
+                                        <img
+                                            src={heroImageUrl}
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="absolute inset-0 h-full w-full object-cover blur-xl opacity-30 scale-110"
+                                        />
+                                        {/* Gambar utama tampil utuh tanpa terpotong */}
+                                        <img
+                                            src={heroImageUrl}
+                                            alt={heroArticle.title}
+                                            className="relative max-h-[380px] w-auto max-w-full rounded-xl object-contain shadow-sm transition-transform duration-700 ease-out group-hover:scale-102"
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="flex h-full w-full items-center justify-center text-[12px] font-bold tracking-wider text-[#5E3122]/40">
                                         GAMBAR UTAMA
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#1D4533]/40 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#1D4533]/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
 
                                 {heroYtId && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

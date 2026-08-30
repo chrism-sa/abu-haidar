@@ -573,3 +573,18 @@ input:-webkit-autofill:active {
         margin: 18mm 15mm 18mm 15mm;
     }
 }
+
+/* =========================================
+   STYLING GAMBAR DALAM QUILL EDITOR
+========================================= */
+.ql-editor img {
+    cursor: pointer !important;
+    transition: outline 0.2s ease;
+    border-radius: 12px;
+}
+
+/* Efek garis halus saat gambar diklik/disorot di editor */
+.ql-editor img:hover {
+    outline: 2px dashed #1D4533;
+    outline-offset: 4px;
+}
