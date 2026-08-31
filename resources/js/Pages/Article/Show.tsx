@@ -84,7 +84,8 @@ const createVideoElement = (doc: Document, ytId: string) => {
 
     // 1. Tampilan Video Player di Web (Rasio 16:9 Murni Tanpa Double Wrapper)
     const screenPlayer = doc.createElement("div");
-    screenPlayer.className = "w-full overflow-hidden rounded-2xl bg-black shadow-md no-print";
+    screenPlayer.className =
+        "w-full overflow-hidden rounded-2xl bg-black shadow-md no-print";
 
     const newIframe = doc.createElement("iframe");
     newIframe.setAttribute("src", `https://www.youtube.com/embed/${ytId}`);
@@ -98,7 +99,8 @@ const createVideoElement = (doc: Document, ytId: string) => {
 
     // 2. Teks URL Polos untuk Cetak PDF
     const printLinkBox = doc.createElement("p");
-    printLinkBox.className = "print-only-link text-center my-4 font-mono text-[9pt] text-[#8C5E43]";
+    printLinkBox.className =
+        "print-only-link text-center my-4 font-mono text-[9pt] text-[#8C5E43]";
     printLinkBox.textContent = `https://www.youtube.com/watch?v=${ytId}`;
 
     wrapper.appendChild(screenPlayer);
@@ -116,7 +118,15 @@ const renderArticleHtml = (htmlContent: string) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(cleanHtml, "text/html");
 
-        // 1. Konversi iframe YouTube asli bawaan editor
+        // 1. Format & Optimalisasi Gambar di Halaman Show (Anti-Pecah & Tampil HD/Lebih Besar)
+        const images = doc.querySelectorAll("img");
+        images.forEach((img) => {
+            img.setAttribute("loading", "lazy");
+            img.className =
+                "mx-auto block h-auto max-h-[700px] w-auto max-w-full rounded-2xl border border-[#E8CEBC] object-contain my-6 shadow-xs [image-rendering:crisp-edges]";
+        });
+
+        // 2. Konversi iframe YouTube asli bawaan editor
         const iframes = doc.querySelectorAll("iframe:not([data-processed])");
         iframes.forEach((iframe) => {
             if (iframe.closest("[data-rendered-video]")) return;
@@ -128,7 +138,7 @@ const renderArticleHtml = (htmlContent: string) => {
             }
         });
 
-        // 2. Konversi link <a> YouTube murni
+        // 3. Konversi link <a> YouTube murni
         const links = doc.querySelectorAll("a");
         links.forEach((link) => {
             if (link.closest("[data-rendered-video]")) return;
@@ -151,7 +161,7 @@ const renderArticleHtml = (htmlContent: string) => {
             }
         });
 
-        // 3. Konversi paragraf <p> yang hanya berisi URL teks mentah YouTube
+        // 4. Konversi paragraf <p> yang hanya berisi URL teks mentah YouTube
         const paragraphs = doc.querySelectorAll("p");
         paragraphs.forEach((p) => {
             if (p.closest("[data-rendered-video]")) return;

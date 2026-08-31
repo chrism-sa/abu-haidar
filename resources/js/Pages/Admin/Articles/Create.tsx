@@ -267,34 +267,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
-    // Handler Buka File Gambar untuk Disisipkan ke Naskah
-    const handleTriggerContentImage = () => {
-        const input = document.createElement("input");
-        input.setAttribute("type", "file");
-        input.setAttribute(
-            "accept",
-            "image/png, image/jpeg, image/jpg, image/webp",
-        );
-        input.click();
-
-        input.onchange = () => {
-            const file = input.files ? input.files[0] : null;
-            if (!file) return;
-
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error("Ukuran gambar maksimal 5 MB!");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = () => {
-                setSelectedEditorRawImage(reader.result as string);
-                setEditorCropModalOpen(true);
-            };
-            reader.readAsDataURL(file);
-        };
-    };
-
     // Handler Selesai Crop Gambar Naskah -> Upload ke Server
     const handleEditorCropComplete = async (croppedBlob: Blob) => {
         setEditorCropModalOpen(false);
@@ -368,7 +340,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
-    // Parser Pratinjau Naskah
     const renderArticleHtml = (htmlContent: string) => {
         if (!htmlContent) return "";
         const cleanHtml = htmlContent.replace(/&nbsp;|\u00a0/g, " ");
@@ -379,39 +350,67 @@ export default function ArticleCreate({ categories }: CreateProps) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(cleanHtml, "text/html");
 
-            // Format Gambar Pratinjau di Naskah
+            // 1. Format & Optimalisasi Gambar di Naskah (Anti-Pecah & Tampil HD/Lebih Besar)
             const images = doc.querySelectorAll("img");
             images.forEach((img) => {
                 img.setAttribute("loading", "lazy");
-                // Ganti object-cover menjadi object-contain dan tambahkan properti rendering warna asli
+                // Menggunakan crisp-edges untuk mempertajam teks/grafis dan memperbesar batas maksimal tinggi (max-h-[700px])
                 img.className =
-                    "mx-auto block h-auto max-h-[520px] w-auto max-w-full rounded-2xl border border-[#E8CEBC] object-contain my-6 shadow-2xs [image-rendering:-webkit-optimize-contrast]";
+                    "mx-auto block h-auto max-h-[700px] w-auto max-w-full rounded-2xl border border-[#E8CEBC] object-contain my-6 shadow-xs [image-rendering:crisp-edges]";
             });
 
-            // Format Iframe YouTube Pratinjau
-            const iframes = doc.querySelectorAll("iframe");
+            // 2. Konversi iframe YouTube asli bawaan editor
+            const iframes = doc.querySelectorAll(
+                "iframe:not([data-processed])",
+            );
             iframes.forEach((iframe) => {
+                if (iframe.closest("[data-rendered-video]")) return;
                 const src = iframe.getAttribute("src") || "";
                 const ytId = getYouTubeId(src);
                 if (ytId) {
-                    const wrapper = doc.createElement("div");
-                    wrapper.className =
-                        "my-6 w-full overflow-hidden rounded-2xl bg-black shadow-md";
+                    const videoEl = createVideoElement(doc, ytId);
+                    iframe.parentNode?.replaceChild(videoEl, iframe);
+                }
+            });
 
-                    const newIframe = doc.createElement("iframe");
-                    newIframe.setAttribute(
-                        "src",
-                        `https://www.youtube.com/embed/${ytId}`,
-                    );
-                    newIframe.className = "w-full aspect-video border-0 block";
-                    newIframe.setAttribute(
-                        "allow",
-                        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
-                    );
-                    newIframe.setAttribute("allowfullscreen", "true");
+            // 3. Konversi link <a> YouTube murni
+            const links = doc.querySelectorAll("a");
+            links.forEach((link) => {
+                if (link.closest("[data-rendered-video]")) return;
+                const href =
+                    link.getAttribute("href") || link.textContent || "";
+                const ytId = getYouTubeId(href);
+                if (ytId) {
+                    const videoEl = createVideoElement(doc, ytId);
+                    if (
+                        link.parentNode &&
+                        link.parentNode.nodeName === "P" &&
+                        link.parentNode.childNodes.length === 1
+                    ) {
+                        link.parentNode.parentNode?.replaceChild(
+                            videoEl,
+                            link.parentNode,
+                        );
+                    } else {
+                        link.parentNode?.replaceChild(videoEl, link);
+                    }
+                }
+            });
 
-                    wrapper.appendChild(newIframe);
-                    iframe.parentNode?.replaceChild(wrapper, iframe);
+            // 4. Konversi paragraf <p> yang hanya berisi URL teks mentah YouTube
+            const paragraphs = doc.querySelectorAll("p");
+            paragraphs.forEach((p) => {
+                if (p.closest("[data-rendered-video]")) return;
+                const text = p.textContent?.trim() || "";
+                const ytId = getYouTubeId(text);
+                if (
+                    ytId &&
+                    (text.startsWith("http://") ||
+                        text.startsWith("https://")) &&
+                    p.children.length === 0
+                ) {
+                    const videoEl = createVideoElement(doc, ytId);
+                    p.parentNode?.replaceChild(videoEl, p);
                 }
             });
 
@@ -437,7 +436,44 @@ export default function ArticleCreate({ categories }: CreateProps) {
         quote_color: data.quote_color,
     }));
 
-    // 1. Tambahkan handler paste di dalam komponen (setelah deklarasi quillRef)
+    // 1. Validasi saat klik tombol upload foto di naskah
+    const handleTriggerContentImage = () => {
+        const input = document.createElement("input");
+        input.setAttribute("type", "file");
+        input.setAttribute(
+            "accept",
+            "image/png, image/jpeg, image/jpg, image/webp",
+        );
+        input.click();
+
+        input.onchange = () => {
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+
+            // 👉 DIPERKETAT: Naikkan batas minimal jadi 200 KB supaya ukuran 107 KB otomatis tertolak!
+            if (file.size < 200 * 1024) {
+                toast.error(
+                    "❌ Gambar artikel terlalu kecil / kurang dari 200 KB! Mohon gunakan gambar beresolusi tinggi (HD) agar teks/kitab tidak pecah.",
+                    { duration: 6000 }
+                );
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("Ukuran gambar maksimal 5 MB!");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                setSelectedEditorRawImage(reader.result as string);
+                setEditorCropModalOpen(true);
+            };
+            reader.readAsDataURL(file);
+        };
+    };
+
+    // 2. Validasi saat melakukan Paste gambar di naskah
     useEffect(() => {
         const quill = quillRef.current?.getEditor();
         if (!quill) return;
@@ -450,24 +486,30 @@ export default function ArticleCreate({ categories }: CreateProps) {
                 item.type.startsWith("image/"),
             );
 
-            // Kalau bukan gambar, biarkan Quill menangani paste normal
             if (!imageItem) return;
 
-            // Hentikan paste gambar bawaan Quill
             e.preventDefault();
 
             const file = imageItem.getAsFile();
             if (!file) return;
+
+            // 👉 DIPERKETAT: Naikkan batas minimal jadi 200 KB
+            if (file.size < 200 * 1024) {
+                toast.error(
+                    "❌ Gambar hasil paste terlalu kecil (< 200 KB)! Mohon gunakan gambar beresolusi tinggi (HD) agar tidak pecah.",
+                    { duration: 6000 }
+                );
+                return;
+            }
 
             if (file.size > 5 * 1024 * 1024) {
                 toast.error("Ukuran gambar maksimal 5 MB!");
                 return;
             }
 
-            const toastId = toast.loading("Mengunggah gambar hasil paste...");
+            const toastId = toast.loading("Mengunggah gambar HD hasil paste...");
 
             const formData = new FormData();
-
             formData.append("file", file, `pasted-image-${Date.now()}.png`);
 
             try {
@@ -485,19 +527,14 @@ export default function ArticleCreate({ categories }: CreateProps) {
                 if (!response.data?.success) {
                     toast.error(
                         response.data?.message || "Gagal mengunggah gambar.",
-                        {
-                            id: toastId,
-                        },
+                        { id: toastId },
                     );
                     return;
                 }
 
                 const editor = quillRef.current?.getEditor();
-
                 if (!editor) {
-                    toast.error("Editor tidak ditemukan.", {
-                        id: toastId,
-                    });
+                    toast.error("Editor tidak ditemukan.", { id: toastId });
                     return;
                 }
 
@@ -505,25 +542,16 @@ export default function ArticleCreate({ categories }: CreateProps) {
                 const index = range ? range.index : editor.getLength();
 
                 editor.insertEmbed(index, "image", response.data.url);
-
                 editor.setSelection(index + 1, 0);
 
-                toast.success("Gambar berhasil disisipkan!", {
-                    id: toastId,
-                });
+                toast.success("Gambar HD berhasil disisipkan!", { id: toastId });
             } catch (err) {
                 console.error("Paste upload error:", err);
-
-                toast.error("Gagal mengunggah gambar hasil paste.", {
-                    id: toastId,
-                });
+                toast.error("Gagal mengunggah gambar hasil paste.", { id: toastId });
             }
         };
 
         const editorElement = quill.root;
-
-        // Capture phase supaya event ditangkap
-        // sebelum handler paste milik Quill.
         editorElement.addEventListener("paste", handlePaste, true);
 
         return () => {
