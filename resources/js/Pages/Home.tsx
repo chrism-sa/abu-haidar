@@ -76,80 +76,78 @@ export default function Home({
     return (
         <MainLayout title="Beranda">
             <div className="mx-auto max-w-[1140px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-                {/* HERO SECTION (KREM MATANG #FAF1E8) */}
+                {/* HERO SECTION (KREM MATANG #f6e7d8) */}
                 {heroArticle ? (
                     <motion.section
                         initial="hidden"
                         animate="visible"
                         variants={fadeUp}
-                        className="group mb-10 sm:mb-14 overflow-hidden rounded-3xl bg-[#FAF1E8] border border-[#E6CEBC] shadow-xs transition-all duration-300 hover:shadow-md hover:border-[#1D4533]/40"
+                        className="group mb-10 sm:mb-14 overflow-hidden rounded-3xl bg-[#f6e7d8] border border-[#E6CEBC] shadow-sm transition-all duration-300 hover:shadow-md hover:border-[#1D4533]/40 p-4 sm:p-8 lg:p-10"
                     >
-                        <div className="grid lg:grid-cols-[1.15fr_1fr] items-stretch">
-                            <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12 order-2 lg:order-1 bg-[#FAF1E8]">
-                                {heroArticle.category && (
-                                    <div>
-                                        <CategoryBadge>
-                                            {heroArticle.category.name}
-                                        </CategoryBadge>
+                        {/* Gambar Utama: Tinggi disesuaikan responsif (h-[200px] di HP agar tidak makan tempat) */}
+                        <Link
+                            href={`/artikel/${heroArticle.slug}`}
+                            className="relative mb-4 sm:mb-6 block h-[200px] sm:h-[350px] lg:h-[460px] w-full overflow-hidden rounded-2xl bg-[#F2E0D2] border border-[#E6CEBC]/80 shadow-inner"
+                        >
+                            {heroImageUrl ? (
+                                <img
+                                    src={heroImageUrl}
+                                    alt={heroArticle.title}
+                                    className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-[12px] font-bold tracking-wider text-[#5E3122]/40">
+                                    GAMBAR UTAMA
+                                </div>
+                            )}
+                            
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80" />
+
+                            {heroYtId && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-black/60 backdrop-blur-xs text-white shadow-xl transition-transform duration-500 group-hover:scale-110 group-hover:bg-red-600">
+                                        <FaYoutube size={24} />
                                     </div>
-                                )}
-                                <Link href={`/artikel/${heroArticle.slug}`}>
-                                    <h1 className="mt-4 font-brand text-[24px] sm:text-[30px] lg:text-[36px] font-bold leading-[1.2] text-[#1D4533] transition-colors group-hover:text-[#5E3122]">
-                                        {heroArticle.title}
-                                    </h1>
-                                </Link>
-                                <p className="mt-3.5 text-[13.5px] sm:text-[14.5px] leading-relaxed text-[#5E3122]/80 line-clamp-3">
-                                    {heroArticle.description}
-                                </p>
-                                <div className="mt-7 flex flex-wrap items-center gap-4">
-                                    <Link
-                                        href={`/artikel/${heroArticle.slug}`}
-                                        className="inline-flex w-fit items-center gap-2.5 rounded-full bg-[#1D4533] px-6 py-3 text-[12.5px] sm:text-[13px] font-bold tracking-wide text-[#F7EAE0] transition-all hover:bg-[#143325] hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#1D4533]/20"
-                                    >
-                                        <span>Baca Artikel Utama</span>
-                                        <ArrowRight size={15} />
-                                    </Link>
-                                    <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#8C5E43]">
-                                        <Calendar size={13} />
-                                        {formatDate(heroArticle.created_at)}
+                                </div>
+                            )}
+
+                            {heroArticle.category && (
+                                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
+                                    <span className="inline-block rounded-full bg-[#1D4533]/90 backdrop-blur-md px-3 py-0.5 sm:px-3.5 sm:py-1 text-[10px] sm:text-[11px] font-bold tracking-wide text-[#F7EAE0] shadow-md border border-white/20">
+                                        {heroArticle.category.name}
                                     </span>
                                 </div>
-                            </div>
-                            <Link
-                                href={`/artikel/${heroArticle.slug}`}
-                                className="relative min-h-[260px] sm:min-h-[320px] lg:min-h-full w-full overflow-hidden flex items-center justify-center bg-[#F2E0D2]/50 order-1 lg:order-2 border-b lg:border-b-0 lg:border-l border-[#E6CEBC] p-4 sm:p-6"
-                            >
-                                {heroImageUrl ? (
-                                    <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-2xl">
-                                        {/* Background blur samar untuk mengisi area kosong jika foto bukan 16:9 */}
-                                        <img
-                                            src={heroImageUrl}
-                                            alt=""
-                                            aria-hidden="true"
-                                            className="absolute inset-0 h-full w-full object-cover blur-xl opacity-30 scale-110"
-                                        />
-                                        {/* Gambar utama tampil utuh tanpa terpotong */}
-                                        <img
-                                            src={heroImageUrl}
-                                            alt={heroArticle.title}
-                                            className="relative max-h-[380px] w-auto max-w-full rounded-xl object-contain shadow-sm transition-transform duration-700 ease-out group-hover:scale-102"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="flex h-full w-full items-center justify-center text-[12px] font-bold tracking-wider text-[#5E3122]/40">
-                                        GAMBAR UTAMA
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#1D4533]/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+                            )}
+                        </Link>
 
-                                {heroYtId && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 backdrop-blur-xs text-white shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:bg-red-600">
-                                            <FaYoutube size={26} />
-                                        </div>
-                                    </div>
-                                )}
+                        {/* Konten Teks */}
+                        <div className="flex flex-col px-1 sm:px-4">
+                            {/* Judul: Ukuran disesuaikan agar tidak terlalu memakan tempat di HP */}
+                            <Link href={`/artikel/${heroArticle.slug}`}>
+                                <h1 className="font-brand text-[18px] sm:text-[28px] lg:text-[40px] font-bold leading-[1.25] text-[#1D4533] transition-colors group-hover:text-[#5E3122] break-words">
+                                    {heroArticle.title}
+                                </h1>
                             </Link>
+                            
+                            {/* Deskripsi: Batasi line-clamp di HP agar ringkas */}
+                            <p className="mt-2.5 sm:mt-3.5 text-[12.5px] sm:text-[15px] leading-relaxed text-[#5E3122]/80 line-clamp-2">
+                                {heroArticle.description}
+                            </p>
+                            
+                            <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4 border-t border-[#E6CEBC]/60 pt-4 sm:pt-5">
+                                <Link
+                                    href={`/artikel/${heroArticle.slug}`}
+                                    className="inline-flex items-center gap-2 rounded-full bg-[#1D4533] px-5 py-2.5 sm:px-6 sm:py-3 text-[11.5px] sm:text-[13px] font-bold tracking-wide text-[#F7EAE0] transition-all hover:bg-[#143325] shadow-md shadow-[#1D4533]/20"
+                                >
+                                    <span>Baca Artikel Utama</span>
+                                    <ArrowRight size={14} />
+                                </Link>
+                                
+                                <span className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-semibold text-[#8C5E43]">
+                                    <Calendar size={12} />
+                                    {formatDate(heroArticle.created_at)}
+                                </span>
+                            </div>
                         </div>
                     </motion.section>
                 ) : (
