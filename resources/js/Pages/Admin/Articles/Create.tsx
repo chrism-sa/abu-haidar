@@ -454,7 +454,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
             if (file.size < 200 * 1024) {
                 toast.error(
                     "❌ Gambar artikel terlalu kecil / kurang dari 200 KB! Mohon gunakan gambar beresolusi tinggi (HD) agar teks/kitab tidak pecah.",
-                    { duration: 6000 }
+                    { duration: 6000 },
                 );
                 return;
             }
@@ -472,6 +472,36 @@ export default function ArticleCreate({ categories }: CreateProps) {
             reader.readAsDataURL(file);
         };
     };
+
+    // Memantau klik kursor dan teks yang diblok agar toolbar langsung menyesuaikan formatnya secara real-time
+    useEffect(() => {
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+
+        const handleSelectionChange = (range: any) => {
+            if (!range) return;
+            try {
+                let formats = {};
+                if (range.length > 0) {
+                    // Jika teks sedang diblok/disorot
+                    formats = quill.getFormat(range.index, range.length) || {};
+                    if (Object.keys(formats).length === 0) {
+                        formats = quill.getFormat(range.index, 1) || {};
+                    }
+                } else {
+                    // Jika hanya klik kursor biasa
+                    formats = quill.getFormat(range.index, 0) || {};
+                }
+                setActiveFormats(formats);
+            } catch (err) {}
+        };
+
+        quill.on("selection-change", handleSelectionChange);
+
+        return () => {
+            quill.off("selection-change", handleSelectionChange);
+        };
+    }, []);
 
     // 2. Validasi saat melakukan Paste gambar di naskah
     useEffect(() => {
@@ -497,7 +527,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
             if (file.size < 200 * 1024) {
                 toast.error(
                     "❌ Gambar hasil paste terlalu kecil (< 200 KB)! Mohon gunakan gambar beresolusi tinggi (HD) agar tidak pecah.",
-                    { duration: 6000 }
+                    { duration: 6000 },
                 );
                 return;
             }
@@ -507,7 +537,9 @@ export default function ArticleCreate({ categories }: CreateProps) {
                 return;
             }
 
-            const toastId = toast.loading("Mengunggah gambar HD hasil paste...");
+            const toastId = toast.loading(
+                "Mengunggah gambar HD hasil paste...",
+            );
 
             const formData = new FormData();
             formData.append("file", file, `pasted-image-${Date.now()}.png`);
@@ -544,10 +576,14 @@ export default function ArticleCreate({ categories }: CreateProps) {
                 editor.insertEmbed(index, "image", response.data.url);
                 editor.setSelection(index + 1, 0);
 
-                toast.success("Gambar HD berhasil disisipkan!", { id: toastId });
+                toast.success("Gambar HD berhasil disisipkan!", {
+                    id: toastId,
+                });
             } catch (err) {
                 console.error("Paste upload error:", err);
-                toast.error("Gagal mengunggah gambar hasil paste.", { id: toastId });
+                toast.error("Gagal mengunggah gambar hasil paste.", {
+                    id: toastId,
+                });
             }
         };
 
@@ -665,6 +701,52 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
+    // Otomatis bersihkan format di baris baru saat Enter ditekan (via text-change)
+    useEffect(() => {
+        const quill = quillRef.current?.getEditor();
+        if (!quill) return;
+
+        const handleTextChange = (delta: any, oldDelta: any, source: string) => {
+            if (source !== "user") return;
+
+            // Cek apakah ada operasi insert newline (\n) yang menandakan tombol Enter ditekan
+            let hasNewline = false;
+            delta.ops.forEach((op: any) => {
+                if (typeof op.insert === "string" && op.insert.includes("\n")) {
+                    hasNewline = true;
+                }
+            });
+
+            if (hasNewline) {
+                setTimeout(() => {
+                    const range = quill.getSelection();
+                    if (range) {
+                        // Bersihkan format inline pada baris baru tersebut
+                        quill.formatText(range.index, 0, {
+                            bold: false,
+                            italic: false,
+                            underline: false,
+                            strike: false,
+                            color: false,
+                            background: false,
+                            size: false,
+                            font: false,
+                            letterSpacing: false,
+                            lineHeight: false,
+                        });
+                        setActiveFormats({});
+                    }
+                }, 10);
+            }
+        };
+
+        quill.on("text-change", handleTextChange);
+
+        return () => {
+            quill.off("text-change", handleTextChange);
+        };
+    }, []);
+    
     const quillModules = useMemo(
         () => ({
             toolbar: false,
@@ -2053,9 +2135,6 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             if (errors.content)
                                                 clearErrors("content");
                                         }}
-                                        onChangeSelection={
-                                            handleChangeSelection
-                                        }
                                         modules={quillModules}
                                         placeholder="Mula menulis teks artikel kajian di sini..."
                                     />
