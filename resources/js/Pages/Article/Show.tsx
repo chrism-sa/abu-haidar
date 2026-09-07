@@ -182,14 +182,13 @@ const renderArticleHtml = (htmlContent: string) => {
         return cleanHtml;
     }
 };
-
 const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
         transition: {
-            staggerChildren: 0.12,
-            delayChildren: 0.05,
+            staggerChildren: 0.3, // Jeda antar elemen lebih lama & mengalir santai
+            delayChildren: 0.15,
         },
     },
 };
@@ -197,16 +196,16 @@ const containerVariants = {
 const itemVariants = {
     hidden: {
         opacity: 0,
-        y: 12,
-        filter: "blur(4px)",
+        y: 14, // Jarak geser diperkecil agar pas & mulus di layar mobile
+        filter: "blur(8px)", // Efek blur awal lebih tebal agar transisi fade-in nya makin dramatis
     },
     visible: {
         opacity: 1,
         y: 0,
         filter: "blur(0px)",
         transition: {
-            duration: 0.85,
-            ease: [0.25, 1, 0.5, 1],
+            duration: 1.7, // Sangat lambat, halus, dan elegan (cocok banget buat request klien di HP)
+            ease: [0.22, 1, 0.36, 1], // Kurva easing custom yang sangat lembut di ujung gerakan
         },
     },
 };

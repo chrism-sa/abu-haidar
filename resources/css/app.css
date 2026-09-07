@@ -18,6 +18,15 @@
 /* =========================================
    1. DEFINISI FONT LOKAL (Dua Nama: Kebab-case & Title Case)
 ========================================= */
+
+@font-face {
+    font-family: "kfgqpc-rbic-symbol-01";
+    src: url("/fonts/hafs.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 @font-face {
     font-family: "Al Jazeera";
     src: url("/fonts/AL-JAZEERA-ARABIC-REGULAR.TTF") format("truetype");
@@ -167,6 +176,18 @@
 .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times"]::before,
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times"]::before {
     content: "Times New Roman" !important;
+}
+
+/* Class helper dan inline style Quill */
+.font-kfgqpc-rbic-symbol-01,
+.ql-font-kfgqpc-rbic-symbol-01 {
+    font-family: "kfgqpc-rbic-symbol-01", serif !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="kfgqpc-rbic-symbol-01"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="kfgqpc-rbic-symbol-01"]::before {
+    content: "KFGQPC Symbol" !important;
+    font-family: "kfgqpc-rbic-symbol-01", serif !important;
 }
 
 /* =========================================

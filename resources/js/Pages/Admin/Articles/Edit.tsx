@@ -58,6 +58,7 @@ FontAttributor.whitelist = [
     "scheherazade",
     "adobe-naskh",
     "al-jazeera",
+    "kfgqpc-rbic-symbol-01",
 ];
 Quill.register(FontAttributor, true);
 
@@ -1617,6 +1618,9 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
                                             </option>
                                             <option value="al-jazeera">
                                                 Al Jazeera
+                                            </option>
+                                            <option value="kfgqpc-rbic-symbol-01">
+                                                KFGQPC Symbol
                                             </option>
                                             <option value="times">
                                                 Times New Roman

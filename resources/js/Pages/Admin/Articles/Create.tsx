@@ -57,6 +57,7 @@ FontAttributor.whitelist = [
     "scheherazade",
     "adobe-naskh",
     "al-jazeera",
+    "kfgqpc-rbic-symbol-01",
 ];
 Quill.register(FontAttributor, true);
 
@@ -706,7 +707,11 @@ export default function ArticleCreate({ categories }: CreateProps) {
         const quill = quillRef.current?.getEditor();
         if (!quill) return;
 
-        const handleTextChange = (delta: any, oldDelta: any, source: string) => {
+        const handleTextChange = (
+            delta: any,
+            oldDelta: any,
+            source: string,
+        ) => {
             if (source !== "user") return;
 
             // Cek apakah ada operasi insert newline (\n) yang menandakan tombol Enter ditekan
@@ -746,7 +751,7 @@ export default function ArticleCreate({ categories }: CreateProps) {
             quill.off("text-change", handleTextChange);
         };
     }, []);
-    
+
     const quillModules = useMemo(
         () => ({
             toolbar: false,
@@ -1561,6 +1566,9 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                             </option>
                                             <option value="al-jazeera">
                                                 Al Jazeera
+                                            </option>
+                                            <option value="kfgqpc-rbic-symbol-01">
+                                                KFGQPC Symbol
                                             </option>
                                             <option value="times">
                                                 Times New Roman
