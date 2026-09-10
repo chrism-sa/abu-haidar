@@ -32,6 +32,7 @@ import {
     RotateCcw,
     Highlighter,
     Video,
+    Film,
 } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import { Category } from "@/types";
@@ -140,6 +141,32 @@ Quill.register(ColorStyle, true);
 
 const BackgroundStyle = Quill.import("attributors/style/background") as any;
 Quill.register(BackgroundStyle, true);
+
+// =========================================================================
+// REGISTRASI CUSTOM BLOT VIDEO LOKAL (HTML5)
+// =========================================================================
+const BlockEmbed = Quill.import("blots/block/embed") as any;
+
+class LocalVideoBlot extends BlockEmbed {
+    static create(value: string) {
+        const node = super.create();
+        node.setAttribute("controls", "true");
+        node.setAttribute("preload", "metadata");
+        node.setAttribute("src", value);
+        node.setAttribute(
+            "class",
+            "mx-auto block my-6 w-full max-w-2xl rounded-2xl border border-[#E8CEBC] shadow-xs bg-black aspect-video",
+        );
+        return node;
+    }
+
+    static value(node: HTMLElement) {
+        return node.getAttribute("src");
+    }
+}
+LocalVideoBlot.blotName = "localVideo";
+LocalVideoBlot.tagName = "video";
+Quill.register(LocalVideoBlot, true);
 
 const getYouTubeId = (url: string | null | undefined) => {
     if (!url) return null;
@@ -341,6 +368,74 @@ export default function ArticleCreate({ categories }: CreateProps) {
         }
     };
 
+    // Handler Sisipkan Video Lokal (MP4 / WebM / OGG) ke Naskah Quill
+    const handleTriggerLocalVideo = () => {
+        const input = document.createElement("input");
+        input.setAttribute("type", "file");
+        input.setAttribute("accept", "video/mp4, video/webm, video/ogg");
+        input.click();
+
+        input.onchange = async () => {
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+
+            // Batas ukuran (misal 50 MB)
+            if (file.size > 50 * 1024 * 1024) {
+                toast.error("Ukuran video lokal maksimal 50 MB!");
+                return;
+            }
+
+            const toastId = toast.loading(
+                "Mengunggah video lokal ke server...",
+            );
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await axios.post(
+                    "/admin/editor/upload-media",
+                    formData,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                    },
+                );
+
+                if (response.data && response.data.success) {
+                    const quill = quillRef.current?.getEditor();
+                    if (quill) {
+                        const range = quill.getSelection(true);
+                        const index = range ? range.index : quill.getLength();
+                        // Masukkan format embed custom blot localVideo
+                        quill.insertEmbed(
+                            index,
+                            "localVideo",
+                            response.data.url,
+                            "user",
+                        );
+                        quill.setSelection(index + 1, 0);
+                    }
+                    toast.success("Video lokal berhasil disisipkan!", {
+                        id: toastId,
+                    });
+                } else {
+                    toast.error(
+                        response.data?.message || "Gagal mengunggah video.",
+                        { id: toastId },
+                    );
+                }
+            } catch (err: any) {
+                console.error("Upload video error:", err);
+                const errorMsg =
+                    err.response?.data?.message ||
+                    "Gagal mengunggah video ke server.";
+                toast.error(errorMsg, { id: toastId });
+            }
+        };
+    };
+
     const renderArticleHtml = (htmlContent: string) => {
         if (!htmlContent) return "";
         const cleanHtml = htmlContent.replace(/&nbsp;|\u00a0/g, " ");
@@ -413,6 +508,15 @@ export default function ArticleCreate({ categories }: CreateProps) {
                     const videoEl = createVideoElement(doc, ytId);
                     p.parentNode?.replaceChild(videoEl, p);
                 }
+            });
+
+            // Di dalam renderArticleHtml:
+            const videos = doc.querySelectorAll("video");
+            videos.forEach((vid) => {
+                vid.className =
+                    "mx-auto block h-auto max-h-[500px] w-full max-w-2xl rounded-2xl border border-[#E8CEBC] object-contain my-6 shadow-xs bg-black";
+                vid.setAttribute("controls", "true");
+                vid.setAttribute("preload", "metadata");
             });
 
             return doc.body.innerHTML;
@@ -2001,9 +2105,10 @@ export default function ArticleCreate({ categories }: CreateProps) {
 
                                     <div className="h-7 w-[1px] bg-[#E8CEBC] mx-0.5 hidden sm:block self-center"></div>
 
-                                    {/* 9. Sisipkan Media ke Naskah (Foto & Video) */}
+                                    {/* 9. Sisipkan Media ke Naskah (Foto, Video Lokal & YouTube) */}
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-0.5">
+                                            {/* Foto */}
                                             <button
                                                 type="button"
                                                 onClick={
@@ -2018,6 +2123,22 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 </span>
                                             </button>
 
+                                            {/* Video Lokal */}
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    handleTriggerLocalVideo
+                                                }
+                                                className="h-8 px-2 flex items-center gap-1 rounded-lg border border-[#E8CEBC] bg-white text-[#1D4533] hover:bg-[#FAF3EB] text-[11px] font-bold transition cursor-pointer active:scale-95 shadow-2xs"
+                                                title="Upload Video dari Perangkat (MP4, WebM)"
+                                            >
+                                                <Film size={13} />
+                                                <span className="hidden sm:inline">
+                                                    Video
+                                                </span>
+                                            </button>
+
+                                            {/* Video YouTube */}
                                             <button
                                                 type="button"
                                                 onClick={
@@ -2026,9 +2147,9 @@ export default function ArticleCreate({ categories }: CreateProps) {
                                                 className="h-8 px-2 flex items-center gap-1 rounded-lg border border-[#E8CEBC] bg-white text-red-600 hover:bg-red-50 text-[11px] font-bold transition cursor-pointer active:scale-95 shadow-2xs"
                                                 title="Sisipkan Video YouTube ke dalam Naskah"
                                             >
-                                                <Video size={13} />
+                                                <FaYoutube size={14} />
                                                 <span className="hidden sm:inline">
-                                                    Video
+                                                    YT
                                                 </span>
                                             </button>
                                         </div>

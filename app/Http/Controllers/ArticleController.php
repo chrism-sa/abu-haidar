@@ -313,38 +313,43 @@ class ArticleController extends Controller
     }
 
     public function uploadEditorMedia(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
-        ], [
-            'file.required' => 'File gambar wajib dipilih!',
-            'file.image' => 'File harus berupa gambar.',
-            'file.max' => 'Ukuran gambar maksimal 5 MB.',
-        ]);
+{
+    $request->validate([
+        'file' => 'required|file|mimes:jpeg,png,jpg,webp,gif,mp4,webm,ogg|max:51200', // 50 MB
+    ], [
+        'file.required' => 'File media wajib dipilih!',
+        'file.mimes' => 'Format file harus berupa gambar (JPG, PNG, WebP) atau video (MP4, WebM, OGG).',
+        'file.max' => 'Ukuran file maksimal 50 MB.',
+    ]);
 
-        try {
-            if ($request->hasFile('file')) {
-                $file = $request->file('file');
-                $path = $file->store('articles/media', 'public');
-                $url = '/storage/' . $path;
+    try {
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $mime = $file->getMimeType();
+            $isDirectVideo = str_starts_with($mime, 'video/');
+            
+            // Simpan file ke direktori storage/articles/media
+            $path = $file->store('articles/media', 'public');
+            $url = '/storage/' . $path;
 
-                return response()->json([
-                    'success' => true,
-                    'url' => $url,
-                ], 200);
-            }
-        } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengunggah file: ' . $e->getMessage()
-            ], 500);
+                'success' => true,
+                'url' => $url,
+                'type' => $isDirectVideo ? 'video' : 'image',
+            ], 200);
         }
-
+    } catch (\Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => 'File gambar tidak ditemukan.'
-        ], 400);
+            'message' => 'Gagal mengunggah berkas: ' . $e->getMessage()
+        ], 500);
     }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'File tidak ditemukan.'
+    ], 400);
+}
 
     public function cleanStorageImages()
     {
