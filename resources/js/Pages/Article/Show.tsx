@@ -6,6 +6,8 @@ import {
     Calendar,
     Share2,
     Check,
+    Volume2,
+    Square,
 } from "lucide-react";
 import {
     FaFacebookF,
@@ -76,13 +78,11 @@ const getYouTubeId = (url: string | null | undefined) => {
 };
 
 // Helper Video: Menampilkan Player di Web & URL Teks Murni saat Dicetak ke PDF
-// Helper Video Bersih: Mencegah Duplikasi & Mencegah Video Terpotong
 const createVideoElement = (doc: Document, ytId: string) => {
     const wrapper = doc.createElement("div");
     wrapper.className = "my-6 w-full video-container-block";
     wrapper.setAttribute("data-rendered-video", "true");
 
-    // 1. Tampilan Video Player di Web (Rasio 16:9 Murni Tanpa Double Wrapper)
     const screenPlayer = doc.createElement("div");
     screenPlayer.className =
         "w-full overflow-hidden rounded-2xl bg-black shadow-md no-print";
@@ -97,7 +97,6 @@ const createVideoElement = (doc: Document, ytId: string) => {
     newIframe.setAttribute("allowfullscreen", "true");
     screenPlayer.appendChild(newIframe);
 
-    // 2. Teks URL Polos untuk Cetak PDF
     const printLinkBox = doc.createElement("p");
     printLinkBox.className =
         "print-only-link text-center my-4 font-mono text-[9pt] text-[#8C5E43]";
@@ -118,15 +117,13 @@ const renderArticleHtml = (htmlContent: string) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(cleanHtml, "text/html");
 
-        // 1. Format & Optimalisasi Gambar di Halaman Show (Anti-Pecah & Tampil HD/Lebih Besar)
         const images = doc.querySelectorAll("img");
         images.forEach((img) => {
             img.setAttribute("loading", "lazy");
             img.className =
-                "mx-auto block h-auto max-h-[700px] w-auto max-w-full rounded-2xl border border-[#E8CEBC] object-contain my-6 shadow-xs [image-rendering:crisp-edges]";
+                "mx-auto block h-auto max-h-[700px] w-auto max-w-full object-contain my-6 bg-transparent [image-rendering:crisp-edges]";
         });
 
-        // 2. Konversi iframe YouTube asli bawaan editor
         const iframes = doc.querySelectorAll("iframe:not([data-processed])");
         iframes.forEach((iframe) => {
             if (iframe.closest("[data-rendered-video]")) return;
@@ -138,7 +135,6 @@ const renderArticleHtml = (htmlContent: string) => {
             }
         });
 
-        // 3. Konversi link <a> YouTube murni
         const links = doc.querySelectorAll("a");
         links.forEach((link) => {
             if (link.closest("[data-rendered-video]")) return;
@@ -161,7 +157,6 @@ const renderArticleHtml = (htmlContent: string) => {
             }
         });
 
-        // 4. Konversi paragraf <p> yang hanya berisi URL teks mentah YouTube
         const paragraphs = doc.querySelectorAll("p");
         paragraphs.forEach((p) => {
             if (p.closest("[data-rendered-video]")) return;
@@ -182,12 +177,13 @@ const renderArticleHtml = (htmlContent: string) => {
         return cleanHtml;
     }
 };
+
 const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
         transition: {
-            staggerChildren: 0.3, // Jeda antar elemen lebih lama & mengalir santai
+            staggerChildren: 0.3,
             delayChildren: 0.15,
         },
     },
@@ -196,16 +192,16 @@ const containerVariants = {
 const itemVariants = {
     hidden: {
         opacity: 0,
-        y: 14, // Jarak geser diperkecil agar pas & mulus di layar mobile
-        filter: "blur(8px)", // Efek blur awal lebih tebal agar transisi fade-in nya makin dramatis
+        y: 14,
+        filter: "blur(8px)",
     },
     visible: {
         opacity: 1,
         y: 0,
         filter: "blur(0px)",
         transition: {
-            duration: 1.7, // Sangat lambat, halus, dan elegan (cocok banget buat request klien di HP)
-            ease: [0.22, 1, 0.36, 1], // Kurva easing custom yang sangat lembut di ujung gerakan
+            duration: 1.7,
+            ease: [0.22, 1, 0.36, 1],
         },
     },
 };
@@ -220,10 +216,124 @@ export default function Show({
 }: ShowProps) {
     const [copied, setCopied] = useState(false);
     const [currentUrl, setCurrentUrl] = useState("");
+    
+    // State untuk fitur Audiobook / Text-to-Speech
+    const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+    const [synth, setSynth] = useState<SpeechSynthesis | null>(null);
 
     useEffect(() => {
         setCurrentUrl(window.location.href);
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            setSynth(window.speechSynthesis);
+        }
+        
+        // Cleanup suara jika user pindah halaman saat audio sedang diputar
+        return () => {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+        };
     }, []);
+
+// Fungsi Audiobook Pintar: Memisahkan Teks Indonesia dan Lafaz Arab agar terbaca akurat
+    const handleToggleAudiobook = () => {
+        if (!synth) {
+            alert("Maaf, browser Anda tidak mendukung fitur pemutar audio otomatis.");
+            return;
+        }
+
+        if (isPlayingAudio) {
+            synth.cancel();
+            setIsPlayingAudio(false);
+            return;
+        }
+
+        // 1. Ambil konten artikel
+        let rawContent = article.content || "";
+
+        // 2. Hapus elemen/link YouTube supaya tidak ikut terbaca
+        rawContent = rawContent.replace(/<iframe[^>]*youtube[^>]*>.*?<\/iframe>/gi, "");
+        rawContent = rawContent.replace(/https?:\/\/(?:www\.)?(?:youtube\.|youtu\.be\/)[^\s<]+/gi, "");
+
+        // 3. Bersihkan tag HTML menjadi teks biasa
+        let cleanText = rawContent.replace(/<[^>]*>?/gm, " ");
+        cleanText = cleanText.replace(/\s+/g, " ").trim();
+
+        // Gabungkan Judul dan Konten
+        const fullText = `${article.title}. ${cleanText}`;
+
+        // 4. Pecah teks berdasarkan blok huruf Arab vs Non-Arab (Indonesia/Latin)
+        // Regex ini mendeteksi blok unicode huruf Arab (\u0600-\u06FF)
+        const regex = /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\s\d\p{P}]+)/gu;
+        
+        // Kita pisahkan teks menjadi potongan-potongan kecil (token)
+        const segments: { text: string; lang: string }[] = [];
+        
+        // Pendekatan: Scan teks per karakter/kata atau split menggunakan regex pencocokan Arab
+        // Cara aman: Cari semua teks Arab vs teks biasa secara berurutan
+        let lastIndex = 0;
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g;
+        let match;
+
+        while ((match = arabicRegex.exec(fullText)) !== null) {
+            // Teks sebelum bagian Arab (Biasanya Indonesia)
+            if (match.index > lastIndex) {
+                const idText = fullText.substring(lastIndex, match.index).trim();
+                if (idText) {
+                    segments.push({ text: idText, lang: "id-ID" });
+                }
+            }
+            // Teks Arabnya
+            const arText = match[0].trim();
+            if (arText) {
+                segments.push({ text: arText, lang: "ar-SA" });
+            }
+            lastIndex = arabicRegex.lastIndex;
+        }
+
+        // Sisa teks terakhir setelah blok Arab terakhir
+        if (lastIndex < fullText.length) {
+            const remainingText = fullText.substring(lastIndex).trim();
+            if (remainingText) {
+                segments.push({ text: remainingText, lang: "id-ID" });
+            }
+        }
+
+        // Jika sama sekali tidak ada teks Arab, masukkan seluruh teks sebagai id-ID
+        if (segments.length === 0) {
+            segments.push({ text: fullText, lang: "id-ID" });
+        }
+
+        setIsPlayingAudio(true);
+
+        // 5. Jalankan antrean pembacaan (Queue) secara berurutan
+        let currentIndex = 0;
+
+        const speakNext = () => {
+            if (currentIndex >= segments.length) {
+                setIsPlayingAudio(false);
+                return;
+            }
+
+            const segment = segments[currentIndex];
+            const utterance = new SpeechSynthesisUtterance(segment.text);
+            utterance.lang = segment.lang; // Otomatis beralih ke 'ar-SA' untuk Arab dan 'id-ID' untuk Indonesia
+            utterance.rate = segment.lang === "ar-SA" ? 0.9 : 0.95; // Sedikit lebih pelan untuk Arab agar fasih
+
+            utterance.onend = () => {
+                currentIndex++;
+                speakNext();
+            };
+
+            utterance.onerror = () => {
+                setIsPlayingAudio(false);
+            };
+
+            synth.speak(utterance);
+        };
+
+        speakNext();
+    };
 
     const encodedUrl = encodeURIComponent(currentUrl);
     const encodedTitle = encodeURIComponent(article.title);
@@ -295,7 +405,7 @@ export default function Show({
             >
                 <div className="grid gap-8 lg:gap-10 lg:grid-cols-[1fr_300px]">
                     <article className="min-w-0">
-                        {/* 1. KOP SURAT RESMI CETAK (Logo MainLayout) */}
+                        {/* 1. KOP SURAT RESMI CETAK */}
                         <div className="print-header hidden mb-6 pb-4 border-b-2 border-[#1D4533]">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -373,18 +483,46 @@ export default function Show({
                                 {article.title}
                             </h1>
 
-                            <div className="mt-4 flex flex-wrap items-center gap-3 border-y border-[#E8CEBC] py-3.5 text-[12px] sm:text-[12.5px] font-semibold text-[#5E3122]/75 print-meta">
-                                <span className="flex items-center gap-1.5">
-                                    <Calendar
-                                        size={13}
-                                        className="text-[#8C5E43] no-print"
-                                    />
-                                    Ditulis: {formatDate(article.created_at)}
-                                </span>
-                                <span className="h-1 w-1 rounded-full bg-[#E8CEBC] no-print"></span>
-                                <span className="italic text-[#8C5E43] no-print">
-                                    {timeAgo(article.updated_at)}
-                                </span>
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-[#E8CEBC] py-3.5 text-[12px] sm:text-[12.5px] font-semibold text-[#5E3122]/75 print-meta">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <span className="flex items-center gap-1.5">
+                                        <Calendar
+                                            size={13}
+                                            className="text-[#8C5E43] no-print"
+                                        />
+                                        Ditulis: {formatDate(article.created_at)}
+                                    </span>
+                                    <span className="h-1 w-1 rounded-full bg-[#E8CEBC] no-print"></span>
+                                    <span className="italic text-[#8C5E43] no-print">
+                                        {timeAgo(article.updated_at)}
+                                    </span>
+                                </div>
+
+                                {/* TOMBOL AUDIOBOOK / TEXT-TO-SPEECH (No Print) */}
+                                <motion.button
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={handleToggleAudiobook}
+                                    type="button"
+                                    className={`no-print inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all shadow-2xs cursor-pointer ${
+                                        isPlayingAudio
+                                            ? "bg-[#8C5E43] text-white animate-pulse"
+                                            : "bg-[#FAF1E8] border border-[#E8CEBC] text-[#1D4533] hover:bg-[#1D4533] hover:text-[#F7EAE0]"
+                                    }`}
+                                    aria-label="Putar Audiobook Artikel"
+                                >
+                                    {isPlayingAudio ? (
+                                        <>
+                                            <Square size={13} className="fill-current" />
+                                            <span>Hentikan Audio</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Volume2 size={14} className="text-[#1D4533]" />
+                                            <span>Dengarkan Artikel (Audiobook)</span>
+                                        </>
+                                    )}
+                                </motion.button>
                             </div>
                         </motion.header>
 
@@ -405,7 +543,6 @@ export default function Show({
                                         />
                                     </div>
 
-                                    {/* Link Sampul YouTube Cetak/PDF (Teks URL Polos) */}
                                     <p className="print-only-link text-center my-4 font-mono text-[9pt] text-[#8C5E43]">
                                         {`https://www.youtube.com/watch?v=${ytId}`}
                                     </p>

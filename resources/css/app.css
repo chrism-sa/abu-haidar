@@ -456,17 +456,19 @@ input:-webkit-autofill:active {
     transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Styling Gambar & Video Iframe di dalam Naskah Artikel */
+/* Styling Gambar di dalam Naskah Artikel & Editor */
 .article-content img,
 .ql-editor img {
-    border-radius: 1rem;
+    border-radius: 0 !important; /* Hilangkan sudut melengkung kotak */
     margin: 1.5rem auto;
     max-height: 550px;
     width: auto;
     max-width: 100%;
-    object-fit: cover;
+    object-contain: contain;
     display: block;
-    box-shadow: 0 4px 14px rgba(94, 49, 34, 0.08);
+    box-shadow: none !important; /* Hapus bayangan kotak */
+    border: none !important; 
+    background: transparent !important;
 }
 
 /* Iframe Video YouTube di dalam Naskah */
