@@ -499,7 +499,7 @@ export default function Show({
                                 </div>
 
                                 {/* TOMBOL AUDIOBOOK / TEXT-TO-SPEECH (No Print) */}
-                                <motion.button
+                                {/* <motion.button
                                     whileHover={{ scale: 1.03 }}
                                     whileTap={{ scale: 0.97 }}
                                     onClick={handleToggleAudiobook}
@@ -522,7 +522,7 @@ export default function Show({
                                             <span>Dengarkan Artikel (Audiobook)</span>
                                         </>
                                     )}
-                                </motion.button>
+                                </motion.button> */}
                             </div>
                         </motion.header>
 
