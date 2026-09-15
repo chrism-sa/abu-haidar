@@ -299,7 +299,7 @@ export default function ArticleEdit({ article, categories, quote }: EditProps) {
     );
     const isTafsirCategory = selectedCategory?.name
         ?.toLowerCase()
-        .includes("tafsir");
+        .includes("al-qur'an");
 
     const syncCurrentFormats = (quillInstance?: any) => {
         const quill = quillInstance || quillRef.current?.getEditor();
