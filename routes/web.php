@@ -583,7 +583,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             'description' => 'nullable|string',
             'author' => 'nullable|string',
             'total_pages' => 'nullable|integer',
-            'pdf_file' => 'required|mimes:pdf|max:20480',
+            'pdf_file' => 'required|mimes:pdf|max:51200',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
@@ -629,7 +629,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             'description' => 'nullable|string',
             'author' => 'nullable|string',
             'total_pages' => 'nullable|integer',
-            'pdf_file' => 'nullable|mimes:pdf|max:20480',
+            'pdf_file' => 'nullable|mimes:pdf|max:51200',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 

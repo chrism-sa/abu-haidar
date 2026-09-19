@@ -532,7 +532,7 @@ export default function AdminEbookIndex({ ebooks = [] }: IndexProps) {
                                             {/* File Dokumen PDF */}
                                             <div>
                                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5E3122] mb-1">
-                                                    File Dokumen PDF * (Maks. 20
+                                                    File Dokumen PDF * (Maks. 50
                                                     MB)
                                                 </label>
                                                 <input
